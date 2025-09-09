@@ -12,9 +12,12 @@ app.use(express.json());
 
 // Importar rutas de perfiles
 const profileRoutes = require('./src/routes/profileRoutes');
+const filterSearchRoutes = require('./src/routes/filterSearchRoutes');
 
 // Usar rutas
 app.use('/api/profiles', profileRoutes);
+
+app.use('/api/filter-search', filterSearchRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
