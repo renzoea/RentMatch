@@ -12,9 +12,11 @@ app.use(express.json());
 
 // Importar rutas de perfiles
 const profileRoutes = require('./src/routes/profileRoutes');
+const authRoutes = require('./src/routes/authRoutes');
 
 // Usar rutas
 app.use('/api/profiles', profileRoutes);
+app.use('/api/auth', authRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
