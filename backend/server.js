@@ -11,11 +11,11 @@ app.use(cors());
 app.use(express.json());
 
 // Importar rutas de perfiles
-const profileRoutes = require('./src/routes/profileRoutes');
+const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 
 // Usar rutas
-app.use('/api/profiles', profileRoutes);
+app.use('/api/search-profiles', searchProfileRoutes);
 app.use('/api/auth', authRoutes);
 
 // Ruta de prueba
