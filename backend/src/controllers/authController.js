@@ -53,22 +53,33 @@ exports.login = async (req, res) => {
     return res.status(400).json({ error: 'Faltan campos obligatorios.' });
   }
   try {
-    // Buscar perfil por email
-    const { data: user, error } = await supabase
+    // 1. Autenticar con Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (authError || !authData.session) {
+      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    }
+
+    // 2. Buscar perfil por id (no por email)
+    console.log('Buscando perfil con id:', authData.user.id);
+    const { data: user, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('email', email)
+      .eq('id', authData.user.id)
       .single();
+    console.log('Resultado perfil:', user, profileError); 
     if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
+      return res.status(401).json({ error: 'Perfil no encontrado.' });
     }
-    // Verificar contraseña
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
-    }
-    // Aquí podrías generar un JWT si lo necesitas
-    return res.status(200).json({ message: 'Login exitoso', user });
+
+    // 3. Retornar el token y el usuario
+    return res.status(200).json({
+      message: 'Login exitoso',
+      access_token: authData.session.access_token,
+      user
+    });
   } catch (err) {
     console.error('Error interno:', err);
     return res.status(500).json({ error: 'Error interno del servidor.', details: err.message });
