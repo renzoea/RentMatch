@@ -1,7 +1,45 @@
+'use client'
+
+import { useState } from "react"
+import { supabase } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("")
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    if (!email) {
+      setErrorMsg("Debes ingresar tu correo electrónico")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset_password`, // Página a la que redirige luego del reset
+      })
+
+      if (error) {
+        setErrorMsg(error.message)
+      } else {
+        setSuccessMsg("¡Correo enviado! Revisa tu bandeja de entrada para restablecer tu contraseña.")
+      }
+    } catch (err) {
+      console.error(err)
+      setErrorMsg("Ha ocurrido un error inesperado.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       {/* Logo */}
@@ -21,30 +59,43 @@ export default function ForgotPasswordPage() {
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Recuperar contraseña</h1>
-          <p className="text-gray-600">Te enviaremos un código de verificación a tu correo</p>
+          <p className="text-gray-600">Te enviaremos un correo para restablecer tu contraseña</p>
         </div>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
               Correo Electrónico
             </label>
-            <Input id="email" type="email" placeholder="tu@email.com" className="w-full" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="tu@email.com"
+              className="w-full"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
             <p className="text-sm text-gray-500 mt-2">Ingresa el correo asociado a tu cuenta de RentMatch</p>
           </div>
+
+          {/* Error / Success Message */}
+          {errorMsg && <p className="text-red-600 text-sm text-center">{errorMsg}</p>}
+          {successMsg && <p className="text-green-600 text-sm text-center">{successMsg}</p>}
 
           {/* Send Code Button */}
           <Button
             type="submit"
+            disabled={loading}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg"
           >
-            Enviar Código
+            {loading ? "Enviando..." : "Enviar Código"}
           </Button>
 
           {/* Back to Login Link */}
           <div className="text-center mt-4">
-            <a href="/" className="text-gray-600 hover:text-gray-800 font-medium inline-flex items-center">
+            <a href="/login" className="text-gray-600 hover:text-gray-800 font-medium inline-flex items-center">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
