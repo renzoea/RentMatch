@@ -51,7 +51,7 @@ export default function Navbar({ onNavigate }: NavbarProps) {
 
         {/* Auth Buttons */}
         <div className="flex items-center space-x-3">
-          <Button variant="ghost" className="text-gray-700 hover:text-orange-500">
+          <Button  variant="ghost" className="text-gray-700 hover:text-orange-500">
             Iniciar sesión
           </Button>
           <Button className="bg-orange-500 hover:bg-orange-600 text-white">Registrarse</Button>
