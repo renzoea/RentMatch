@@ -3,8 +3,7 @@
 
 import { useState } from "react" // <--- 2. Importar hooks de React
 import { useRouter } from "next/navigation"
-import { supabase } from "@/utils/supabase/client" // <--- 4. Importar el cliente de Supabase (Paso 1 anterior)
-
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -14,9 +13,52 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  
+  // Función para manejar el login
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setErrorMsg(null)
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Login exitoso
+        console.log('Login exitoso:', data)
+
+        // Guardar token en localStorage
+        localStorage.setItem('access_token', data.access_token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        console.log('Usuario guardado en localStorage:', data.user)
+        // Redirigir al dashboard
+        router.push('/home')
+      } else {
+        // Error del servidor
+        setErrorMsg(data.error || 'Error al iniciar sesión')
+      }
+    } catch (error) {
+      console.error('Error de red:', error)
+      setErrorMsg('Error de conexión. Intenta nuevamente.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       {/* Logo */}
@@ -28,8 +70,10 @@ export default function LoginPage() {
               <polyline points="9,22 9,12 15,12 15,22" />
             </svg>
           </div>
-          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
+          <a href="/">          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
+          </a>
         </div>
+
       </div>
 
       {/* Login Form */}
@@ -40,7 +84,7 @@ export default function LoginPage() {
         </div>
 
         {/* --- 7. Conectar el <form> a la función handleLogin --- */}
-        <form className="space-y-4" >
+        <form className="space-y-4" onSubmit={handleLogin}>
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -95,8 +139,9 @@ export default function LoginPage() {
           <Button
             type="submit" // <--- 13. Asegurarse que el tipo es "submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg"
+            disabled={isLoading}
           >
-            Ingresar
+            {isLoading ? 'Ingresando...' : 'Ingresar'}
           </Button>
 
           {/* Register Link */}

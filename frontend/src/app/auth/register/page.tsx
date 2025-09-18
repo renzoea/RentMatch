@@ -78,11 +78,22 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="mb-8 text-center">
-        <span className="text-2xl font-bold text-orange-500">RentMatch</span>
+     <div className="mb-8">
+        <div className="flex items-center justify-center">
+          <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-6 h-6">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9,22 9,12 15,12 15,22" />
+            </svg>
+          </div>
+          <a href="/">          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
+          </a>
+        </div>
+
       </div>
 
-      <div className="bg-gray-200 rounded-2xl shadow-lg p-10 w-full max-w-lg">
+
+      <div className=" rounded-2xl shadow-lg p-10 w-full max-w-lg">
         <h1 className="text-lg font-semibold text-gray-900 mb-6 text-center">
           Únete a RentMatch y encuentra tu hogar ideal
         </h1>

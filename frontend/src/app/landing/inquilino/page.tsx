@@ -16,15 +16,12 @@ export default function InquilinosPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
      
 
-            {/* Navigation */}
                <Navbar onNavigate={scrollToSection} />
 
 
 
-      {/* Hero Section */}
       <section className="bg-white py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -82,7 +79,6 @@ export default function InquilinosPage() {
               </CardContent>
             </Card>
 
-            {/* Sin Competencia */}
             <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -95,7 +91,6 @@ export default function InquilinosPage() {
               </CardContent>
             </Card>
 
-            {/* 100% Seguro */}
             <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -111,7 +106,6 @@ export default function InquilinosPage() {
         </div>
       </section>
 
-      {/* FAQ Section */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
