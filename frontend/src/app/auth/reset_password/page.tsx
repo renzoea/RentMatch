@@ -34,49 +34,6 @@ export default function ResetPasswordPage() {
     setPasswordMatch(newPassword === confirmPassword || confirmPassword === "")
   }, [newPassword, confirmPassword])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMsg(null)
-    setSuccessMsg(null)
-
-    if (!newPassword || !confirmPassword) {
-      setErrorMsg("Debes ingresar la nueva contraseña y confirmarla")
-      return
-    }
-
-    if (newPassword !== confirmPassword) {
-      setErrorMsg("Las contraseñas no coinciden")
-      return
-    }
-
-    if (!token) {
-      setErrorMsg("Token inválido o expirado")
-      return
-    }
-
-    setLoading(true)
-    try {
-      // Con el access_token, Supabase sabe qué usuario es
-      const { data, error } = await supabase.auth.updateUser(
-        { password: newPassword },
-      )
-
-      if (error) {
-        setErrorMsg(error.message)
-      } else {
-        setSuccessMsg("¡Contraseña restablecida correctamente!")
-        setTimeout(() => {
-          router.push("/login")
-        }, 2000)
-      }
-    } catch (err) {
-      console.error(err)
-      setErrorMsg("Ha ocurrido un error inesperado")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="mb-8 text-center">
@@ -85,7 +42,7 @@ export default function ResetPasswordPage() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form  className="space-y-4">
           <div>
             <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
               Nueva Contraseña

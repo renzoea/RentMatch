@@ -11,34 +11,10 @@ export default function ForgotPasswordPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMsg(null)
-    setSuccessMsg(null)
 
-    if (!email) {
-      setErrorMsg("Debes ingresar tu correo electrónico")
-      return
-    }
 
-    setLoading(true)
-    try {
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset_password`, // Página a la que redirige luego del reset
-      })
+ 
 
-      if (error) {
-        setErrorMsg(error.message)
-      } else {
-        setSuccessMsg("¡Correo enviado! Revisa tu bandeja de entrada para restablecer tu contraseña.")
-      }
-    } catch (err) {
-      console.error(err)
-      setErrorMsg("Ha ocurrido un error inesperado.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -62,7 +38,7 @@ export default function ForgotPasswordPage() {
           <p className="text-gray-600">Te enviaremos un correo para restablecer tu contraseña</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4">
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">

@@ -36,50 +36,9 @@ export default function RegisterPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMsg(null)
+ 
 
-    if (formData.password !== formData.confirmPassword) {
-      setPasswordMatch(false)
-      setErrorMsg("Las contraseñas no coinciden")
-      return
-    }
-
-    if (!formData.acceptTerms) {
-      setErrorMsg("Debes aceptar los términos y condiciones")
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            nombre: formData.nombre,
-            apellido: formData.apellido,
-            telefono: formData.telefono,
-            userType: userType,
-          },
-        },
-      })
-
-      if (error) {
-        setErrorMsg(error.message)
-      } else {
-        alert("¡Cuenta creada exitosamente! Revisa tu email para confirmar.")
-        router.push("/login")
-      }
-    } catch (err) {
-      console.error(err)
-      setErrorMsg("Ha ocurrido un error inesperado.")
-    } finally {
-      setLoading(false)
-    }
-  }
+  
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -94,7 +53,7 @@ export default function RegisterPage() {
 
         {errorMsg && <p className="text-red-600 text-center mb-4">{errorMsg}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form  className="space-y-5">
           {/* User Type */}
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-3">¿Qué tipo de usuario eres?</Label>

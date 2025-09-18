@@ -16,32 +16,7 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const router = useRouter()
 
-  // --- 6. Función que maneja el envío del formulario ---
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault() // Evitar que la página recargue
-    setErrorMsg(null) // Resetear errores previos
-
-    try {
-      // Usamos el cliente de Supabase para iniciar sesión
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      })
-
-      if (error) {
-        setErrorMsg(error.message) // Mostrar error de Supabase (ej. "Invalid login credentials")
-      } else {
-        // ¡Login exitoso!
-        // Supabase guarda la sesión. Redirigimos al usuario.
-        router.push('/') // (o a la ruta principal de tu app)
-        router.refresh() // Asegura que el layout del servidor recargue
-      }
-    } catch (error) {
-      console.error(error)
-      setErrorMsg("Ha ocurrido un error inesperado.")
-    }
-  }
-
+  
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       {/* Logo */}
@@ -65,7 +40,7 @@ export default function LoginPage() {
         </div>
 
         {/* --- 7. Conectar el <form> a la función handleLogin --- */}
-        <form className="space-y-4" onSubmit={handleLogin}>
+        <form className="space-y-4" >
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
