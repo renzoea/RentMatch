@@ -1,18 +1,15 @@
 'use client'
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/utils/supabase/client"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+import type { AxiosError } from "axios";
+import { useState } from "react";
+import api from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const [userType, setUserType] = useState("inquilino")
+  const [userType, setUserType] = useState("inquilino");
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -21,24 +18,63 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
     acceptTerms: false,
-  })
-  const [passwordMatch, setPasswordMatch] = useState(true)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  });
+  const [passwordMatch, setPasswordMatch] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
     if (field === "confirmPassword" || field === "password") {
-      const newPassword = field === "password" ? value : formData.password
-      const newConfirmPassword = field === "confirmPassword" ? value : formData.confirmPassword
-      setPasswordMatch(newPassword === newConfirmPassword || newConfirmPassword === "")
+      const newPassword = field === "password" ? value : formData.password;
+      const newConfirmPassword = field === "confirmPassword" ? value : formData.confirmPassword;
+      setPasswordMatch(newPassword === newConfirmPassword || newConfirmPassword === "");
     }
-  }
+  };
 
- 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
 
-  
+    if (!passwordMatch) {
+      setErrorMsg("Las contraseñas no coinciden.");
+      return;
+    }
+    if (!formData.acceptTerms) {
+      setErrorMsg("Debes aceptar los términos y condiciones.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post("/auth/register", {
+        full_name: `${formData.nombre} ${formData.apellido}`,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.telefono,
+        role: userType,
+      });
+      setSuccessMsg("Registro exitoso. Revisa tu correo para confirmar tu cuenta.");
+      setFormData({
+        nombre: "",
+        apellido: "",
+        email: "",
+        telefono: "",
+        password: "",
+        confirmPassword: "",
+        acceptTerms: false,
+      });
+    } catch (error) {
+      const err = error as AxiosError<{ error: string }>;
+      console.log(err);
+      setErrorMsg(err.response?.data?.error || "Error al registrar.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -51,20 +87,18 @@ export default function RegisterPage() {
           Únete a RentMatch y encuentra tu hogar ideal
         </h1>
 
-        {errorMsg && <p className="text-red-600 text-center mb-4">{errorMsg}</p>}
-
-        <form  className="space-y-5">
+        <form className="space-y-5" onSubmit={handleSubmit}>
           {/* User Type */}
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-3">¿Qué tipo de usuario eres?</Label>
             <RadioGroup value={userType} onValueChange={setUserType} className="flex gap-8">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="inquilino" id="inquilino" />
-                <Label htmlFor="inquilino" className="text-sm text-gray-700 cursor-pointer">Inquilino</Label>
+                <Label htmlFor="inquilino">Inquilino</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="propietario" id="propietario" />
-                <Label htmlFor="propietario" className="text-sm text-gray-700 cursor-pointer">Propietario</Label>
+                <Label htmlFor="propietario">Propietario</Label>
               </div>
             </RadioGroup>
           </div>
@@ -134,20 +168,23 @@ export default function RegisterPage() {
               required
             />
             <Label htmlFor="terms" className="text-xs text-gray-700 leading-relaxed">
-              Acepto los <a href="#" className="text-orange-500 hover:underline">Términos y Condiciones</a> y la <a href="#" className="text-orange-500 hover:underline">Política de Privacidad</a>
+              Acepto los <a href="#" className="underline">Términos y Condiciones</a> y la <a href="#" className="underline">Política de Privacidad</a>
             </Label>
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg">
-            {loading ? "Creando cuenta..." : "Crear cuenta"}
+          {errorMsg && <div className="text-red-600 text-sm">{errorMsg}</div>}
+          {successMsg && <div className="text-green-600 text-sm">{successMsg}</div>}
+
+          <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg" disabled={loading}>
+            {loading ? "Registrando..." : "Registrarse"}
           </Button>
 
           <div className="text-center mt-4">
             <span className="text-gray-600 text-sm">¿Ya tienes una cuenta? </span>
-            <a href="/login" className="text-orange-500 hover:text-orange-600 font-medium text-sm hover:underline">Inicia sesión aquí</a>
+            <a href="/auth/login" className="text-orange-500 underline text-sm">Inicia sesión</a>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
