@@ -1,5 +1,6 @@
 'use client'
 import type { AxiosError } from "axios";
+import Link from "next/link"
 import { useState } from "react";
 import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
@@ -86,8 +87,8 @@ export default function RegisterPage() {
               <polyline points="9,22 9,12 15,12 15,22" />
             </svg>
           </div>
-          <a href="/">          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
-          </a>
+          <Link href="/">          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
+          </Link>
         </div>
 
       </div>

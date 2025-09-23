@@ -70,8 +70,8 @@ export default function LoginPage() {
               <polyline points="9,22 9,12 15,12 15,22" />
             </svg>
           </div>
-          <a href="/">          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
-          </a>
+          <Link href="/">          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
+          </Link>
         </div>
 
       </div>
@@ -125,9 +125,9 @@ export default function LoginPage() {
                 Recordarme
               </label>
             </div>
-            <a href="forgot_password" className="text-sm text-orange-500 hover:text-orange-600">
+            <Link href="forgot_password" className="text-sm text-orange-500 hover:text-orange-600">
               ¿Olvidaste tu contraseña?
-            </a>
+            </Link>
           </div>
 
           {/* --- 12. Mostrar error si existe --- */}

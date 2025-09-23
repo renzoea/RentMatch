@@ -7,7 +7,7 @@ import {
   Plus,
   FileText,
   Wallet,
-  User,
+  User as UserIcon,
   LogOut,
   Search,
   Users,
@@ -21,9 +21,26 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
+// Define los tipos correctos
+type User = {
+  full_name: string;
+  role: string;
+};
+
+type SearchProfile = {
+  id: string;
+  property_type: string;
+  preferred_neighborhoods?: string;
+  status: string;
+  min_budget?: number;
+  max_budget?: number;
+  interested_owners?: number;
+  created_at: string;
+};
+
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null)
-  const [searchProfiles, setSearchProfiles] = useState<any[]>([])
+  const [user, setUser] = useState<User | null>(null)
+  const [searchProfiles, setSearchProfiles] = useState<SearchProfile[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [profilesLoading, setProfilesLoading] = useState(false)
   const router = useRouter()
@@ -39,7 +56,7 @@ export default function DashboardPage() {
     
     if (userData) {
       try {
-        const parsedUser = JSON.parse(userData)
+        const parsedUser: User = JSON.parse(userData)
         setUser(parsedUser)
         fetchSearchProfiles()
       } catch (error) {
@@ -52,6 +69,7 @@ export default function DashboardPage() {
     }
     
     setIsLoading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   const handleLogout = () => {
@@ -76,7 +94,6 @@ export default function DashboardPage() {
 
       if (response.ok) {
         const data = await response.json()
-        console.log('Perfiles obtenidos:', data)
         setSearchProfiles(data.searchProfiles || [])
       } else if (response.status === 401) {
         handleLogout()
@@ -101,7 +118,6 @@ export default function DashboardPage() {
     )
   }
 
-  // Si no hay usuario, no renderizar nada (se está redirigiendo)
   if (!user) {
     return null
   }
@@ -164,7 +180,7 @@ export default function DashboardPage() {
                 Depósito
               </Button>
               <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100">
-                <User className="w-5 h-5 mr-3" />
+                <UserIcon className="w-5 h-5 mr-3" />
                 Mi Cuenta
               </Button>
               <Button 
