@@ -27,15 +27,12 @@ export default function LoginPage() {
         password,
       })
 
-      console.log("Respuesta del backend:", response.data)
-
       const data = response.data
 
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('user', JSON.stringify(data.user))
       router.push('/home')
     } catch (error: unknown) {
-      console.error("Error en login:", error)
       if (error instanceof AxiosError && error.response) {
         setErrorMsg(error.response.data.error || 'Error al iniciar sesión')
       } else {
