@@ -1,63 +1,47 @@
+'use client'
 
-'use client' // <--- 1. Importante: Convertir a Client Component
-
-import { useState } from "react" // <--- 2. Importar hooks de React
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import api from "@/lib/api"
+import { AxiosError } from "axios"
 
 export default function LoginPage() {
-  // --- 5. Estados para manejar los inputs y errores ---
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Función para manejar el login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setErrorMsg(null)
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const response = await api.post("/api/auth/login", {
+        email,
+        password,
       })
 
-      const data = await response.json()
+      const data = response.data
 
-      if (response.ok) {
-        // Login exitoso
-        console.log('Login exitoso:', data)
-
-        // Guardar token en localStorage
-        localStorage.setItem('access_token', data.access_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        console.log('Usuario guardado en localStorage:', data.user)
-        // Redirigir al dashboard
-        router.push('/home')
+      localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+      router.push('/home')
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response) {
+        setErrorMsg(error.response.data.error || 'Error al iniciar sesión')
       } else {
-        // Error del servidor
-        setErrorMsg(data.error || 'Error al iniciar sesión')
+        setErrorMsg('Error de conexión. Intenta nuevamente.')
       }
-    } catch (error) {
-      console.error('Error de red:', error)
-      setErrorMsg('Error de conexión. Intenta nuevamente.')
     } finally {
       setIsLoading(false)
     }
   }
-
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -70,10 +54,10 @@ export default function LoginPage() {
               <polyline points="9,22 9,12 15,12 15,22" />
             </svg>
           </div>
-          <Link href="/">          <span className="text-2xl font-bold text-orange-500">RentMatch</span>
+          <Link href="/">
+            <span className="text-2xl font-bold text-orange-500">RentMatch</span>
           </Link>
         </div>
-
       </div>
 
       {/* Login Form */}
@@ -83,7 +67,6 @@ export default function LoginPage() {
           <p className="text-gray-600">Accede a tu cuenta de RentMatch</p>
         </div>
 
-        {/* --- 7. Conectar el <form> a la función handleLogin --- */}
         <form className="space-y-4" onSubmit={handleLogin}>
           {/* Email Field */}
           <div>
@@ -95,8 +78,8 @@ export default function LoginPage() {
               type="email"
               placeholder="tu@email.com"
               className="w-full"
-              value={email} // <--- 8. Conectar estado
-              onChange={(e) => setEmail(e.target.value)} // <--- 9. Actualizar estado
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -111,8 +94,8 @@ export default function LoginPage() {
               type="password"
               placeholder="••••••"
               className="w-full"
-              value={password} // <--- 10. Conectar estado
-              onChange={(e) => setPassword(e.target.value)} // <--- 11. Actualizar estado
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
@@ -130,14 +113,14 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* --- 12. Mostrar error si existe --- */}
+          {/* Mostrar error si existe */}
           {errorMsg && (
             <p className="text-sm text-red-600 text-center">{errorMsg}</p>
           )}
 
           {/* Login Button */}
           <Button
-            type="submit" // <--- 13. Asegurarse que el tipo es "submit"
+            type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg"
             disabled={isLoading}
           >
@@ -147,9 +130,9 @@ export default function LoginPage() {
           {/* Register Link */}
           <div className="text-center mt-4">
             <span className="text-gray-600">¿No tienes una cuenta? </span>
-            <a href="register" className="text-orange-500 hover:text-orange-600 font-medium">
+            <Link href="register" className="text-orange-500 hover:text-orange-600 font-medium">
               Regístrate aquí
-            </a>
+            </Link>
           </div>
         </form>
       </div>
