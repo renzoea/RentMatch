@@ -9,9 +9,13 @@ exports.register = async (req, res) => {
   }
   try {
     // 1. Crear usuario en Supabase Auth
+    const emailRedirectTo =
+    process.env.EMAIL_CONFIRM_REDIRECT_URL || 'https://rent-match-umber.vercel.app/auth/confirm';
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: { emailRedirectTo }, // 👈 le decís a Supabase a dónde mandar al confirmar
     });
     if (authError) {
       console.error('Error en Supabase Auth:', authError);
