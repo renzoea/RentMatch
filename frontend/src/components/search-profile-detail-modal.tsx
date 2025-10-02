@@ -2,6 +2,28 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import type { AxiosInstance, AxiosError } from 'axios'
+import { 
+  MapPin, 
+  DollarSign, 
+  Home, 
+  Users, 
+  Sparkles, 
+  StickyNote,
+  X,
+  Bed,
+  Bath,
+  Calendar,
+  Maximize,
+  Check,
+  Building2,
+  Car,
+  Shield,
+  Sun,
+  Waves,
+  Wind,
+  Lock,
+  MoveUp
+} from 'lucide-react'
 
 export type SearchProfileDetail = {
   id: string
@@ -91,115 +113,309 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
 
   if (!open) return null
 
-  const bool = (v?: boolean) => (v ? 'Sí' : 'No')
   const cap = (s?: string) =>
     s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : s
 
+  const BooleanBadge = ({ value, trueText = 'Sí', falseText = 'No' }: { value?: boolean; trueText?: string; falseText?: string }) => {
+    if (value === undefined) return null
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+        value 
+          ? 'bg-green-100 text-green-700' 
+          : 'bg-gray-100 text-gray-600'
+      }`}>
+        {value && <Check className="w-3 h-3" />}
+        {value ? trueText : falseText}
+      </span>
+    )
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/40 p-4">
-      <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl border border-gray-200 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold text-gray-800">Detalle del Perfil</h2>
+    <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Home className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Detalle del Perfil</h2>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-800 text-sm"
+            className="text-white/90 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
           >
-            Cerrar
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6 space-y-6">
+
+        <div className="p-6 space-y-5 overflow-y-auto">
           {loading && (
-            <div className="flex justify-center py-6">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+              <p className="mt-4 text-gray-500 text-sm">Cargando información...</p>
             </div>
           )}
+
           {error && (
-            <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded p-3">
-              {error}
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="text-red-500 mt-0.5">⚠️</div>
+                <div>
+                  <h3 className="text-red-800 font-semibold text-sm">Error</h3>
+                  <p className="text-red-700 text-sm mt-1">{error}</p>
+                </div>
+              </div>
             </div>
           )}
+
           {!loading && !error && data && (
-            <div className="space-y-6 text-sm">
-              <section>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Ubicación</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><span className="font-medium">Ciudad:</span> {cap(data.city) || '—'}</div>
-                  <div><span className="font-medium">Barrio:</span> {cap(data.neighborhood) || '—'}</div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Economía</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><span className="font-medium">Presupuesto Mín:</span> ${data.budget_min?.toLocaleString() || '—'}</div>
-                  <div><span className="font-medium">Presupuesto Máx:</span> ${data.budget_max?.toLocaleString() || '—'}</div>
-                  <div><span className="font-medium">Meses de contrato:</span> {data.lease_term_months || '—'}</div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Propiedad</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="font-medium">Tipos:</span>{' '}
-                    {data.property_types?.map(t => cap(t)).join(', ') || '—'}
+            <div className="space-y-5">
+              {/* Ubicación */}
+              {(data.city || data.neighborhood) && (
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Ubicación</h3>
                   </div>
-                  <div><span className="font-medium">Dormitorios:</span> {data.bedroom_min || '—'} - {data.bedroom_max || '—'}</div>
-                  <div><span className="font-medium">Ambientes:</span> {data.rooms_min || '—'} - {data.rooms_max || '—'}</div>
-                  <div><span className="font-medium">Baños:</span> {data.bathrooms_min || '—'} - {data.bathrooms_max || '—'}</div>
-                  <div><span className="font-medium">Área (m²):</span> {data.area_min || '—'} - {data.area_max || '—'}</div>
-                  <div><span className="font-medium">Amoblado:</span> {bool(data.furnished)}</div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Preferencias</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><span className="font-medium">Mascotas:</span> {bool(data.pets_allowed)}</div>
-                  <div><span className="font-medium">Fumadores:</span> {bool(data.smokers_allowed)}</div>
-                  <div><span className="font-medium">Niños:</span> {bool(data.children)}</div>
-                  <div><span className="font-medium">Estudiantes:</span> {bool(data.students)}</div>
-                  <div><span className="font-medium">Estacionamiento:</span> {data.parking_needed ? 'Necesario' : 'Opcional'}</div>
-                  <div><span className="font-medium">Landlord verificado:</span> {bool(data.require_verified_landlord)}</div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Comodidades</h3>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {data.amenities?.length
-                    ? data.amenities.map(a => (
-                      <span key={a} className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded">
-                        {cap(a)}
-                      </span>
-                    ))
-                    : <span className="text-gray-500">—</span>}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div><span className="font-medium">Balcón:</span> {bool(data.balcony)}</div>
-                  <div><span className="font-medium">Terraza:</span> {bool(data.terrace)}</div>
-                  <div><span className="font-medium">Lavadero:</span> {bool(data.laundry)}</div>
-                  <div><span className="font-medium">Seguridad:</span> {bool(data.security)}</div>
-                  <div><span className="font-medium">Ascensor:</span> {bool(data.elevator)}</div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Notas</h3>
-                <div className="space-y-2">
-                  <div>
-                    <span className="font-medium">Preferencias:</span><br />
-                    {data.metadata?.preferencias || <span className="text-gray-500">—</span>}
-                  </div>
-                  <div>
-                    <span className="font-medium">Notas:</span><br />
-                    {data.metadata?.notas || <span className="text-gray-500">—</span>}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.city && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-blue-700 font-semibold text-sm">Ciudad:</span>
+                        <span className="text-blue-900 text-sm">{cap(data.city)}</span>
+                      </div>
+                    )}
+                    {data.neighborhood && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-blue-700 font-semibold text-sm">Barrio:</span>
+                        <span className="text-blue-900 text-sm">{cap(data.neighborhood)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </section>
+              )}
 
-              <div className="flex justify-end pt-2">
-                <Button variant="outline" onClick={onClose}>Cerrar</Button>
+              {/* Economía */}
+              {(data.budget_min || data.budget_max || data.lease_term_months) && (
+                <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <h3 className="text-sm font-bold text-green-900 uppercase tracking-wide">Economía</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.budget_min && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-700 font-semibold text-sm">Presupuesto Mín:</span>
+                        <span className="text-green-900 font-bold text-sm">${data.budget_min.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {data.budget_max && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-700 font-semibold text-sm">Presupuesto Máx:</span>
+                        <span className="text-green-900 font-bold text-sm">${data.budget_max.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {data.lease_term_months && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-green-600" />
+                        <span className="text-green-700 font-semibold text-sm">Contrato:</span>
+                        <span className="text-green-900 text-sm">{data.lease_term_months} meses</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Propiedad */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Propiedad</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {data.property_types?.length > 0 && (
+                    <div className="md:col-span-2">
+                      <span className="text-purple-700 font-semibold text-sm block mb-2">Tipos:</span>
+                      <div className="flex flex-wrap gap-2">
+                        {data.property_types.map(t => (
+                          <span key={t} className="px-3 py-1.5 bg-purple-200 text-purple-800 rounded-lg text-xs font-medium">
+                            {cap(t)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(data.bedroom_min || data.bedroom_max) && (
+                    <div className="flex items-center gap-2">
+                      <Bed className="w-4 h-4 text-purple-600" />
+                      <span className="text-purple-700 font-semibold text-sm">Dormitorios:</span>
+                      <span className="text-purple-900 text-sm">{data.bedroom_min || 0} - {data.bedroom_max || '∞'}</span>
+                    </div>
+                  )}
+                  {(data.rooms_min || data.rooms_max) && (
+                    <div className="flex items-center gap-2">
+                      <Home className="w-4 h-4 text-purple-600" />
+                      <span className="text-purple-700 font-semibold text-sm">Ambientes:</span>
+                      <span className="text-purple-900 text-sm">{data.rooms_min || 0} - {data.rooms_max || '∞'}</span>
+                    </div>
+                  )}
+                  {(data.bathrooms_min || data.bathrooms_max) && (
+                    <div className="flex items-center gap-2">
+                      <Bath className="w-4 h-4 text-purple-600" />
+                      <span className="text-purple-700 font-semibold text-sm">Baños:</span>
+                      <span className="text-purple-900 text-sm">{data.bathrooms_min || 0} - {data.bathrooms_max || '∞'}</span>
+                    </div>
+                  )}
+                  {(data.area_min || data.area_max) && (
+                    <div className="flex items-center gap-2">
+                      <Maximize className="w-4 h-4 text-purple-600" />
+                      <span className="text-purple-700 font-semibold text-sm">Área (m²):</span>
+                      <span className="text-purple-900 text-sm">{data.area_min || 0} - {data.area_max || '∞'}</span>
+                    </div>
+                  )}
+                  {data.furnished !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-purple-700 font-semibold text-sm">Amoblado:</span>
+                      <BooleanBadge value={data.furnished} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Preferencias */}
+              <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-5 border border-amber-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide">Preferencias</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {data.pets_allowed !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-700 font-semibold text-sm">Mascotas:</span>
+                      <BooleanBadge value={data.pets_allowed} />
+                    </div>
+                  )}
+                  {data.smokers_allowed !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-700 font-semibold text-sm">Fumadores:</span>
+                      <BooleanBadge value={data.smokers_allowed} />
+                    </div>
+                  )}
+                  {data.children !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-700 font-semibold text-sm">Niños:</span>
+                      <BooleanBadge value={data.children} />
+                    </div>
+                  )}
+                  {data.students !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-700 font-semibold text-sm">Estudiantes:</span>
+                      <BooleanBadge value={data.students} />
+                    </div>
+                  )}
+                  {data.parking_needed !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <Car className="w-4 h-4 text-amber-600" />
+                      <span className="text-amber-700 font-semibold text-sm">Estacionamiento:</span>
+                      <BooleanBadge value={data.parking_needed} trueText="Necesario" falseText="Opcional" />
+                    </div>
+                  )}
+                  {data.require_verified_landlord !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-amber-600" />
+                      <span className="text-amber-700 font-semibold text-sm">Landlord verificado:</span>
+                      <BooleanBadge value={data.require_verified_landlord} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Comodidades */}
+              {(data.amenities?.length || data.balcony || data.terrace || data.laundry || data.security || data.elevator) && (
+                <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-5 border border-teal-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-5 h-5 text-teal-600" />
+                    <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Comodidades</h3>
+                  </div>
+                  {data.amenities && data.amenities.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-2">
+                        {data.amenities.map(a => (
+                          <span key={a} className="px-3 py-1.5 bg-teal-200 text-teal-800 rounded-lg text-xs font-medium">
+                            {cap(a)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {data.balcony && (
+                      <div className="flex items-center gap-2">
+                        <Sun className="w-4 h-4 text-teal-600" />
+                        <span className="text-teal-900 text-sm">Balcón</span>
+                      </div>
+                    )}
+                    {data.terrace && (
+                      <div className="flex items-center gap-2">
+                        <Waves className="w-4 h-4 text-teal-600" />
+                        <span className="text-teal-900 text-sm">Terraza</span>
+                      </div>
+                    )}
+                    {data.laundry && (
+                      <div className="flex items-center gap-2">
+                        <Wind className="w-4 h-4 text-teal-600" />
+                        <span className="text-teal-900 text-sm">Lavadero</span>
+                      </div>
+                    )}
+                    {data.security && (
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-teal-600" />
+                        <span className="text-teal-900 text-sm">Seguridad</span>
+                      </div>
+                    )}
+                    {data.elevator && (
+                      <div className="flex items-center gap-2">
+                        <MoveUp className="w-4 h-4 text-teal-600" />
+                        <span className="text-teal-900 text-sm">Ascensor</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Notas */}
+              {(data.metadata?.preferencias || data.metadata?.notas) && (
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border border-slate-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <StickyNote className="w-5 h-5 text-slate-600" />
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Notas</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {data.metadata?.preferencias && (
+                      <div className="bg-white p-3 rounded-lg border border-slate-200">
+                        <span className="text-slate-700 font-semibold text-sm block mb-1">Preferencias:</span>
+                        <p className="text-slate-600 text-sm leading-relaxed">{data.metadata.preferencias}</p>
+                      </div>
+                    )}
+                    {data.metadata?.notas && (
+                      <div className="bg-white p-3 rounded-lg border border-slate-200">
+                        <span className="text-slate-700 font-semibold text-sm block mb-1">Notas:</span>
+                        <p className="text-slate-600 text-sm leading-relaxed">{data.metadata.notas}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex justify-end pt-4 border-t border-gray-200">
+                <Button 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="hover:bg-gray-100 transition-colors"
+                >
+                  Cerrar
+                </Button>
               </div>
             </div>
           )}

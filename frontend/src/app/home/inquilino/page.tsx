@@ -3,10 +3,22 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import api from "@/lib/api"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Search, FileText, Edit, Trash2, Wallet, MapPin } from "lucide-react"
+import { 
+  Search, 
+  FileText, 
+  Edit, 
+  Trash2, 
+  MapPin, 
+  DollarSign,
+  Home,
+  Calendar,
+  Plus,
+  CheckCircle2,
+  Clock,
+  Archive,
+  Sparkles
+} from "lucide-react"
 import SearchProfileDetailModal from "@/components/search-profile-detail-modal"
 import SearchProfileEditModal from "@/components/search-profile-edit-modal"
 import SearchProfileDeleteModal from "@/components/search-profile-delete-modal"
@@ -24,24 +36,6 @@ type SearchProfile = {
   metadata?: {
     preferencias?: string
     notas?: string
-  }
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case "activo": return "Activo"
-    case "pausado": return "Pausado"
-    case "archivado": return "Archivado"
-    default: return status
-  }
-}
-
-function getStatusBadgeClass(status: string) {
-  switch (status) {
-    case "activo": return "bg-green-500 text-white text-sm px-3 py-1 shadow-sm"
-    case "pausado": return "bg-yellow-400 text-white text-sm px-3 py-1 shadow-sm"
-    case "archivado": return "bg-gray-400 text-white text-sm px-3 py-1 shadow-sm"
-    default: return "bg-orange-500 text-white text-sm px-3 py-1 shadow-sm"
   }
 }
 
@@ -86,167 +80,243 @@ export default function SearchProfileDashboard() {
     setDeleteOpen(true)
   }
 
-  // Métricas
   const activos = searchProfiles.filter(p => p.status === 'activo').length
   const pausados = searchProfiles.filter(p => p.status === 'pausado').length
   const archivados = searchProfiles.filter(p => p.status === 'archivado').length
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-2">Perfiles de Búsqueda</h1>
-      <p className="text-gray-600 mb-8">
-        Gestiona tus perfiles de búsqueda de propiedades.
-      </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg">
+                <Search className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">Mis Perfiles de Búsqueda</h1>
+                <p className="text-gray-600 mt-1">
+                  Gestiona tus perfiles para encontrar la propiedad ideal
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => router.push('/home/inquilino/crear')}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Perfil
+            </Button>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <Search className="w-8 h-8 text-green-500" />
-            <div>
-              <p className="text-sm text-gray-600">Activos</p>
-              <p className="text-2xl font-bold">{activos}</p>
+        {/* Métricas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-6 border border-green-200 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="bg-green-500 p-3 rounded-lg">
+                <CheckCircle2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-green-700">Activos</p>
+                <p className="text-3xl font-bold text-green-900">{activos}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <FileText className="w-8 h-8 text-yellow-500" />
-            <div>
-              <p className="text-sm text-gray-600">Pausados</p>
-              <p className="text-2xl font-bold">{pausados}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 rounded-xl p-6 border border-yellow-200 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="bg-yellow-500 p-3 rounded-lg">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-yellow-700">Pausados</p>
+                <p className="text-3xl font-bold text-yellow-900">{pausados}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <FileText className="w-8 h-8 text-gray-500" />
-            <div>
-              <p className="text-sm text-gray-600">Archivados</p>
-              <p className="text-2xl font-bold">{archivados}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="bg-gray-500 p-3 rounded-lg">
+                <Archive className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Archivados</p>
+                <p className="text-3xl font-bold text-gray-900">{archivados}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Lista de Perfiles */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-200 border-t-orange-500 mb-4"></div>
+            <p className="text-gray-500 text-sm">Cargando perfiles...</p>
+          </div>
+        ) : searchProfiles.length === 0 ? (
+          <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-12">
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-gradient-to-br from-orange-100 to-orange-200 p-6 rounded-full mb-6">
+                <Search className="w-12 h-12 text-orange-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">No tienes perfiles de búsqueda</h3>
+              <p className="text-gray-600 mb-6 max-w-md">
+                Crea tu primer perfil para que podamos ayudarte a encontrar la propiedad perfecta
+              </p>
+              <Button
+                onClick={() => router.push('/home/inquilino/crear')}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Primer Perfil
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {searchProfiles.map(profile => (
+              <div
+                key={profile.id}
+                className="bg-white rounded-2xl shadow-md border border-gray-200 hover:shadow-xl hover:border-orange-200 transition-all duration-200 overflow-hidden"
+              >
+                {/* Header del Card */}
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100/50 px-6 py-4 border-b border-orange-200">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <Home className="w-5 h-5 text-orange-600" />
+                          <span className="font-bold text-lg text-gray-900">
+                            {Array.isArray(profile.property_types) && profile.property_types.length > 0
+                              ? profile.property_types.map(capitalize).join(', ')
+                              : 'Sin especificar'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="w-4 h-4 text-orange-500" />
+                        <span className="font-medium">
+                          {profile.neighborhood && profile.city
+                            ? `${profile.neighborhood}, ${profile.city}`
+                            : profile.city || profile.neighborhood || 'Ubicación no especificada'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                        profile.status === 'activo' 
+                          ? 'bg-green-100 text-green-700 border border-green-300'
+                          : profile.status === 'pausado'
+                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                          : 'bg-gray-100 text-gray-700 border border-gray-300'
+                      }`}>
+                        {capitalize(profile.status)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contenido del Card */}
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    {/* Presupuesto */}
+                    <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-4 border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-green-500 p-2 rounded-lg">
+                          <DollarSign className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-green-700 mb-1">Presupuesto</p>
+                          <p className="font-bold text-lg text-green-900">
+                            ${profile.budget_min?.toLocaleString() || '0'} - ${profile.budget_max?.toLocaleString() || '∞'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Fecha de creación */}
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-500 p-2 rounded-lg">
+                          <Calendar className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-blue-700 mb-1">Creado</p>
+                          <p className="font-bold text-lg text-blue-900">
+                            {new Date(profile.created_at).toLocaleDateString('es-ES', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Amenidades Preview */}
+                  {profile.amenities && profile.amenities.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-purple-600" />
+                        <span className="text-xs font-semibold text-purple-700 uppercase tracking-wide">Amenidades</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.amenities.slice(0, 5).map(amenity => (
+                          <span
+                            key={amenity}
+                            className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium border border-purple-200"
+                          >
+                            {capitalize(amenity)}
+                          </span>
+                        ))}
+                        {profile.amenities.length > 5 && (
+                          <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium">
+                            +{profile.amenities.length - 5} más
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Acciones */}
+                  <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-200">
+                    <Button
+                      variant="outline"
+                      onClick={() => openDetail(profile.id)}
+                      className="w-full hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Detalles
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => openEdit(profile.id)}
+                      className="w-full hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => openDelete(profile.id)}
+                      className="w-full hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-        </div>
-      ) : searchProfiles.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 flex flex-col items-center">
-            <Search className="w-10 h-10 text-gray-400 mb-4" />
-            <p className="font-semibold text-gray-700 mb-2">No tienes perfiles de búsqueda</p>
-            <Button
-              className="bg-orange-500 text-white mt-4"
-              onClick={() => router.push('/home/inquilino/crear')}
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Crear Primer Perfil
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {searchProfiles.map(profile => (
-            <div
-              key={profile.id}
-              className="rounded-xl border border-gray-200 hover:shadow-lg hover:border-orange-200 transition-all duration-200 overflow-hidden bg-white"
-            >
-              <div className="bg-gradient-to-b from-orange-100 to-white px-5 pt-5 pb-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      {Array.isArray(profile.property_types) &&
-                        profile.property_types.map(type => (
-                          <Badge
-                            key={type}
-                            className="bg-white text-orange-700 border border-orange-200 text-sm font-medium px-3 py-1 shadow-sm"
-                          >
-                            {capitalize(type)}
-                          </Badge>
-                        ))
-                      }
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="w-5 h-5 text-orange-500" />
-                      <span className="font-semibold text-lg text-gray-900">
-                        {profile.neighborhood || 'Sin especificar'}
-                      </span>
-                      {profile.city && (
-                        <span className="text-gray-500">• {profile.city}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 items-end">
-                    <Badge className={getStatusBadgeClass(profile.status)}>
-                      {getStatusLabel(profile.status)}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                  <div className="bg-gray-50 rounded-lg p-4 flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-orange-500" />
-                    <div>
-                      <div className="text-xs text-gray-500">Presupuesto</div>
-                      <div className="font-bold text-lg text-gray-900">
-                        ${profile.budget_min?.toLocaleString()} - ${profile.budget_max?.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                    <div>
-                      <div className="text-xs text-gray-500">Creado</div>
-                      <div className="font-bold text-lg text-gray-900">
-                        {new Date(profile.created_at).toLocaleDateString('es-ES', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => openDetail(profile.id)}
-                  >
-                    <FileText className="w-4 h-4 mr-1" />
-                    Ver Detalles
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => openEdit(profile.id)}
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-red-600 border-red-300 hover:bg-red-50"
-                    onClick={() => openDelete(profile.id)}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Eliminar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
+      {/* Modales */}
       <SearchProfileDetailModal
         open={detailOpen}
         id={selectedId}

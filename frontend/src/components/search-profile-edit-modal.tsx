@@ -3,6 +3,19 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import type { AxiosInstance, AxiosError } from 'axios'
 import { Button } from '@/components/ui/button'
 import { SearchProfileDetail } from './search-profile-detail-modal'
+import LocationSelector from './location-selector'
+import { 
+  MapPin, 
+  DollarSign, 
+  Building2, 
+  Users, 
+  Sparkles, 
+  StickyNote,
+  X,
+  Save,
+  AlertCircle,
+  CheckCircle2
+} from 'lucide-react'
 
 interface ApiErrorPayload { error?: string; message?: string }
 
@@ -18,12 +31,10 @@ type FormState = Partial<SearchProfileDetail>
 
 const STATUS_OPTIONS = ['activo', 'pausado', 'archivado'] as const
 
-// Tipos de propiedad fijos
 const PROPERTY_TYPE_OPTIONS = ['departamento', 'ph', 'duplex', 'casa', 'estudio'] as const
 const isKnownPropertyType = (v: string): v is typeof PROPERTY_TYPE_OPTIONS[number] =>
   (PROPERTY_TYPE_OPTIONS as readonly string[]).includes(v)
 
-// Amenidades sugeridas
 const AMENITY_OPTIONS = [
   'wifi',
   'pileta',
@@ -46,12 +57,19 @@ const AMENITY_OPTIONS = [
   'deposito'
 ]
 
-// Componente Section fuera del componente principal
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="space-y-3">
-    <h3 className="text-xs font-semibold text-gray-500 uppercase">{title}</h3>
-    <div className="grid md:grid-cols-2 gap-4">{children}</div>
-  </section>
+const Section = ({ title, icon: Icon, color, children }: { 
+  title: string; 
+  icon: React.ElementType;
+  color: string;
+  children: React.ReactNode 
+}) => (
+  <div className={`bg-gradient-to-br ${color} rounded-xl p-5 border-2 border-${color.split('-')[1]}-200`}>
+    <div className="flex items-center gap-2 mb-4">
+      <Icon className={`w-5 h-5 text-${color.split('-')[1]}-600`} />
+      <h3 className={`text-sm font-bold text-${color.split('-')[1]}-900 uppercase tracking-wide`}>{title}</h3>
+    </div>
+    <div className="space-y-4">{children}</div>
+  </div>
 )
 
 const titleCase = (s: string) =>
@@ -160,9 +178,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
       await apiClient.patch(`/api/search-profiles/${id}`, diff, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      setSuccess('Perfil actualizado')
+      setSuccess('✅ Perfil actualizado correctamente')
       setInitial(prev => prev ? { ...prev, ...diff } as SearchProfileDetail : prev)
       if (onUpdated) onUpdated({ id, ...diff })
+      setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       const e = err as AxiosError<ApiErrorPayload>
       setError(e.response?.data?.error || e.response?.data?.message || 'Error guardando')
@@ -202,111 +221,158 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
     setForm(prev => ({ ...prev, amenities: (prev.amenities || []).filter(x => x !== a) }))
   }, [])
 
-  const BoolButton = useCallback(({ label, fieldKey }: { label: string; fieldKey: keyof FormState }) => (
-    <button
-      type="button"
-      onClick={() => toggleBool(fieldKey)}
-      className={`text-sm px-3 py-2 rounded border flex justify-between items-center ${
-        form[fieldKey] ? 'bg-green-50 border-green-300 text-green-700' : 'bg-gray-50 border-gray-300 text-gray-600'
-      }`}
-    >
-      <span>{label}</span>
-      <span className="font-semibold">{form[fieldKey] ? 'Sí' : 'No'}</span>
-    </button>
-  ), [form, toggleBool])
+  const ToggleSwitch = useCallback(({ label, fieldKey }: { label: string; fieldKey: keyof FormState }) => {
+    const isActive = !!form[fieldKey]
+    return (
+      <button
+        type="button"
+        onClick={() => toggleBool(fieldKey)}
+        className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+          isActive 
+            ? 'bg-green-50 border-green-300 hover:bg-green-100' 
+            : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+        }`}
+      >
+        <span className={`text-sm font-medium ${isActive ? 'text-green-900' : 'text-gray-700'}`}>
+          {label}
+        </span>
+        <div className={`relative w-11 h-6 rounded-full transition-colors ${
+          isActive ? 'bg-green-500' : 'bg-gray-300'
+        }`}>
+          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+            isActive ? 'translate-x-5' : 'translate-x-0'
+          }`} />
+        </div>
+      </button>
+    )
+  }, [form, toggleBool])
 
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/40 p-4">
-      <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl border border-gray-200 max-h-[92vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
-          <h2 className="text-lg font-semibold">Editar Perfil de Búsqueda</h2>
-          <button onClick={close} className="text-gray-500 hover:text-gray-800 text-sm">Cerrar</button>
+    <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-100 max-h-[92vh] flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Save className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Editar Perfil de Búsqueda</h2>
+          </div>
+          <button
+            onClick={close}
+            disabled={saving}
+            className="text-white/90 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {loading && (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+              <p className="mt-4 text-gray-500 text-sm">Cargando información...</p>
             </div>
           )}
-          {!loading && error && (
-            <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded p-3">
-              {error}
+
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-red-800 font-semibold text-sm">Error</h3>
+                  <p className="text-red-700 text-sm mt-1">{error}</p>
+                </div>
+              </div>
             </div>
           )}
+
+          {success && (
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <p className="text-green-700 text-sm font-medium">{success}</p>
+              </div>
+            </div>
+          )}
+
           {!loading && !error && initial && (
             <>
-              {success && (
-                <div className="text-green-700 text-sm bg-green-50 border border-green-200 rounded p-3">
-                  {success}
+              {/* Ubicación */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Ubicación</h3>
                 </div>
-              )}
+                <LocationSelector
+                  selectedCity={form.city}
+                  selectedNeighborhood={form.neighborhood}
+                  onCityChange={city => handleChange('city', city)}
+                  onNeighborhoodChange={neighborhood => handleChange('neighborhood', neighborhood)}
+                />
+              </div>
 
-              <Section title="Ubicación">
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Ciudad</label>
-                  <input
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={form.city || ''}
-                    onChange={e => handleChange('city', e.target.value)}
-                  />
+              {/* Economía */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                  <h3 className="text-sm font-bold text-green-900 uppercase tracking-wide">Economía & Estado</h3>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Barrio</label>
-                  <input
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={form.neighborhood || ''}
-                    onChange={e => handleChange('neighborhood', e.target.value)}
-                  />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Mín ($)</label>
+                    <input
+                      type="number"
+                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                      value={numberInput(form.budget_min)}
+                      onChange={e => handleChange('budget_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Máx ($)</label>
+                    <input
+                      type="number"
+                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                      value={numberInput(form.budget_max)}
+                      onChange={e => handleChange('budget_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                      placeholder="∞"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-green-700 block mb-2">Plazo del Contrato (meses)</label>
+                    <input
+                      type="number"
+                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                      value={numberInput(form.lease_term_months)}
+                      onChange={e => handleChange('lease_term_months', e.target.value === '' ? undefined : Number(e.target.value))}
+                      placeholder="12"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-green-700 block mb-2">Estado del Perfil</label>
+                    <select
+                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white bg-white"
+                      value={form.status || STATUS_OPTIONS[0]}
+                      onChange={e => handleChange('status', e.target.value as FormState['status'])}
+                    >
+                      {STATUS_OPTIONS.map(s => (
+                        <option key={s} value={s}>{titleCase(s)}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </Section>
+              </div>
 
-              <Section title="Economía / Estado">
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Presupuesto Mín</label>
-                  <input
-                    type="number"
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={numberInput(form.budget_min)}
-                    onChange={e => handleChange('budget_min', e.target.value === '' ? undefined : Number(e.target.value))}
-                  />
+              {/* Tipos de Propiedad */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Tipos de Propiedad</h3>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Presupuesto Máx</label>
-                  <input
-                    type="number"
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={numberInput(form.budget_max)}
-                    onChange={e => handleChange('budget_max', e.target.value === '' ? undefined : Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Plazo (meses)</label>
-                  <input
-                    type="number"
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={numberInput(form.lease_term_months)}
-                    onChange={e => handleChange('lease_term_months', e.target.value === '' ? undefined : Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Estado</label>
-                  <select
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={form.status || STATUS_OPTIONS[0]}
-                    onChange={e => handleChange('status', e.target.value as FormState['status'])}
-                  >
-                    {STATUS_OPTIONS.map(s => (
-                      <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                    ))}
-                  </select>
-                </div>
-              </Section>
-
-              <section className="space-y-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase">Tipos de Propiedad</h3>
                 <div className="flex flex-wrap gap-2">
                   {PROPERTY_TYPE_OPTIONS.map(pt => {
                     const active = (form.property_types || []).includes(pt)
@@ -315,10 +381,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                         key={pt}
                         type="button"
                         onClick={() => toggleInArray('property_types', pt)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                        className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
                           active
-                            ? 'bg-orange-500 border-orange-600 text-white shadow-sm'
-                            : 'bg-white border-gray-300 text-gray-600 hover:border-orange-400 hover:text-orange-600'
+                            ? 'bg-purple-500 border-purple-600 text-white shadow-md scale-105'
+                            : 'bg-white border-purple-200 text-purple-700 hover:border-purple-400 hover:bg-purple-50'
                         }`}
                       >
                         {titleCase(pt)}
@@ -327,20 +393,20 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                   })}
                 </div>
                 {(form.property_types || []).some(t => !isKnownPropertyType(t)) && (
-                  <div className="pt-2">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Otros</p>
+                  <div className="mt-4 pt-4 border-t border-purple-200">
+                    <p className="text-xs font-semibold text-purple-700 mb-2">Otros tipos personalizados:</p>
                     <div className="flex flex-wrap gap-2">
                       {(form.property_types || [])
                         .filter(t => !isKnownPropertyType(t))
                         .map(t => (
                           <span
                             key={t}
-                            className="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
+                            className="flex items-center gap-2 bg-purple-100 text-purple-800 px-3 py-1.5 rounded-lg text-sm font-medium"
                           >
                             {titleCase(t)}
                             <button
                               type="button"
-                              className="text-gray-500 hover:text-red-500"
+                              className="text-purple-600 hover:text-red-600 font-bold"
                               onClick={() =>
                                 handleChange(
                                   'property_types',
@@ -355,11 +421,123 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                     </div>
                   </div>
                 )}
-              </section>
+              </div>
 
-              <section className="space-y-3">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase">Amenidades</h3>
-                <div className="flex flex-wrap gap-2">
+              {/* Rangos */}
+              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-5 border border-indigo-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide">Características de la Propiedad</h3>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Dormitorios (Mín - Máx)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.bedroom_min)}
+                        onChange={e => handleChange('bedroom_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="0"
+                      />
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.bedroom_max)}
+                        onChange={e => handleChange('bedroom_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="∞"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Ambientes (Mín - Máx)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.rooms_min)}
+                        onChange={e => handleChange('rooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="0"
+                      />
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.rooms_max)}
+                        onChange={e => handleChange('rooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="∞"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Baños (Mín - Máx)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.bathrooms_min)}
+                        onChange={e => handleChange('bathrooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="0"
+                      />
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.bathrooms_max)}
+                        onChange={e => handleChange('bathrooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="∞"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Área m² (Mín - Máx)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.area_min)}
+                        onChange={e => handleChange('area_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="0"
+                      />
+                      <input
+                        type="number"
+                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        value={numberInput(form.area_max)}
+                        onChange={e => handleChange('area_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                        placeholder="∞"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferencias */}
+              <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-5 border border-amber-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide">Preferencias & Condiciones</h3>
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <ToggleSwitch label="Amoblado" fieldKey="furnished" />
+                  <ToggleSwitch label="Mascotas Permitidas" fieldKey="pets_allowed" />
+                  <ToggleSwitch label="Fumadores Permitidos" fieldKey="smokers_allowed" />
+                  <ToggleSwitch label="Niños" fieldKey="children" />
+                  <ToggleSwitch label="Estudiantes" fieldKey="students" />
+                  <ToggleSwitch label="Estacionamiento Necesario" fieldKey="parking_needed" />
+                  <ToggleSwitch label="Landlord Verificado" fieldKey="require_verified_landlord" />
+                  <ToggleSwitch label="Balcón" fieldKey="balcony" />
+                  <ToggleSwitch label="Terraza" fieldKey="terrace" />
+                  <ToggleSwitch label="Lavadero" fieldKey="laundry" />
+                  <ToggleSwitch label="Seguridad" fieldKey="security" />
+                  <ToggleSwitch label="Ascensor" fieldKey="elevator" />
+                </div>
+              </div>
+
+              {/* Amenidades */}
+              <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-5 border border-teal-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-5 h-5 text-teal-600" />
+                  <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Amenidades</h3>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4">
                   {AMENITY_OPTIONS.map(a => {
                     const active = (form.amenities || []).includes(a)
                     return (
@@ -367,10 +545,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                         key={a}
                         type="button"
                         onClick={() => toggleInArray('amenities', a)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                        className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
                           active
-                            ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm'
-                            : 'bg-white border-gray-300 text-gray-600 hover:border-emerald-400 hover:text-emerald-600'
+                            ? 'bg-teal-500 border-teal-600 text-white shadow-md'
+                            : 'bg-white border-teal-200 text-teal-700 hover:border-teal-400 hover:bg-teal-50'
                         }`}
                       >
                         {titleCase(a)}
@@ -379,14 +557,14 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                   })}
                 </div>
 
-                <div className="pt-2 space-y-2">
-                  <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                <div className="pt-4 border-t border-teal-200">
+                  <label className="block text-xs font-semibold text-teal-700 mb-2">
                     Añadir Amenidad Personalizada
                   </label>
                   <div className="flex gap-2">
                     <input
-                      className="flex-1 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="ej: cine, cowork..."
+                      className="flex-1 rounded-lg border-2 border-teal-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                      placeholder="Ej: cine, cowork..."
                       value={newAmenity}
                       onChange={e => setNewAmenity(e.target.value)}
                       onKeyDown={e => {
@@ -399,32 +577,32 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                     <Button
                       type="button"
                       variant="outline"
-                      className="text-xs"
+                      className="border-teal-300 text-teal-700 hover:bg-teal-50"
                       onClick={addCustomAmenity}
                     >
                       Agregar
                     </Button>
                   </div>
                   {newCustomAmenityError && (
-                    <p className="text-xs text-red-600">{newCustomAmenityError}</p>
+                    <p className="text-xs text-red-600 mt-2">{newCustomAmenityError}</p>
                   )}
                 </div>
 
                 {(form.amenities || []).some(a => !AMENITY_OPTIONS.includes(a)) && (
-                  <div className="pt-2">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Personalizadas</p>
+                  <div className="mt-4 pt-4 border-t border-teal-200">
+                    <p className="text-xs font-semibold text-teal-700 mb-2">Amenidades personalizadas:</p>
                     <div className="flex flex-wrap gap-2">
                       {(form.amenities || [])
                         .filter(a => !AMENITY_OPTIONS.includes(a))
                         .map(a => (
                           <span
                             key={a}
-                            className="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
+                            className="flex items-center gap-2 bg-teal-100 text-teal-800 px-3 py-1.5 rounded-lg text-sm font-medium"
                           >
                             {titleCase(a)}
                             <button
                               type="button"
-                              className="text-gray-500 hover:text-red-500"
+                              className="text-teal-600 hover:text-red-600 font-bold"
                               onClick={() => removeCustomAmenity(a)}
                             >
                               ×
@@ -434,137 +612,64 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                     </div>
                   </div>
                 )}
-              </section>
+              </div>
 
-              <Section title="Rangos / Cantidades">
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Dormitorios Mín - Máx</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.bedroom_min)}
-                      onChange={e => handleChange('bedroom_min', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Mín"
+              {/* Notas */}
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border border-slate-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <StickyNote className="w-5 h-5 text-slate-600" />
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Notas Adicionales</h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-2">
+                      Preferencias (texto libre)
+                    </label>
+                    <textarea
+                      className="w-full rounded-lg border-2 border-slate-200 px-3 py-2.5 text-sm h-24 resize-y focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white"
+                      value={form.metadata?.preferencias || ''}
+                      onChange={e =>
+                        handleChange('metadata', {
+                          ...(form.metadata || {}),
+                          preferencias: e.target.value
+                        })
+                      }
+                      placeholder="Describe tus preferencias específicas..."
                     />
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.bedroom_max)}
-                      onChange={e => handleChange('bedroom_max', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Máx"
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-2">Notas</label>
+                    <textarea
+                      className="w-full rounded-lg border-2 border-slate-200 px-3 py-2.5 text-sm h-24 resize-y focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white"
+                      value={form.metadata?.notas || ''}
+                      onChange={e =>
+                        handleChange('metadata', {
+                          ...(form.metadata || {}),
+                          notas: e.target.value
+                        })
+                      }
+                      placeholder="Agrega notas adicionales..."
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Ambientes Mín - Máx</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.rooms_min)}
-                      onChange={e => handleChange('rooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Mín"
-                    />
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.rooms_max)}
-                      onChange={e => handleChange('rooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Máx"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Baños Mín - Máx</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.bathrooms_min)}
-                      onChange={e => handleChange('bathrooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Mín"
-                    />
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.bathrooms_max)}
-                      onChange={e => handleChange('bathrooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Máx"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600">Área m² Mín - Máx</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.area_min)}
-                      onChange={e => handleChange('area_min', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Mín"
-                    />
-                    <input
-                      type="number"
-                      className="mt-1 w-1/2 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      value={numberInput(form.area_max)}
-                      onChange={e => handleChange('area_max', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="Máx"
-                    />
-                  </div>
-                </div>
-              </Section>
-
-              <Section title="Preferencias / Flags">
-                <BoolButton label="Amoblado" fieldKey="furnished" />
-                <BoolButton label="Mascotas" fieldKey="pets_allowed" />
-                <BoolButton label="Fumadores" fieldKey="smokers_allowed" />
-                <BoolButton label="Niños" fieldKey="children" />
-                <BoolButton label="Estudiantes" fieldKey="students" />
-                <BoolButton label="Estacionamiento Necesario" fieldKey="parking_needed" />
-                <BoolButton label="Landlord Verificado" fieldKey="require_verified_landlord" />
-                <BoolButton label="Balcón" fieldKey="balcony" />
-                <BoolButton label="Terraza" fieldKey="terrace" />
-                <BoolButton label="Lavadero" fieldKey="laundry" />
-                <BoolButton label="Seguridad" fieldKey="security" />
-                <BoolButton label="Ascensor" fieldKey="elevator" />
-              </Section>
-
-              <Section title="Notas">
-                <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-gray-600">Preferencias (texto libre)</label>
-                  <textarea
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm h-20 resize-y focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={form.metadata?.preferencias || ''}
-                    onChange={e =>
-                      handleChange('metadata', {
-                        ...(form.metadata || {}),
-                        preferencias: e.target.value
-                      })
-                    }
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-gray-600">Notas</label>
-                  <textarea
-                    className="mt-1 w-full rounded border px-3 py-2 text-sm h-20 resize-y focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={form.metadata?.notas || ''}
-                    onChange={e =>
-                      handleChange('metadata', {
-                        ...(form.metadata || {}),
-                        notas: e.target.value
-                      })
-                    }
-                  />
-                </div>
-              </Section>
+              </div>
             </>
           )}
         </div>
 
-        <div className="border-t px-6 py-4 bg-white flex items-center justify-between">
-          <div className="text-xs text-gray-500">
-            {isDirty ? `${Object.keys(diff).length} cambio(s) sin guardar` : 'Sin cambios'}
+        {/* Footer */}
+        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2">
+            {isDirty ? (
+              <>
+                <AlertCircle className="w-4 h-4 text-orange-500" />
+                <span className="text-sm font-medium text-orange-600">
+                  {Object.keys(diff).length} cambio{Object.keys(diff).length !== 1 ? 's' : ''} sin guardar
+                </span>
+              </>
+            ) : (
+              <span className="text-sm text-gray-500">Sin cambios pendientes</span>
+            )}
           </div>
           <div className="flex gap-3">
             <Button
@@ -572,6 +677,7 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
               type="button"
               onClick={close}
               disabled={saving}
+              className="hover:bg-gray-100"
             >
               Cancelar
             </Button>
@@ -579,9 +685,23 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
               type="button"
               onClick={submit}
               disabled={!isDirty || saving}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className={`${
+                isDirty 
+                  ? 'bg-orange-500 hover:bg-orange-600' 
+                  : 'bg-gray-300'
+              } text-white transition-all`}
             >
-              {saving ? 'Guardando...' : 'Guardar Cambios'}
+              {saving ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Guardando...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Save className="w-4 h-4" />
+                  Guardar Cambios
+                </span>
+              )}
             </Button>
           </div>
         </div>
