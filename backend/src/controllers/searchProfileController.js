@@ -4,7 +4,6 @@ const supabase = require('../config/supabase');
 exports.createSearchProfile = async (req, res) => {
   try {
     const {
-      tenant_id,
       city,
       neighborhood,
       budget_min,
@@ -24,7 +23,6 @@ exports.createSearchProfile = async (req, res) => {
       students,
       parking_needed,
       require_verified_landlord,
-      visibility,
       status,
       bedroom_min,
       bedroom_max,
@@ -37,6 +35,9 @@ exports.createSearchProfile = async (req, res) => {
       area_max,
       metadata
     } = req.body;
+
+    // El tenant_id viene del middleware de autenticación
+    const tenant_id = req.user.id;
 
     const { data, error } = await supabase
       .from('tenant_search_profiles')
@@ -61,7 +62,6 @@ exports.createSearchProfile = async (req, res) => {
         students,
         parking_needed,
         require_verified_landlord,
-        visibility,
         status,
         bedroom_min,
         bedroom_max,
@@ -77,11 +77,13 @@ exports.createSearchProfile = async (req, res) => {
       .select();
 
     if (error) {
+      console.error('Error de Supabase:', error);
       return res.status(400).json({ error: error.message });
     }
 
-    res.status(201).json({ message: 'Perfil de Búsqueda creado correctamente' });
+    res.status(201).json({ message: 'Perfil de Búsqueda creado correctamente', data });
   } catch (err) {
+    console.error('Error interno:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };

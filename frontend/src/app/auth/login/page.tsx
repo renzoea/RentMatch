@@ -31,7 +31,13 @@ export default function LoginPage() {
 
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('user', JSON.stringify(data.user))
-      router.push('/home')
+      if (data.user.role === 'inquilino') {
+        router.push('/home/inquilino')
+      } else if (data.user.role === 'propietario') {
+        router.push('/home/propietario')
+      } else {
+        router.push('/')
+      }
     } catch (error: unknown) {
       if (error instanceof AxiosError && error.response) {
         setErrorMsg(error.response.data.error || 'Error al iniciar sesión')
