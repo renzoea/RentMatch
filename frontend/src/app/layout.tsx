@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     template: "%s | RentMatch",
   },
   description: "RentMatch conecta inquilinos y propietarios para facilitar el proceso de alquiler.",
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 
