@@ -28,4 +28,21 @@ async function authorizeTenant(req, res, next) {
   next();
 }
 
-module.exports = { authenticateToken, authorizeTenant };
+async function authorizeLandlord(req, res, next) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', req.user.id)
+    .single();
+
+  if (error || !data) return res.status(403).json({ message: 'No se encontró el perfil' });
+  if (data.role !== 'propietario') {
+    return res.status(403).json({ message: 'Esto solo lo pueden hacer los propietarios' });
+  }
+  if (data.is_banned) {
+    return res.status(403).json({ message: 'Usuario baneado, no puedes hacer eso.' });
+  }
+  next();
+}
+
+module.exports = { authenticateToken, authorizeTenant, authorizeLandlord };

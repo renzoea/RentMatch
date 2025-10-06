@@ -13,10 +13,14 @@
   "description": "",
   "dependencies": {
     "@supabase/supabase-js": "^2.57.2",
+    "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "docusign-esign": "^8.4.0",
     "dotenv": "^17.2.2",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

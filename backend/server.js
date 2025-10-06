@@ -1,27 +1,49 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:3000';
+const CORS_ORIGINS = [
+  FRONTEND,
+  'https://rent-match-umber.vercel.app'
+];
+
+// parse JSON bodies
+app.use(express.json());
+
+// seguridad básica
+app.use(helmet());
+
+// rate limit simple (ajusta según necesites)
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 120 // 120 requests por IP por minuto
+});
+app.use(limiter);
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://rent-match-umber.vercel.app'
-  ],
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (CORS_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error('CORS origin denied'));
+  },
   credentials: true
 }));
-app.use(express.json());
 
 // Importar rutas de perfiles
 const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const contractRoutes = require('./src/routes/contractRoutes');
 
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/contracts', contractRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {

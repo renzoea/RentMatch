@@ -35,7 +35,11 @@ export default function SidebarMenu({ onLogout }: { onLogout: () => void }) {
             <Plus className="w-5 h-5 mr-3" />
             Crear Perfil
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100" onClick={() => window.location.href = "/home/contratos"}>
+          <Button
+            variant={isActive("/home/inquilino/contratos") ? "secondary" : "ghost"}
+            className={`w-full justify-start ${isActive("/home/inquilino/contratos") ? "bg-orange-100 text-orange-700" : "text-gray-700 hover:bg-gray-100"}`}
+            onClick={() => window.location.href = "/home/inquilino/contratos"}
+          >
             <FileText className="w-5 h-5 mr-3" />
             Contratos
           </Button>
