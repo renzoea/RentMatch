@@ -273,29 +273,40 @@ exports.signContractAsTenant = async (req, res) => {
       return res.status(400).json({ error: 'No hay PDF adjunto en el contrato.' });
     }
 
-    // (opcional) Verificación rápida de PDF
+    // Verificación rápida de PDF
     if (pdfBuffer.slice(0, 4).toString() !== '%PDF') {
       return res.status(400).json({ error: 'El archivo adjunto no parece ser un PDF válido.' });
     }
 
     // 4) Autenticación JWT correctamente aplicada
     const apiClient = new docusign.ApiClient();
-
-    // OAuth host (DEMO)
     apiClient.setOAuthBasePath('account-d.docusign.com');
 
-    // soporta clave en ENV (producción) o fichero (dev)
-    const privateKeyBuffer = process.env.DOCUSIGN_PRIVATE_KEY
-      ? Buffer.from(process.env.DOCUSIGN_PRIVATE_KEY.replace(/\\n/g, '\n'))
-      : fs.readFileSync(process.env.DOCUSIGN_PRIVATE_KEY_PATH);
+    // preparar private key: acepta DOCUSIGN_PRIVATE_KEY (PEM o path) o DOCUSIGN_PRIVATE_KEY_PATH
+    let privateKeyForSdk;
+    if (process.env.DOCUSIGN_PRIVATE_KEY) {
+      const raw = process.env.DOCUSIGN_PRIVATE_KEY;
+      // si la variable contiene la PEM completa
+      if (raw.includes('-----BEGIN') && raw.includes('PRIVATE KEY')) {
+        const pem = raw.replace(/\\n/g, '\n');
+        privateKeyForSdk = Buffer.from(pem);
+      } else {
+        // si no parece PEM, interpretarla como path y leer fichero
+        privateKeyForSdk = fs.readFileSync(raw);
+      }
+    } else if (process.env.DOCUSIGN_PRIVATE_KEY_PATH) {
+      privateKeyForSdk = fs.readFileSync(process.env.DOCUSIGN_PRIVATE_KEY_PATH);
+    } else {
+      return res.status(500).json({ error: 'DocuSign private key not configured' });
+    }
 
     const jwt = await apiClient.requestJWTUserToken(
       process.env.DOCUSIGN_INTEGRATION_KEY,
       process.env.DOCUSIGN_USER_ID,
       ['signature', 'impersonation'],
-      privateKeyBuffer,
-     3600
-   );
+      privateKeyForSdk,
+      3600
+    );
 
     const accessToken = jwt.body.access_token;
 
@@ -331,7 +342,6 @@ exports.signContractAsTenant = async (req, res) => {
           name: tenantProfile.full_name,
           recipientId: '1',
           routingOrder: '1',
-          // Embedded signing (captive): usa clientUserId
           clientUserId: `tenant_${contract.tenant_id}`,
         },
       ],
@@ -339,9 +349,7 @@ exports.signContractAsTenant = async (req, res) => {
     envelopeDefinition.status = 'sent';
 
     const envelopesApi = new docusign.EnvelopesApi(apiClient);
-    const createEnv = await envelopesApi.createEnvelope(account.accountId, {
-      envelopeDefinition,
-    });
+    const createEnv = await envelopesApi.createEnvelope(account.accountId, { envelopeDefinition });
 
     // 6) URL de firma embebida
     const viewRequest = new docusign.RecipientViewRequest();
@@ -360,7 +368,6 @@ exports.signContractAsTenant = async (req, res) => {
 
     res.json({ url: view.url });
   } catch (err) {
-    // Log útil para depurar (sin exponer secretos)
     console.error('DocuSign error:', {
       message: err.message,
       code: err.code,
