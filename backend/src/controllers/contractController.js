@@ -282,20 +282,11 @@ exports.signContractAsTenant = async (req, res) => {
     const apiClient = new docusign.ApiClient();
     apiClient.setOAuthBasePath('account-d.docusign.com');
 
-    // preparar private key: acepta DOCUSIGN_PRIVATE_KEY (PEM o path) o DOCUSIGN_PRIVATE_KEY_PATH
+    // Usar la clave PEM directa desde DOCUSIGN_PRIVATE_KEY
     let privateKeyForSdk;
     if (process.env.DOCUSIGN_PRIVATE_KEY) {
-      const raw = process.env.DOCUSIGN_PRIVATE_KEY;
-      // si la variable contiene la PEM completa
-      if (raw.includes('-----BEGIN') && raw.includes('PRIVATE KEY')) {
-        const pem = raw.replace(/\\n/g, '\n');
-        privateKeyForSdk = Buffer.from(pem);
-      } else {
-        // si no parece PEM, interpretarla como path y leer fichero
-        privateKeyForSdk = fs.readFileSync(raw);
-      }
-    } else if (process.env.DOCUSIGN_PRIVATE_KEY_PATH) {
-      privateKeyForSdk = fs.readFileSync(process.env.DOCUSIGN_PRIVATE_KEY_PATH);
+      const pem = process.env.DOCUSIGN_PRIVATE_KEY.replace(/\\n/g, '\n');
+      privateKeyForSdk = Buffer.from(pem);
     } else {
       return res.status(500).json({ error: 'DocuSign private key not configured' });
     }
