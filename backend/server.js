@@ -39,11 +39,12 @@ app.use(cors({
 const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const contractRoutes = require('./src/routes/contractRoutes');
-
+const MobileRoutes = require('./src/routes/MobileRoutes');
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/mobile-auth', MobileRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
