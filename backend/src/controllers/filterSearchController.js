@@ -606,6 +606,149 @@ const FilterByLaundry = async (req, res) => {
   }
 };
 
+const AdvancedSearch = async (req, res) => {
+  try {
+    const filters = req.body;
+    let query = supabase.from('tenant_search_profiles').select('*');
+
+    // Filtros de rango de precio
+    if (filters.budget_min !== undefined) {
+      query = query.gte('budget_min', filters.budget_min);
+    }
+    if (filters.budget_max !== undefined) {
+      query = query.lte('budget_max', filters.budget_max);
+    }
+
+    // Filtros de ubicación
+    if (filters.city) {
+      query = query.eq('city', filters.city);
+    }
+    if (filters.neighborhood) {
+      query = query.eq('neighborhood', filters.neighborhood);
+    }
+
+    // Filtros de tipo de propiedad
+    if (filters.property_types && filters.property_types.length > 0) {
+      query = query.contains('property_types', filters.property_types);
+    }
+
+    // Filtros de habitaciones
+    if (filters.rooms_min !== undefined) {
+      query = query.lte('rooms_min', filters.rooms_min);
+    }
+    if (filters.rooms_max !== undefined) {
+      query = query.gte('rooms_max', filters.rooms_max);
+    }
+
+    // Filtros de dormitorios
+    if (filters.bedroom_min !== undefined) {
+      query = query.lte('bedroom_min', filters.bedroom_min);
+    }
+    if (filters.bedroom_max !== undefined) {
+      query = query.gte('bedroom_max', filters.bedroom_max);
+    }
+
+    // Filtros de baños
+    if (filters.bathrooms_min !== undefined) {
+      query = query.lte('bathrooms_min', filters.bathrooms_min);
+    }
+    if (filters.bathrooms_max !== undefined) {
+      query = query.gte('bathrooms_max', filters.bathrooms_max);
+    }
+
+    // Filtros de área
+    if (filters.area_min !== undefined) {
+      query = query.lte('area_min', filters.area_min);
+    }
+    if (filters.area_max !== undefined) {
+      query = query.gte('area_max', filters.area_max);
+    }
+
+    // Filtros booleanos
+    if (filters.furnished !== undefined) {
+      query = query.eq('furnished', filters.furnished);
+    }
+    if (filters.pets_allowed !== undefined) {
+      query = query.eq('pets_allowed', filters.pets_allowed);
+    }
+    if (filters.smokers_allowed !== undefined) {
+      query = query.eq('smokers_allowed', filters.smokers_allowed);
+    }
+    if (filters.children !== undefined) {
+      query = query.eq('children', filters.children);
+    }
+    if (filters.students !== undefined) {
+      query = query.eq('students', filters.students);
+    }
+    if (filters.parking_needed !== undefined) {
+      query = query.eq('parking_needed', filters.parking_needed);
+    }
+    if (filters.balcony !== undefined) {
+      query = query.eq('balcony', filters.balcony);
+    }
+    if (filters.terrace !== undefined) {
+      query = query.eq('terrace', filters.terrace);
+    }
+    if (filters.laundry !== undefined) {
+      query = query.eq('laundry', filters.laundry);
+    }
+    if (filters.elevator !== undefined) {
+      query = query.eq('elevator', filters.elevator);
+    }
+    if (filters.security !== undefined) {
+      query = query.eq('security', filters.security);
+    }
+    if (filters.require_verified_landlord !== undefined) {
+      query = query.eq('require_verified_landlord', filters.require_verified_landlord);
+    }
+
+    // Filtros de amenities
+    if (filters.amenities && filters.amenities.length > 0) {
+      query = query.contains('amenities', filters.amenities);
+    }
+
+    // Filtros numéricos exactos
+    if (filters.lease_term_months !== undefined) {
+      query = query.eq('lease_term_months', filters.lease_term_months);
+    }
+    if (filters.occupants !== undefined) {
+      query = query.eq('occupants', filters.occupants);
+    }
+
+    // Filtros de estado y visibilidad
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters.visibility) {
+      query = query.eq('visibility', filters.visibility);
+    }
+    if (filters.is_banned !== undefined) {
+      query = query.eq('is_banned', filters.is_banned);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    res.json({
+      success: true,
+      data,
+      count: data.length,
+      filters_applied: Object.keys(filters).length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = { 
   GetAllSearch,
   FilterByType,
@@ -630,5 +773,6 @@ module.exports = {
   FilterByArea,
   FilterByStudents,
   FilterByParkingNeeded,
-  FilterByLaundry
+  FilterByLaundry,
+  AdvancedSearch
 };
