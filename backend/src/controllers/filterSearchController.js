@@ -528,6 +528,84 @@ const FilterByArea = async (req, res) => {
   }
 };
 
+const FilterByStudents = async (req, res) => {
+  try {
+    const are_students = req.params.students === 'true';
+    const { data,error } = await supabase
+    .from('tenant_search_profiles')
+    .select('*')
+    .eq('students', are_students);
+    if (error) {
+      return res.status(400).json({ 
+        success: false,
+        error: error.message 
+      });
+    }
+    res.json({ 
+      success: true, 
+      data,
+      count: data.length 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor' 
+    });
+  }
+};
+
+const FilterByParkingNeeded = async (req, res) => {
+  try {
+    const needs_parking = req.params.parking === 'true';
+    const { data,error } = await supabase
+    .from('tenant_search_profiles')
+    .select('*')
+    .eq('parking_needed', needs_parking);
+    if (error) {
+      return res.status(400).json({ 
+        success: false,
+        error: error.message 
+      });
+    }
+    res.json({ 
+      success: true, 
+      data,
+      count: data.length 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor' 
+    });
+  }
+};
+
+const FilterByLaundry = async (req, res) => {
+  try {
+    const has_laundry = req.params.laundry === 'true';
+    const { data,error } = await supabase
+    .from('tenant_search_profiles')
+    .select('*')
+    .eq('laundry', has_laundry);
+    if (error) {
+      return res.status(400).json({ 
+        success: false,
+        error: error.message 
+      });
+    }
+    res.json({ 
+      success: true, 
+      data,
+      count: data.length 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor' 
+    });
+  }
+};
+
 module.exports = { 
   GetAllSearch,
   FilterByType,
@@ -549,5 +627,8 @@ module.exports = {
   FilterByVerificatedUser,
   FilterBySecurity,
   FilterByElevator,
-  FilterByArea
+  FilterByArea,
+  FilterByStudents,
+  FilterByParkingNeeded,
+  FilterByLaundry
 };

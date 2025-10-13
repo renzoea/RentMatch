@@ -2,7 +2,8 @@ const express = require('express');
 const {authenticateToken, authorizeOwner } = require('../middleware/authMiddleware');
 const { GetAllSearch, FilterByType, FilterByRoomsRange, FilterByBathrooms, FilterByPriceRange, FilterByLeaseDuration, FilterBychildren,FilterByFurnished, 
     FilterByPets, FilterByAmenities, FilterBySmoking, FilterByBedroomsRange,FilterByCities, FilterByNeighborhood, FilterByBalcony,
-    FilterByTerrace, FliterByOccupants, FilterByVerificatedUser, FilterByElevator, FilterBySecurity, FilterByArea
+    FilterByTerrace, FliterByOccupants, FilterByVerificatedUser, FilterByElevator, FilterBySecurity, FilterByArea, FilterByStudents,
+    FilterByParkingNeeded, FilterByLaundry
  } = require('../controllers/filterSearchController');
 
 const router = express.Router();
@@ -28,5 +29,8 @@ router.get('/verificated/:verificated',authenticateToken,authorizeOwner, FilterB
 router.get('/elevator/:elevator',authenticateToken,authorizeOwner, FilterByElevator);
 router.get('/security/:security',authenticateToken,authorizeOwner, FilterBySecurity);
 router.get('/area/:max/:min',authenticateToken,authorizeOwner, FilterByArea);
+router.get('/students/:students',authenticateToken,authorizeOwner, FilterByStudents);
+router.get('/parking/:parking',authenticateToken,authorizeOwner, FilterByParkingNeeded);
+router.get('/laundry/:laundry',authenticateToken,authorizeOwner, FilterByLaundry);
 
 module.exports = router;
