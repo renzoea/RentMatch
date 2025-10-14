@@ -32,6 +32,6 @@ router.get('/area/:max/:min',authenticateToken,authorizeLandlord, FilterByArea);
 router.get('/students/:students',authenticateToken,authorizeLandlord, FilterByStudents);
 router.get('/parking/:parking',authenticateToken,authorizeLandlord, FilterByParkingNeeded);
 router.get('/laundry/:laundry',authenticateToken,authorizeLandlord, FilterByLaundry);
-router.get('/advanced', authenticateToken, authorizeLandlord, AdvancedSearch);
+router.post('/advanced', authenticateToken, authorizeLandlord, AdvancedSearch);
 
 module.exports = router;

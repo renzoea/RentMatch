@@ -79,8 +79,8 @@ const FilterByBedroomsRange = async (req, res) => {
     const { data,error } = await supabase
     .from('tenant_search_profiles')
     .select('*')
-    .lte('bedroom_min', req.params.max)
-    .gte('bedroom_max', req.params.min);
+    .gte('bedroom_min', req.params.min)
+    .lte('bedroom_max', req.params.max);
     if (error) {
       return res.status(400).json({ 
         success: false,
@@ -606,65 +606,74 @@ const FilterByLaundry = async (req, res) => {
   }
 };
 
+
 const AdvancedSearch = async (req, res) => {
   try {
+    console.log("Filtros recibidos:", req.body);
     const filters = req.body;
-    let query = supabase.from('tenant_search_profiles').select('*');
 
-    // Filtros de rango de precio
-    if (filters.budget_min !== undefined) {
-      query = query.gte('budget_min', filters.budget_min);
-    }
-    if (filters.budget_max !== undefined) {
-      query = query.lte('budget_max', filters.budget_max);
-    }
+    // JOIN con profiles para traer el status de verificación
+    let query = supabase
+      .from('tenant_search_profiles')
+      .select('*, profile:profiles(status)');
 
-    // Filtros de ubicación
-    if (filters.city) {
+    // ========== FILTROS DE UBICACIÓN ==========
+    if (filters.city && filters.city !== '') {
       query = query.eq('city', filters.city);
     }
-    if (filters.neighborhood) {
+    if (filters.neighborhood && filters.neighborhood !== '') {
       query = query.eq('neighborhood', filters.neighborhood);
     }
 
-    // Filtros de tipo de propiedad
+    // ========== FILTROS DE TIPO DE PROPIEDAD ==========
     if (filters.property_types && filters.property_types.length > 0) {
       query = query.contains('property_types', filters.property_types);
     }
 
-    // Filtros de habitaciones
-    if (filters.rooms_min !== undefined) {
-      query = query.lte('rooms_min', filters.rooms_min);
+    // ========== FILTROS DE RANGO DE PRECIO ==========
+    if (filters.budget_min !== undefined) {
+      query = query.gte('budget_max', filters.budget_min);
     }
-    if (filters.rooms_max !== undefined) {
-      query = query.gte('rooms_max', filters.rooms_max);
-    }
-
-    // Filtros de dormitorios
-    if (filters.bedroom_min !== undefined) {
-      query = query.lte('bedroom_min', filters.bedroom_min);
-    }
-    if (filters.bedroom_max !== undefined) {
-      query = query.gte('bedroom_max', filters.bedroom_max);
+    if (filters.budget_max !== undefined) {
+      query = query.lte('budget_min', filters.budget_max);
     }
 
-    // Filtros de baños
-    if (filters.bathrooms_min !== undefined) {
-      query = query.lte('bathrooms_min', filters.bathrooms_min);
-    }
-    if (filters.bathrooms_max !== undefined) {
-      query = query.gte('bathrooms_max', filters.bathrooms_max);
+    // ========== FILTROS DE HABITACIONES ==========
+    if (filters.rooms_min !== undefined && filters.rooms_max !== undefined) {
+      query = query.lte('rooms_min', filters.rooms_max).gte('rooms_max', filters.rooms_min);
+    } else if (filters.rooms_min !== undefined) {
+      query = query.gte('rooms_max', filters.rooms_min);
+    } else if (filters.rooms_max !== undefined) {
+      query = query.lte('rooms_min', filters.rooms_max);
     }
 
-    // Filtros de área
+    // ========== FILTROS DE DORMITORIOS ==========
+    if (filters.bedroom_min !== undefined && filters.bedroom_max !== undefined) {
+      query = query.lte('bedroom_min', filters.bedroom_max).gte('bedroom_max', filters.bedroom_min);
+    } else if (filters.bedroom_min !== undefined) {
+      query = query.gte('bedroom_max', filters.bedroom_min);
+    } else if (filters.bedroom_max !== undefined) {
+      query = query.lte('bedroom_min', filters.bedroom_max);
+    }
+
+    // ========== FILTROS DE BAÑOS ==========
+    if (filters.bathrooms_min !== undefined && filters.bathrooms_max !== undefined) {
+      query = query.lte('bathrooms_min', filters.bathrooms_max).gte('bathrooms_max', filters.bathrooms_min);
+    } else if (filters.bathrooms_min !== undefined) {
+      query = query.gte('bathrooms_max', filters.bathrooms_min);
+    } else if (filters.bathrooms_max !== undefined) {
+      query = query.lte('bathrooms_min', filters.bathrooms_max);
+    }
+
+    // ========== FILTROS DE ÁREA ==========
     if (filters.area_min !== undefined) {
-      query = query.lte('area_min', filters.area_min);
+      query = query.gte('area_max', filters.area_min);
     }
     if (filters.area_max !== undefined) {
-      query = query.gte('area_max', filters.area_max);
+      query = query.lte('area_min', filters.area_max);
     }
 
-    // Filtros booleanos
+    // ========== FILTROS BOOLEANOS ==========
     if (filters.furnished !== undefined) {
       query = query.eq('furnished', filters.furnished);
     }
@@ -698,16 +707,13 @@ const AdvancedSearch = async (req, res) => {
     if (filters.security !== undefined) {
       query = query.eq('security', filters.security);
     }
-    if (filters.require_verified_landlord !== undefined) {
-      query = query.eq('require_verified_landlord', filters.require_verified_landlord);
-    }
 
-    // Filtros de amenities
+    // ========== FILTROS DE AMENITIES ==========
     if (filters.amenities && filters.amenities.length > 0) {
       query = query.contains('amenities', filters.amenities);
     }
 
-    // Filtros numéricos exactos
+    // ========== FILTROS NUMÉRICOS EXACTOS ==========
     if (filters.lease_term_months !== undefined) {
       query = query.eq('lease_term_months', filters.lease_term_months);
     }
@@ -715,25 +721,37 @@ const AdvancedSearch = async (req, res) => {
       query = query.eq('occupants', filters.occupants);
     }
 
-    // Filtros de estado y visibilidad
+    // ========== FILTRO DE PERFIL VERIFICADO ==========
+    if (filters.require_verified_landlord === true) {
+      query = query.eq('profile.status', 'verified');
+    }
+
+    // ========== FILTROS DE ESTADO Y VISIBILIDAD ==========
     if (filters.status) {
       query = query.eq('status', filters.status);
+    } else {
+      query = query.eq('status', 'activo');
     }
     if (filters.visibility) {
       query = query.eq('visibility', filters.visibility);
     }
     if (filters.is_banned !== undefined) {
       query = query.eq('is_banned', filters.is_banned);
+    } else {
+      query = query.eq('is_banned', false);
     }
 
     const { data, error } = await query;
 
     if (error) {
+      console.error("Error de Supabase:", error);
       return res.status(400).json({
         success: false,
         error: error.message
       });
     }
+
+    console.log(`Resultados encontrados: ${data.length}`);
 
     res.json({
       success: true,
@@ -742,6 +760,7 @@ const AdvancedSearch = async (req, res) => {
       filters_applied: Object.keys(filters).length
     });
   } catch (error) {
+    console.error("Error en AdvancedSearch:", error);
     res.status(500).json({
       success: false,
       error: 'Error interno del servidor'

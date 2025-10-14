@@ -3,13 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Filter, Home, MapPin, Calendar, DollarSign, BadgeCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import api from '@/lib/api'
-
+import api from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
-import LocationSelector from "@/components/location-selector"; // ajustá path si hace falta
-
-// ==================== CONFIG ====================
-const API_BASE = "http://localhost:5000/api/filter-search/advanced/";
+import LocationSelector from "@/components/location-selector";
 
 // Formato de dinero
 const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
@@ -36,7 +32,7 @@ type TenantProfileCard = {
 
 // ============ Filtros ============
 type Filters = {
-  property_types: string[];
+  property_types: string[];            // enum[]: departamento | ph | duplex | casa | estudio
   city?: string;
   neighborhood?: string;
   budget_min?: number;
@@ -47,7 +43,10 @@ type Filters = {
   bedroom_max?: number;
   bathrooms_min?: number;
   bathrooms_max?: number;
+  area_min?: number;
+  area_max?: number;
   lease_term_months?: number;
+  occupants?: number;
   furnished?: boolean;
   pets_allowed?: boolean;
   smokers_allowed?: boolean;
@@ -59,12 +58,37 @@ type Filters = {
   laundry?: boolean;
   elevator?: boolean;
   security?: boolean;
+  // enums reales de tu BD:
+  visibility?: "publico" | "privado";
+  status?: "activo" | "pausado" | "archivado";
+  // filtro extra
   require_verified_landlord?: boolean;
-  amenities: string[];
+  amenities: string[]; // ojo con tildes: deben coincidir con lo almacenado en DB
 };
 
-const PROPERTY_TYPES = ["Departamento", "Casa", "PH", "Loft", "Oficina"];
-const AMENITIES = ["Balcón", "Pileta", "Terraza", "Amoblado", "Cochera", "Acepta mascotas"];
+// ====== Enums y arrays EXACTOS según tu BD ======
+const PROPERTY_TYPES = [
+  { label: "Departamento", value: "departamento" },
+  { label: "PH", value: "ph" },
+  { label: "Dúplex", value: "duplex" },
+  { label: "Casa", value: "casa" },
+  { label: "Estudio", value: "estudio" },
+];
+
+const VISIBILITIES: { label: string; value: Filters["visibility"] }[] = [
+  { label: "Público", value: "publico" },
+  { label: "Privado", value: "privado" },
+];
+
+const STATUSES: { label: string; value: Filters["status"] }[] = [
+  { label: "Activo", value: "activo" },
+  { label: "Pausado", value: "pausado" },
+  { label: "Archivado", value: "archivado" },
+];
+
+// Asegurate que estos strings coincidan 1:1 con lo que guardás en tenant_search_profiles.amenities
+const AMENITIES = ["balcón", "pileta", "terraza", "amoblado", "cochera", "acepta mascotas"];
+
 const DURACIONES = ["6", "12", "18", "24"];
 
 // ==================== COMPONENTE ====================
@@ -72,7 +96,6 @@ export default function PropietarioHomePage() {
   const [filters, setFilters] = useState<Filters>({
     property_types: [],
     amenities: [],
-    require_verified_landlord: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -106,69 +129,76 @@ export default function PropietarioHomePage() {
     setFilters({
       property_types: [],
       amenities: [],
-      require_verified_landlord: false,
+      // no seteamos enums/booleanos para que no filtren
     });
 
   // ---------- Adaptador de datos ----------
-  const adapt = (row: any): TenantProfileCard => {
-    const name = row.full_name || row.name || "Inquilino/a";
+  const adapt = (row: Record<string, unknown>): TenantProfileCard => {
+    const name = (row.full_name as string) || "Inquilino/a";
     const initials =
-      (String(name)
+      name
         .split(" ")
         .map((s: string) => s[0]?.toUpperCase())
         .slice(0, 2)
-        .join("") || "IN");
+        .join("") || "IN";
 
     const propertyType =
-      (Array.isArray(row.property_types) && row.property_types[0]) ||
-      row.propertyType ||
-      "—";
+      (Array.isArray(row.property_types) && (row.property_types as string[])[0]) || "—";
 
-    const location = [row.neighborhood, row.city].filter(Boolean).join(", ");
+    const location = [row.neighborhood as string, row.city as string].filter(Boolean).join(", ");
 
     return {
-      id: row.id || row.profile_id || crypto.randomUUID(),
+      id: (row.id as string) || crypto.randomUUID(),
       initials,
       color: "bg-orange-500",
       name,
-      verified: !!row.require_verified_landlord || !!row.verified,
-      seenAgo: row.last_seen_ago || "—",
+      // si querés mostrar “verificado” cuando el perfil pide propietario verificado:
+      verified: !!row.require_verified_landlord,
+      seenAgo: "—",
       propertyType,
       budgetMin: Number(row.budget_min ?? 0),
       budgetMax: Number(row.budget_max ?? 0),
       location: location || "—",
-      available: row.available_from || row.available || "—",
+      available: "—",
       amb: Number(row.rooms_max ?? row.rooms_min ?? 0),
       dorm: Number(row.bedroom_max ?? row.bedroom_min ?? 0),
       bath: Number(row.bathrooms_max ?? row.bathrooms_min ?? 0),
-      amenities: Array.isArray(row.amenities) ? row.amenities : [],
+      amenities: Array.isArray(row.amenities) ? (row.amenities as string[]) : [],
     };
   };
 
-  // ---------- Fetch (GET con querystring) ----------
+  // ---------- Fetch usando axios (api) ----------
   const search = async () => {
     setLoading(true);
     setError(null);
     try {
-      const qs = new URLSearchParams(
-        Object.entries(filters).flatMap(([k, v]) => {
-          if (Array.isArray(v)) return v.length ? [[k, v.join(",")]] : [];
-          if (v === undefined) return [];
-          return [[k, String(v)]];
-        })
-      ).toString();
+      const token = localStorage.getItem("access_token");
 
-      // Obtener el token del localStorage
-      const accessToken = typeof window !== "undefined" ? localStorage.getItem('access_token') : null;
+      // Limpiar filtros vacíos y preparar el body
+      const cleanFilters: Record<string, string | number | boolean | string[]> = {};
 
-      const response = await api.get(`/api/filter-search/advanced/?${qs}`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        if (value === "") return;
+        if (Array.isArray(value) && value.length === 0) return;
+        // Evitar mandar booleanos false (no filtrar)
+        if (typeof value === "boolean" && value === false) return;
+        cleanFilters[key] = value as string | number | boolean | string[];
       });
-      const j = response.data;
-      const rows = Array.isArray(j?.data) ? j.data : [];
+
+      const response = await api.post("/api/filter-search/advanced/", cleanFilters, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      const rows = Array.isArray(response.data?.data) ? response.data.data : [];
       setList(rows.map(adapt));
-    } catch (e: any) {
-      setError(e?.response?.data?.error || e.message || "Error al buscar");
+    } catch (e: unknown) {
+      if (typeof e === "object" && e !== null) {
+        const err = e as { response?: { data?: { error?: string } }; message?: string };
+        setError(err?.response?.data?.error || err?.message || "Error al buscar");
+      } else {
+        setError("Error al buscar");
+      }
       setList([]);
     } finally {
       setLoading(false);
@@ -180,7 +210,7 @@ export default function PropietarioHomePage() {
     search();
   }, []);
 
-  // Si activás "Solo verificados" aplica filtro local
+  // Si activás "Solo verificados" (local)
   const finalList = useMemo(() => {
     if (filters.require_verified_landlord) {
       return list.filter((p) => p.verified);
@@ -206,6 +236,7 @@ export default function PropietarioHomePage() {
               variant="secondary"
               className="ml-auto bg-orange-500 hover:bg-orange-600 text-white h-8 px-3 rounded-md"
               onClick={search}
+              disabled={loading}
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
@@ -223,7 +254,7 @@ export default function PropietarioHomePage() {
               label="Tipo de Propiedad"
               value={filters.property_types[0] || ""}
               onChange={(v) => setSelectOrPush("property_types", v)}
-              options={["", ...PROPERTY_TYPES]}
+              options={["", ...PROPERTY_TYPES.map((pt) => pt.value)]}
               placeholder="Todos los tipos"
             />
 
@@ -235,6 +266,26 @@ export default function PropietarioHomePage() {
                 onNeighborhoodChange={handleNeighborhoodChange}
               />
             </div>
+
+            {/* NUEVOS selects alineados con enums de tu BD */}
+            <SelectBox
+              label="Visibilidad"
+              value={filters.visibility ?? ""}
+              onChange={(v) =>
+                setFilters((f) => ({ ...f, visibility: (v || undefined) as Filters["visibility"] }))
+              }
+              options={["", ...VISIBILITIES.map((v) => v.value!)]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Estado del perfil"
+              value={filters.status ?? ""}
+              onChange={(v) =>
+                setFilters((f) => ({ ...f, status: (v || undefined) as Filters["status"] }))
+              }
+              options={["", ...STATUSES.map((s) => s.value!)]}
+              placeholder="Cualquiera"
+            />
 
             <SelectBox
               label="Presupuesto Mínimo"
@@ -293,10 +344,31 @@ export default function PropietarioHomePage() {
               placeholder="Cualquiera"
             />
             <SelectBox
+              label="Superficie mínima (m²)"
+              value={String(filters.area_min ?? "")}
+              onChange={(v) => setNumber("area_min", v)}
+              options={["", "20", "30", "40", "50", "60", "80", "100"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Superficie máxima (m²)"
+              value={String(filters.area_max ?? "")}
+              onChange={(v) => setNumber("area_max", v)}
+              options={["", "30", "40", "50", "60", "80", "100", "150"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
               label="Duración (meses)"
               value={String(filters.lease_term_months ?? "")}
               onChange={(v) => setNumber("lease_term_months", v)}
               options={["", ...DURACIONES]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Ocupantes"
+              value={String(filters.occupants ?? "")}
+              onChange={(v) => setNumber("occupants", v)}
+              options={["", "1", "2", "3", "4", "5", "6"]}
               placeholder="Cualquiera"
             />
           </div>
@@ -341,7 +413,9 @@ export default function PropietarioHomePage() {
           {/* Acciones */}
           <div className="mt-4 flex items-center gap-2">
             <button
-              onClick={() => setFilters((f) => ({ ...f, require_verified_landlord: !f.require_verified_landlord }))}
+              onClick={() =>
+                setFilters((f) => ({ ...f, require_verified_landlord: !f.require_verified_landlord }))
+              }
               className={`text-xs font-semibold px-3 py-1.5 rounded-md border ${
                 filters.require_verified_landlord
                   ? "bg-green-100 text-green-700 border-green-300"
@@ -355,7 +429,7 @@ export default function PropietarioHomePage() {
               <Button variant="outline" className="h-9" onClick={clearFilters}>
                 Limpiar filtros
               </Button>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white h-9" onClick={search}>
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white h-9" onClick={search} disabled={loading}>
                 {loading ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
