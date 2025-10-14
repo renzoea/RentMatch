@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Filter, Home, MapPin, Calendar, DollarSign, BadgeCheck,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Filter, Home, MapPin, Calendar, DollarSign, BadgeCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import api from '@/lib/api'
 
-type TenantProfile = {
+import { Card, CardContent } from "@/components/ui/card";
+import LocationSelector from "@/components/location-selector"; // ajustá path si hace falta
+
+// ==================== CONFIG ====================
+const API_BASE = "http://localhost:5000/api/filter-search/advanced/";
+
+// Formato de dinero
+const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+const moneyAR = (n: number) => `$${nfAR.format(n)}`;
+
+// ============ Tipos ============
+type TenantProfileCard = {
   id: string;
   initials: string;
   color: string;
@@ -25,83 +34,166 @@ type TenantProfile = {
   amenities: string[];
 };
 
-const MOCK_PROFILES: TenantProfile[] = [
-  {
-    id: "1",
-    initials: "MR",
-    color: "bg-orange-500",
-    name: "María González Rodríguez",
-    verified: true,
-    seenAgo: "hace 3 días",
-    propertyType: "Departamento",
-    budgetMin: 400000,
-    budgetMax: 600000,
-    location: "Palermo, Belgrano",
-    available: "Agosto 2025",
-    amb: 2, dorm: 1, bath: 1,
-    amenities: ["Balcón", "Pileta", "Cochera"],
-  },
-  {
-    id: "2",
-    initials: "CM",
-    color: "bg-orange-600",
-    name: "Carlos Martínez",
-    verified: true,
-    seenAgo: "hace 1 semana",
-    propertyType: "Casa",
-    budgetMin: 800000,
-    budgetMax: 1200000,
-    location: "San Isidro, Martínez",
-    available: "Septiembre 2025",
-    amb: 4, dorm: 3, bath: 2,
-    amenities: ["Jardín", "Terraza", "Cochera"],
-  },
-  {
-    id: "3",
-    initials: "AL",
-    color: "bg-orange-400",
-    name: "Ana López",
-    seenAgo: "hace 5 días",
-    propertyType: "Departamento",
-    budgetMin: 600000,
-    budgetMax: 900000,
-    location: "Recoleta",
-    available: "Septiembre 2025",
-    amb: 3, dorm: 2, bath: 2,
-    amenities: ["Balcón", "Amoblado"],
-  },
-  {
-    id: "4",
-    initials: "CL",
-    color: "bg-orange-700",
-    name: "Carlos López",
-    seenAgo: "hace 5 días",
-    propertyType: "Departamento",
-    budgetMin: 300000,
-    budgetMax: 400000,
-    location: "San Telmo",
-    available: "Octubre 2025",
-    amb: 1, dorm: 1, bath: 1,
-    amenities: ["Acepta mascotas"],
-  },
-];
+// ============ Filtros ============
+type Filters = {
+  property_types: string[];
+  city?: string;
+  neighborhood?: string;
+  budget_min?: number;
+  budget_max?: number;
+  rooms_min?: number;
+  rooms_max?: number;
+  bedroom_min?: number;
+  bedroom_max?: number;
+  bathrooms_min?: number;
+  bathrooms_max?: number;
+  lease_term_months?: number;
+  furnished?: boolean;
+  pets_allowed?: boolean;
+  smokers_allowed?: boolean;
+  children?: boolean;
+  students?: boolean;
+  parking_needed?: boolean;
+  balcony?: boolean;
+  terrace?: boolean;
+  laundry?: boolean;
+  elevator?: boolean;
+  security?: boolean;
+  require_verified_landlord?: boolean;
+  amenities: string[];
+};
 
-// ⬆️ Fuera del componente, al tope del archivo
-const nfAR = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
-const moneyAR = (n: number) => `$${nfAR.format(n)}`;
+const PROPERTY_TYPES = ["Departamento", "Casa", "PH", "Loft", "Oficina"];
+const AMENITIES = ["Balcón", "Pileta", "Terraza", "Amoblado", "Cochera", "Acepta mascotas"];
+const DURACIONES = ["6", "12", "18", "24"];
 
-
+// ==================== COMPONENTE ====================
 export default function PropietarioHomePage() {
-  const [onlyVerified, setOnlyVerified] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    property_types: [],
+    amenities: [],
+    require_verified_landlord: false,
+  });
 
-  const list = onlyVerified ? MOCK_PROFILES.filter(p => p.verified) : MOCK_PROFILES;
+  const [loading, setLoading] = useState(false);
+  const [list, setList] = useState<TenantProfileCard[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // ---------- Helpers ----------
+  const setNumber = (key: keyof Filters, v: string) =>
+    setFilters((f) => ({ ...f, [key]: v ? Number(v) : undefined }));
+
+  const toggleBoolean = (key: keyof Filters) =>
+    setFilters((f) => ({ ...f, [key]: !f[key] }));
+
+  const toggleAmenity = (amenity: string) =>
+    setFilters((f) => {
+      const has = f.amenities?.includes(amenity);
+      const next = has ? f.amenities.filter((a) => a !== amenity) : [...(f.amenities || []), amenity];
+      return { ...f, amenities: next };
+    });
+
+  const setSelectOrPush = (arrKey: keyof Filters, value: string) =>
+    setFilters((f) => {
+      if (!value) return { ...f, [arrKey]: [] };
+      return { ...f, [arrKey]: [value] };
+    });
+
+  const handleCityChange = (city: string) => setFilters((f) => ({ ...f, city, neighborhood: "" }));
+  const handleNeighborhoodChange = (neighborhood: string) => setFilters((f) => ({ ...f, neighborhood }));
+
+  const clearFilters = () =>
+    setFilters({
+      property_types: [],
+      amenities: [],
+      require_verified_landlord: false,
+    });
+
+  // ---------- Adaptador de datos ----------
+  const adapt = (row: any): TenantProfileCard => {
+    const name = row.full_name || row.name || "Inquilino/a";
+    const initials =
+      (String(name)
+        .split(" ")
+        .map((s: string) => s[0]?.toUpperCase())
+        .slice(0, 2)
+        .join("") || "IN");
+
+    const propertyType =
+      (Array.isArray(row.property_types) && row.property_types[0]) ||
+      row.propertyType ||
+      "—";
+
+    const location = [row.neighborhood, row.city].filter(Boolean).join(", ");
+
+    return {
+      id: row.id || row.profile_id || crypto.randomUUID(),
+      initials,
+      color: "bg-orange-500",
+      name,
+      verified: !!row.require_verified_landlord || !!row.verified,
+      seenAgo: row.last_seen_ago || "—",
+      propertyType,
+      budgetMin: Number(row.budget_min ?? 0),
+      budgetMax: Number(row.budget_max ?? 0),
+      location: location || "—",
+      available: row.available_from || row.available || "—",
+      amb: Number(row.rooms_max ?? row.rooms_min ?? 0),
+      dorm: Number(row.bedroom_max ?? row.bedroom_min ?? 0),
+      bath: Number(row.bathrooms_max ?? row.bathrooms_min ?? 0),
+      amenities: Array.isArray(row.amenities) ? row.amenities : [],
+    };
+  };
+
+  // ---------- Fetch (GET con querystring) ----------
+  const search = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const qs = new URLSearchParams(
+        Object.entries(filters).flatMap(([k, v]) => {
+          if (Array.isArray(v)) return v.length ? [[k, v.join(",")]] : [];
+          if (v === undefined) return [];
+          return [[k, String(v)]];
+        })
+      ).toString();
+
+      // Obtener el token del localStorage
+      const accessToken = typeof window !== "undefined" ? localStorage.getItem('access_token') : null;
+
+      const response = await api.get(`/api/filter-search/advanced/?${qs}`, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      });
+      const j = response.data;
+      const rows = Array.isArray(j?.data) ? j.data : [];
+      setList(rows.map(adapt));
+    } catch (e: any) {
+      setError(e?.response?.data?.error || e.message || "Error al buscar");
+      setList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Búsqueda inicial
+  useEffect(() => {
+    search();
+  }, []);
+
+  // Si activás "Solo verificados" aplica filtro local
+  const finalList = useMemo(() => {
+    if (filters.require_verified_landlord) {
+      return list.filter((p) => p.verified);
+    }
+    return list;
+  }, [list, filters.require_verified_landlord]);
 
   return (
     <div className="max-w-[1200px] mx-auto px-3 sm:px-4 md:px-6 py-5">
       {/* Título */}
       <div className="mb-4">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Perfiles de Inquilinos</h1>
-        <p className="text-gray-600">Encuentra inquilinos ideales para tus propiedades</p>
+        <p className="text-gray-600">Encontrá inquilinos ideales para tus propiedades</p>
       </div>
 
       {/* Filtros */}
@@ -113,42 +205,145 @@ export default function PropietarioHomePage() {
             <Button
               variant="secondary"
               className="ml-auto bg-orange-500 hover:bg-orange-600 text-white h-8 px-3 rounded-md"
+              onClick={search}
             >
-              Más filtros
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
+                </span>
+              ) : (
+                "Buscar"
+              )}
             </Button>
           </div>
 
-          {/* Row selects */}
+          {/* Selects principales */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <SelectBox label="Tipo de Propiedad" placeholder="Todos los tipos" />
-            <SelectBox label="Ubicación" placeholder="Todas las zonas" />
-            <SelectBox label="Presupuestos Mínimo" placeholder="Ej: $400.000" />
-            <SelectBox label="Presupuestos Máximo" placeholder="Ej: $800.000" />
-            <SelectBox label="Ambientes" placeholder="Cualquiera" />
-            <SelectBox label="Dormitorios" placeholder="Cualquiera" />
-            <SelectBox label="Baños" placeholder="Cualquiera" />
-            <SelectBox label="Duración Contrato" placeholder="Cualquiera" />
+            <SelectBox
+              label="Tipo de Propiedad"
+              value={filters.property_types[0] || ""}
+              onChange={(v) => setSelectOrPush("property_types", v)}
+              options={["", ...PROPERTY_TYPES]}
+              placeholder="Todos los tipos"
+            />
+
+            <div className="sm:col-span-2 lg:col-span-2">
+              <LocationSelector
+                selectedCity={filters.city}
+                selectedNeighborhood={filters.neighborhood}
+                onCityChange={handleCityChange}
+                onNeighborhoodChange={handleNeighborhoodChange}
+              />
+            </div>
+
+            <SelectBox
+              label="Presupuesto Mínimo"
+              value={String(filters.budget_min ?? "")}
+              onChange={(v) => setNumber("budget_min", v)}
+              options={["", "200000", "400000", "600000", "800000", "1000000"]}
+              placeholder="Ej: $400.000"
+            />
+            <SelectBox
+              label="Presupuesto Máximo"
+              value={String(filters.budget_max ?? "")}
+              onChange={(v) => setNumber("budget_max", v)}
+              options={["", "400000", "600000", "800000", "1000000", "1500000"]}
+              placeholder="Ej: $800.000"
+            />
+            <SelectBox
+              label="Ambientes (mín)"
+              value={String(filters.rooms_min ?? "")}
+              onChange={(v) => setNumber("rooms_min", v)}
+              options={["", "1", "2", "3", "4", "5"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Ambientes (máx)"
+              value={String(filters.rooms_max ?? "")}
+              onChange={(v) => setNumber("rooms_max", v)}
+              options={["", "1", "2", "3", "4", "5"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Dormitorios (mín)"
+              value={String(filters.bedroom_min ?? "")}
+              onChange={(v) => setNumber("bedroom_min", v)}
+              options={["", "0", "1", "2", "3", "4"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Dormitorios (máx)"
+              value={String(filters.bedroom_max ?? "")}
+              onChange={(v) => setNumber("bedroom_max", v)}
+              options={["", "0", "1", "2", "3", "4"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Baños (mín)"
+              value={String(filters.bathrooms_min ?? "")}
+              onChange={(v) => setNumber("bathrooms_min", v)}
+              options={["", "1", "2", "3"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Baños (máx)"
+              value={String(filters.bathrooms_max ?? "")}
+              onChange={(v) => setNumber("bathrooms_max", v)}
+              options={["", "1", "2", "3"]}
+              placeholder="Cualquiera"
+            />
+            <SelectBox
+              label="Duración (meses)"
+              value={String(filters.lease_term_months ?? "")}
+              onChange={(v) => setNumber("lease_term_months", v)}
+              options={["", ...DURACIONES]}
+              placeholder="Cualquiera"
+            />
           </div>
 
-          {/* Comodidades */}
+          {/* Booleanos */}
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+            <BoolChip label="Amoblado" checked={!!filters.furnished} onChange={() => toggleBoolean("furnished")} />
+            <BoolChip label="Acepta mascotas" checked={!!filters.pets_allowed} onChange={() => toggleBoolean("pets_allowed")} />
+            <BoolChip label="Permite fumadores" checked={!!filters.smokers_allowed} onChange={() => toggleBoolean("smokers_allowed")} />
+            <BoolChip label="Niños" checked={!!filters.children} onChange={() => toggleBoolean("children")} />
+            <BoolChip label="Estudiantes" checked={!!filters.students} onChange={() => toggleBoolean("students")} />
+            <BoolChip label="Necesita cochera" checked={!!filters.parking_needed} onChange={() => toggleBoolean("parking_needed")} />
+            <BoolChip label="Balcón" checked={!!filters.balcony} onChange={() => toggleBoolean("balcony")} />
+            <BoolChip label="Terraza" checked={!!filters.terrace} onChange={() => toggleBoolean("terrace")} />
+            <BoolChip label="Laundry" checked={!!filters.laundry} onChange={() => toggleBoolean("laundry")} />
+            <BoolChip label="Ascensor" checked={!!filters.elevator} onChange={() => toggleBoolean("elevator")} />
+            <BoolChip label="Seguridad" checked={!!filters.security} onChange={() => toggleBoolean("security")} />
+          </div>
+
+          {/* Amenities */}
           <div className="mt-3">
             <p className="text-sm text-gray-700 mb-2">Comodidades</p>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              {["Balcón", "Pileta", "Terraza", "Amoblado", "Cochera", "Acepta mascotas"].map((c) => (
-                <label key={c} className="inline-flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded border-gray-300" />
-                  <span>{c}</span>
-                </label>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {AMENITIES.map((a) => {
+                const active = filters.amenities.includes(a);
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => toggleAmenity(a)}
+                    className={`px-2 py-1 rounded-md border text-xs ${
+                      active ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-gray-50 text-gray-700 border-gray-300"
+                    }`}
+                  >
+                    {a}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Acciones filtros */}
+          {/* Acciones */}
           <div className="mt-4 flex items-center gap-2">
             <button
-              onClick={() => setOnlyVerified(v => !v)}
+              onClick={() => setFilters((f) => ({ ...f, require_verified_landlord: !f.require_verified_landlord }))}
               className={`text-xs font-semibold px-3 py-1.5 rounded-md border ${
-                onlyVerified
+                filters.require_verified_landlord
                   ? "bg-green-100 text-green-700 border-green-300"
                   : "bg-gray-100 text-gray-700 border-gray-300"
               }`}
@@ -157,19 +352,42 @@ export default function PropietarioHomePage() {
             </button>
 
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" className="h-9">Limpiar filtros</Button>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white h-9">Buscar</Button>
+              <Button variant="outline" className="h-9" onClick={clearFilters}>
+                Limpiar filtros
+              </Button>
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white h-9" onClick={search}>
+                {loading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
+                  </span>
+                ) : (
+                  "Buscar"
+                )}
+              </Button>
             </div>
           </div>
+
+          {error && (
+            <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              {error}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Cards */}
       <section className="space-y-4">
-        {list.map((p) => (
+        {loading && finalList.length === 0 && <SkeletonCards />}
+
+        {!loading && finalList.length === 0 && (
+          <div className="text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg p-6 text-center">
+            No encontramos perfiles con esos filtros. Probá ampliando la búsqueda.
+          </div>
+        )}
+
+        {finalList.map((p) => (
           <Card key={p.id} className="border-gray-300">
             <CardContent className="p-4">
-              {/* Header card */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`h-10 w-10 rounded-full ${p.color} text-white flex items-center justify-center font-bold`}>
@@ -189,20 +407,17 @@ export default function PropietarioHomePage() {
                 </div>
               </div>
 
-              {/* Body */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-sm text-gray-800">
                 <Row icon={<Home className="h-4 w-4 text-gray-700" />} text={p.propertyType} />
-                <Row
-  icon={<DollarSign className="h-4 w-4 text-gray-700" />}
-  text={`${moneyAR(p.budgetMin)} – ${moneyAR(p.budgetMax)}`}
-/>
-
+                <Row icon={<DollarSign className="h-4 w-4 text-gray-700" />} text={`${moneyAR(p.budgetMin)} – ${moneyAR(p.budgetMax)}`} />
                 <Row icon={<MapPin className="h-4 w-4 text-red-500" />} text={p.location} />
                 <Row icon={<Calendar className="h-4 w-4 text-gray-700" />} text={p.available} />
                 <div className="col-span-2 text-gray-700">
                   <span className="mr-3">{p.amb} amb.</span>
                   <span className="mr-3">{p.dorm} dorm.</span>
-                  <span>{p.bath} baño{p.bath > 1 ? "s" : ""}</span>
+                  <span>
+                    {p.bath} baño{p.bath > 1 ? "s" : ""}
+                  </span>
                 </div>
                 <div className="col-span-2 flex flex-wrap gap-2">
                   {p.amenities.map((a) => (
@@ -213,11 +428,8 @@ export default function PropietarioHomePage() {
                 </div>
               </div>
 
-              {/* Acciones */}
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <Button className="bg-[#25D366] hover:opacity-90 text-white">
-                  Whatsapp
-                </Button>
+                <Button className="bg-[#25D366] hover:opacity-90 text-white">Whatsapp</Button>
                 <Button variant="outline" className="border-gray-300">
                   Email
                 </Button>
@@ -225,19 +437,12 @@ export default function PropietarioHomePage() {
             </CardContent>
           </Card>
         ))}
-
-        {/* Load more */}
-        <div className="flex justify-center pt-2">
-          <Button variant="outline" className="rounded-full border-gray-300">
-            Cargar más perfiles
-          </Button>
-        </div>
       </section>
     </div>
   );
 }
 
-/* Helpers */
+/* ==== Subcomponentes ==== */
 function Row({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="flex items-center gap-2">
@@ -247,13 +452,78 @@ function Row({ icon, text }: { icon: React.ReactNode; text: string }) {
   );
 }
 
-function SelectBox({ label, placeholder }: { label: string; placeholder: string }) {
+function SelectBox({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+}) {
   return (
     <label className="text-sm">
       <span className="block text-gray-700 mb-1">{label}</span>
-      <select className="w-full h-10 rounded-md border border-gray-300 px-3 text-gray-800 bg-white">
-        <option value="">{placeholder}</option>
+      <select
+        className="w-full h-10 rounded-md border border-gray-300 px-3 text-gray-800 bg-white"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {placeholder !== undefined && <option value="">{placeholder}</option>}
+        {options
+          .filter((o) => o !== "")
+          .map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
       </select>
     </label>
+  );
+}
+
+function BoolChip({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`px-3 py-1.5 rounded-md border text-xs font-semibold ${
+        checked ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-gray-100 text-gray-700 border-gray-300"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function SkeletonCards() {
+  return (
+    <div className="space-y-3">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="border border-gray-200 rounded-xl p-4 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-gray-200" />
+            <div className="h-4 w-48 bg-gray-200 rounded" />
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="h-3 bg-gray-200 rounded" />
+            <div className="h-3 bg-gray-200 rounded" />
+            <div className="h-3 bg-gray-200 rounded col-span-2" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
