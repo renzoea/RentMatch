@@ -483,7 +483,40 @@ export default function PropietarioHomePage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-sm text-gray-800">
-                <Row icon={<Home className="h-4 w-4 text-gray-700" />} text={p.propertyType} />
+{/* Tipo de Propiedad como chips */}
+{/* Tipo de Propiedad como chips (resalta lo elegido en el filtro) */}
+<div className="flex items-center gap-2">
+  <Home className="h-4 w-4 text-gray-700" />
+  {p.propertyType && p.propertyType !== "—" ? (
+    <div className="flex flex-wrap gap-2">
+      {(() => {
+        const activeTypes = new Set((filters.property_types || []).map(s => s.toLowerCase()));
+        return p.propertyType
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .map((t) => {
+            const isActive = activeTypes.has(t.toLowerCase());
+            return (
+              <span
+                key={t}
+                className={`px-2 py-0.5 rounded-lg border text-xs
+                  ${isActive
+                    ? "bg-orange-100 text-orange-700 border-orange-300"
+                    : "bg-gray-100 text-gray-700 border-gray-300"
+                  }`}
+              >
+                {t}
+              </span>
+            );
+          });
+      })()}
+    </div>
+  ) : (
+    <span className="text-gray-700">—</span>
+  )}
+</div>
+
                 <Row icon={<DollarSign className="h-4 w-4 text-gray-700" />} text={`${moneyAR(p.budgetMin)} – ${moneyAR(p.budgetMax)}`} />
                 <Row icon={<MapPin className="h-4 w-4 text-red-500" />} text={p.location} />
                 <Row icon={<Calendar className="h-4 w-4 text-gray-700" />} text={p.available} />
