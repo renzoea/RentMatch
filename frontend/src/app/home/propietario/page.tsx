@@ -142,8 +142,9 @@ export default function PropietarioHomePage() {
         .slice(0, 2)
         .join("") || "IN";
 
-    const propertyType =
-      (Array.isArray(row.property_types) && (row.property_types as string[])[0]) || "—";
+    const propertyType = Array.isArray(row.property_types) 
+      ? (row.property_types as string[]).join(", ") 
+      : "—";
 
     const location = [row.neighborhood as string, row.city as string].filter(Boolean).join(", ");
 
