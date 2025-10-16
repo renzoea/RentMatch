@@ -39,7 +39,7 @@ app.use(cors({
 const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const contractRoutes = require('./src/routes/contractRoutes');
-const filterSearchRoutes = require('./src/routes/filterSearchRoutes');
+const filterSearchRoutes = require('./src/routes/FilterSearchRoutes');
 
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
