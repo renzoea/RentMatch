@@ -9,10 +9,10 @@ const getActiveRentals = async (req, res) => {
 
     try {
         const { data, error } = await supabase
-        .from('tenant_search_profiles')
+        .from('contracts')
         .select('*')
         .eq('tenant_id', userId) 
-        .eq('status', 'activo'); 
+        .eq('status', 'active'); 
         
         if (error) {
             return res.status(400).json({ success: false, message: 'Error en la consulta de Supabase', error: error.message });
@@ -35,7 +35,7 @@ const getRentalHistory = async (req, res) => {
 
   try {
     const { data, error } = await supabase
-    .from('tenant_search_profiles')
+    .from('contracts')
     .select('*')
     .eq('tenant_id', userId); 
 
