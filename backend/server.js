@@ -41,12 +41,15 @@ const authRoutes = require('./src/routes/authRoutes');
 const contractRoutes = require('./src/routes/contractRoutes');
 const MobileRoutes = require('./src/routes/MobileRoutes');
 const MobileUserRoutes = require('./src/routes/MobileProfileRoutes');
+const filterSearchRoutes = require('./src/routes/FilterSearchRoutes');
+
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/mobile-auth', MobileRoutes);
 app.use('/api/mobile-user', MobileUserRoutes);
+app.use('/api/filter-search', filterSearchRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
