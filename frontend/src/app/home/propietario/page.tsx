@@ -73,7 +73,7 @@ type Filters = {
   amenities: string[];
 };
 
-const AMENITIES = ["balcón", "pileta", "terraza", "gym", "cochera", "laundry"];
+// const AMENITIES = ["balcón", "pileta", "terraza", "gym", "cochera", "laundry"];
 
 const ARGENTINA_LOCATIONS: Record<string, string[]> = {
   'Buenos Aires': ['Palermo', 'Recoleta', 'Belgrano', 'Caballito', 'Villa Crespo'],
@@ -97,11 +97,11 @@ export default function PropietarioHomePage() {
 
   const clearFilters = () => setFilters({ amenities: [] });
 
-  const search = async () => {
+  const search = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const cleanFilters: Record<string, any> = {};
+      const cleanFilters: Record<string, string | number | boolean | string[]> = {};
       Object.entries(filters).forEach(([key, value]) => {
         if (value === undefined || value === null || value === "") return;
         if (Array.isArray(value) && value.length === 0) return;
@@ -115,18 +115,18 @@ export default function PropietarioHomePage() {
       });
       const rows = Array.isArray(response.data?.data) ? response.data.data : [];
       setList(rows);
-    } catch (e: any) {
-      setError(e?.response?.data?.error || e?.message || "Error al buscar");
+    } catch (e) {
+      const error = e as { response?: { data?: { error?: string } }; message?: string };
+      setError(error?.response?.data?.error || error?.message || "Error al buscar");
       setList([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  useEffect(() => { search(); }, []);
-
-  const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
-  const cap = (s?: string) => s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
+  useEffect(() => {
+    search();
+  }, [search]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30">
@@ -386,18 +386,18 @@ export default function PropietarioHomePage() {
   );
 }
 
-function MetricCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+function MetricCard({ icon, label, value, color }: { icon: React.ReactElement; label: string; value: number; color: string }) {
   const colors = {
     blue: 'from-blue-500 to-blue-600',
     green: 'from-green-500 to-green-600',
     orange: 'from-orange-500 to-orange-600'
   };
-  
+
   return (
     <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
       <div className="flex items-center gap-3">
         <div className={`bg-gradient-to-br ${colors[color as keyof typeof colors]} p-2.5 rounded-lg`}>
-          {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5 text-white" })}
+          {React.cloneElement(icon, { className: "w-5 h-5 text-white" } as React.HTMLAttributes<HTMLElement>)}
         </div>
         <div>
           <p className="text-sm text-gray-600">{label}</p>
@@ -443,7 +443,21 @@ function Checkbox({
   );
 }
 
-function Select({ label, value, onChange, options, placeholder, disabled }: any) {
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled
+}: {
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder?: string;
+  disabled?: boolean;
+}) {
   return (
     <div>
       {label && <label className="text-xs font-semibold text-gray-700 block mb-1">{label}</label>}
@@ -596,7 +610,7 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
   );
 }
 
-function Badge({ icon, label, color }: { icon: React.ReactNode; label: string; color: string }) {
+function Badge({ icon, label, color }: { icon: React.ReactElement; label: string; color: string }) {
   const colors = {
     blue: 'bg-blue-100 text-blue-700 border-blue-300',
     green: 'bg-green-100 text-green-700 border-green-300',
@@ -604,10 +618,10 @@ function Badge({ icon, label, color }: { icon: React.ReactNode; label: string; c
     yellow: 'bg-yellow-100 text-yellow-700 border-yellow-300',
     teal: 'bg-teal-100 text-teal-700 border-teal-300',
   };
-  
+
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium ${colors[color as keyof typeof colors]}`}>
-      {React.cloneElement(icon as React.ReactElement, { className: "w-3 h-3" })}
+      {React.cloneElement(icon, { className: "w-3 h-3" } as React.HTMLAttributes<HTMLElement>)}
       {label}
     </span>
   );
@@ -617,7 +631,15 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
   const cap = (s?: string) => s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
   const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
 
-  const BooleanBadge = ({ value, trueText = 'Sí', falseText = 'No' }: any) => {
+  const BooleanBadge = ({
+    value,
+    trueText = 'Sí',
+    falseText = 'No'
+  }: {
+    value?: boolean;
+    trueText?: string;
+    falseText?: string;
+  }) => {
     if (value === undefined) return null;
     return (
       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
