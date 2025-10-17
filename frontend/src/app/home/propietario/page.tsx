@@ -9,14 +9,13 @@ import {
 } from "lucide-react";
 import React from "react";
 
-// Importar tu API real
 import api from "@/lib/api";
 
-// ============ Tipos ============
 type TenantProfile = {
   id: string;
   tenant_id: string;
   full_name?: string;
+  profile_status?: string;
   city?: string;
   neighborhood?: string;
   budget_min?: number;
@@ -51,19 +50,13 @@ type TenantProfile = {
 };
 
 type Filters = {
-  property_types: string[];
   city?: string;
   neighborhood?: string;
-  budget_min?: number;
-  budget_max?: number;
-  rooms_min?: number;
-  rooms_max?: number;
-  bedroom_min?: number;
-  bedroom_max?: number;
-  bathrooms_min?: number;
-  bathrooms_max?: number;
-  area_min?: number;
-  area_max?: number;
+  rent_cost?: number;
+  bedrooms?: number;
+  rooms?: number;
+  bathrooms?: number;
+  area?: number;
   lease_term_months?: number;
   occupants?: number;
   furnished?: boolean;
@@ -80,15 +73,6 @@ type Filters = {
   amenities: string[];
 };
 
-// ============ Constantes ============
-const PROPERTY_TYPES = [
-  { label: "Departamento", value: "departamento" },
-  { label: "PH", value: "ph" },
-  { label: "Dúplex", value: "duplex" },
-  { label: "Casa", value: "casa" },
-  { label: "Estudio", value: "estudio" },
-];
-
 const AMENITIES = ["balcón", "pileta", "terraza", "gym", "cochera", "laundry"];
 
 const ARGENTINA_LOCATIONS: Record<string, string[]> = {
@@ -97,9 +81,8 @@ const ARGENTINA_LOCATIONS: Record<string, string[]> = {
   'Rosario': ['Centro', 'Pichincha', 'Fisherton']
 };
 
-// ============ Componente Principal ============
 export default function PropietarioHomePage() {
-  const [filters, setFilters] = useState<Filters>({ property_types: [], amenities: [] });
+  const [filters, setFilters] = useState<Filters>({ amenities: [] });
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<TenantProfile[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +95,7 @@ export default function PropietarioHomePage() {
     return ARGENTINA_LOCATIONS[filters.city] || [];
   }, [filters.city]);
 
-  const clearFilters = () => setFilters({ property_types: [], amenities: [] });
+  const clearFilters = () => setFilters({ amenities: [] });
 
   const search = async () => {
     setLoading(true);
@@ -148,7 +131,6 @@ export default function PropietarioHomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
@@ -157,7 +139,7 @@ export default function PropietarioHomePage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Inquilinos Disponibles</h1>
-                <p className="text-gray-600">Encuentra el inquilino perfecto para tu propiedad</p>
+                <p className="text-gray-600">Encuentra inquilinos que se ajusten a tu propiedad</p>
               </div>
             </div>
             <button
@@ -169,13 +151,12 @@ export default function PropietarioHomePage() {
             </button>
           </div>
 
-          {/* Métricas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <MetricCard icon={<Users />} label="Total" value={list.length} color="blue" />
             <MetricCard 
               icon={<BadgeCheck />} 
               label="Verificados" 
-              value={list.filter(p => p.require_verified_landlord).length} 
+              value={list.filter(p => p.profile_status === 'verified').length}
               color="green" 
             />
             <MetricCard 
@@ -188,7 +169,6 @@ export default function PropietarioHomePage() {
         </div>
 
         <div className="flex gap-6">
-          {/* Panel de Filtros */}
           <aside className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-80 flex-shrink-0`}>
             <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 sticky top-6">
               <div className="flex items-center justify-between mb-4">
@@ -202,26 +182,6 @@ export default function PropietarioHomePage() {
               </div>
 
               <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
-                {/* Tipo de Propiedad */}
-                <FilterSection title="Tipo de Propiedad">
-                  {PROPERTY_TYPES.map(pt => (
-                    <Checkbox
-                      key={pt.value}
-                      label={pt.label}
-                      checked={filters.property_types.includes(pt.value)}
-                      onChange={(checked) => {
-                        setFilters(f => ({
-                          ...f,
-                          property_types: checked 
-                            ? [...f.property_types, pt.value]
-                            : f.property_types.filter(t => t !== pt.value)
-                        }));
-                      }}
-                    />
-                  ))}
-                </FilterSection>
-
-                {/* Ubicación */}
                 <FilterSection title="Ubicación">
                   <Select
                     label="Ciudad"
@@ -240,83 +200,60 @@ export default function PropietarioHomePage() {
                   />
                 </FilterSection>
 
-                {/* Presupuesto */}
-                <FilterSection title="Presupuesto">
-                  <RangeInputs
-                    minValue={filters.budget_min}
-                    maxValue={filters.budget_max}
-                    onMinChange={(v) => setFilters(f => ({ ...f, budget_min: v ? Number(v) : undefined }))}
-                    onMaxChange={(v) => setFilters(f => ({ ...f, budget_max: v ? Number(v) : undefined }))}
-                    minPlaceholder="Mínimo"
-                    maxPlaceholder="Máximo"
-                    prefix="$"
+                <FilterSection title="Costo del Alquiler">
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">Precio mensual ($)</label>
+                  <input
+                    type="number"
+                    value={filters.rent_cost || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, rent_cost: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 5000"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </FilterSection>
 
-                {/* Ambientes y Dormitorios */}
-                <FilterSection title="Distribución">
-                  <label className="text-xs font-semibold text-gray-700">Ambientes</label>
-                  <RangeInputs
-                    minValue={filters.rooms_min}
-                    maxValue={filters.rooms_max}
-                    onMinChange={(v) => setFilters(f => ({ ...f, rooms_min: v ? Number(v) : undefined }))}
-                    onMaxChange={(v) => setFilters(f => ({ ...f, rooms_max: v ? Number(v) : undefined }))}
-                    minPlaceholder="Mín"
-                    maxPlaceholder="Máx"
-                  />
-                  
-                  <label className="text-xs font-semibold text-gray-700 mt-2">Dormitorios</label>
-                  <RangeInputs
-                    minValue={filters.bedroom_min}
-                    maxValue={filters.bedroom_max}
-                    onMinChange={(v) => setFilters(f => ({ ...f, bedroom_min: v ? Number(v) : undefined }))}
-                    onMaxChange={(v) => setFilters(f => ({ ...f, bedroom_max: v ? Number(v) : undefined }))}
-                    minPlaceholder="Mín"
-                    maxPlaceholder="Máx"
-                  />
-                  
-                  <label className="text-xs font-semibold text-gray-700 mt-2">Baños</label>
-                  <RangeInputs
-                    minValue={filters.bathrooms_min}
-                    maxValue={filters.bathrooms_max}
-                    onMinChange={(v) => setFilters(f => ({ ...f, bathrooms_min: v ? Number(v) : undefined }))}
-                    onMaxChange={(v) => setFilters(f => ({ ...f, bathrooms_max: v ? Number(v) : undefined }))}
-                    minPlaceholder="Mín"
-                    maxPlaceholder="Máx"
-                  />
-                </FilterSection>
-
-                {/* Características */}
                 <FilterSection title="Características">
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Dormitorios</label>
+                  <input
+                    type="number"
+                    value={filters.bedrooms || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, bedrooms: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 2"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Ambientes</label>
+                  <input
+                    type="number"
+                    value={filters.rooms || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, rooms: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 3"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Baños</label>
+                  <input
+                    type="number"
+                    value={filters.bathrooms || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, bathrooms: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 1"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Área (m²)</label>
+                  <input
+                    type="number"
+                    value={filters.area || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, area: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 60"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </FilterSection>
+
+                <FilterSection title="Amenidades">
                   <Checkbox 
                     label="Amoblado" 
                     checked={!!filters.furnished} 
                     onChange={(c) => setFilters(f => ({ ...f, furnished: c ? true : undefined }))} 
-                  />
-                  <Checkbox 
-                    label="Acepta mascotas" 
-                    checked={!!filters.pets_allowed} 
-                    onChange={(c) => setFilters(f => ({ ...f, pets_allowed: c ? true : undefined }))} 
-                  />
-                  <Checkbox 
-                    label="Fumadores" 
-                    checked={!!filters.smokers_allowed} 
-                    onChange={(c) => setFilters(f => ({ ...f, smokers_allowed: c ? true : undefined }))} 
-                  />
-                  <Checkbox 
-                    label="Con niños" 
-                    checked={!!filters.children} 
-                    onChange={(c) => setFilters(f => ({ ...f, children: c ? true : undefined }))} 
-                  />
-                  <Checkbox 
-                    label="Estudiantes" 
-                    checked={!!filters.students} 
-                    onChange={(c) => setFilters(f => ({ ...f, students: c ? true : undefined }))} 
-                  />
-                  <Checkbox 
-                    label="Necesita cochera" 
-                    checked={!!filters.parking_needed} 
-                    onChange={(c) => setFilters(f => ({ ...f, parking_needed: c ? true : undefined }))} 
                   />
                   <Checkbox 
                     label="Balcón" 
@@ -343,29 +280,57 @@ export default function PropietarioHomePage() {
                     checked={!!filters.security} 
                     onChange={(c) => setFilters(f => ({ ...f, security: c ? true : undefined }))} 
                   />
+                  <Checkbox 
+                    label="Cochera" 
+                    checked={!!filters.parking_needed} 
+                    onChange={(c) => setFilters(f => ({ ...f, parking_needed: c ? true : undefined }))} 
+                  />
                 </FilterSection>
 
-                {/* Amenidades */}
-                <FilterSection title="Amenidades">
-                  {AMENITIES.map(a => (
-                    <Checkbox
-                      key={a}
-                      label={cap(a)}
-                      checked={filters.amenities.includes(a)}
-                      onChange={(checked) => {
-                        setFilters(f => ({
-                          ...f,
-                          amenities: checked 
-                            ? [...f.amenities, a]
-                            : f.amenities.filter(am => am !== a)
-                        }));
-                      }}
-                    />
-                  ))}
+                <FilterSection title="Preferencias de Inquilinos">
+                  <Checkbox 
+                    label="Acepta mascotas" 
+                    checked={!!filters.pets_allowed} 
+                    onChange={(c) => setFilters(f => ({ ...f, pets_allowed: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Permite fumadores" 
+                    checked={!!filters.smokers_allowed} 
+                    onChange={(c) => setFilters(f => ({ ...f, smokers_allowed: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Permite niños" 
+                    checked={!!filters.children} 
+                    onChange={(c) => setFilters(f => ({ ...f, children: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Acepta estudiantes" 
+                    checked={!!filters.students} 
+                    onChange={(c) => setFilters(f => ({ ...f, students: c ? true : undefined }))} 
+                  />
+                </FilterSection>
+
+                <FilterSection title="Otros Filtros">
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Duración del contrato (meses)</label>
+                  <input
+                    type="number"
+                    value={filters.lease_term_months || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, lease_term_months: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 12"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Número de ocupantes</label>
+                  <input
+                    type="number"
+                    value={filters.occupants || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, occupants: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 2"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
                 </FilterSection>
               </div>
 
-              {/* Botones */}
               <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
                 <button
                   onClick={search}
@@ -385,7 +350,6 @@ export default function PropietarioHomePage() {
             </div>
           </aside>
 
-          {/* Lista de Perfiles */}
           <main className="flex-1 min-w-0">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
@@ -412,7 +376,6 @@ export default function PropietarioHomePage() {
         </div>
       </div>
 
-      {/* Modal de Detalle */}
       {detailProfile && (
         <ProfileDetailModal 
           profile={detailProfile} 
@@ -422,8 +385,6 @@ export default function PropietarioHomePage() {
     </div>
   );
 }
-
-// ============ Componentes Auxiliares ============
 
 function MetricCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   const colors = {
@@ -501,27 +462,6 @@ function Select({ label, value, onChange, options, placeholder, disabled }: any)
   );
 }
 
-function RangeInputs({ minValue, maxValue, onMinChange, onMaxChange, minPlaceholder, maxPlaceholder, prefix }: any) {
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      <input
-        type="number"
-        value={minValue || ''}
-        onChange={(e) => onMinChange(e.target.value)}
-        placeholder={minPlaceholder}
-        className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-      />
-      <input
-        type="number"
-        value={maxValue || ''}
-        onChange={(e) => onMaxChange(e.target.value)}
-        placeholder={maxPlaceholder}
-        className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-      />
-    </div>
-  );
-}
-
 function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onViewDetail: () => void }) {
   const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
   const cap = (s?: string) => s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
@@ -532,9 +472,10 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
     .slice(0, 2)
     .join('');
 
+  const isVerified = profile.profile_status && profile.profile_status === 'verified';
+
   return (
     <div className="bg-white rounded-2xl shadow-md border border-gray-200 hover:shadow-xl hover:border-orange-200 transition-all overflow-hidden">
-      {/* Header */}
       <div className="bg-gradient-to-r from-orange-50 to-orange-100/50 px-6 py-4 border-b border-orange-200">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -544,9 +485,13 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-lg text-gray-900">{profile.full_name || 'Inquilino'}</h3>
-                {profile.require_verified_landlord && (
+                {isVerified ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                    <BadgeCheck className="w-3 h-3" /> Verificado
+                    <Check className="w-3 h-3" /> Verificado
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                    <X className="w-3 h-3" /> No verificado
                   </span>
                 )}
               </div>
@@ -564,58 +509,53 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
         </div>
       </div>
 
-      {/* Contenido */}
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* Tipo de Propiedad */}
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border border-purple-200">
-            <div className="flex items-center gap-2 mb-2">
-              <Home className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-semibold text-purple-700">Tipo de Propiedad</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {profile.property_types && profile.property_types.length > 0 ? (
-                profile.property_types.map(t => (
-                  <span key={t} className="px-2 py-1 bg-purple-200 text-purple-800 rounded-lg text-xs font-medium">
-                    {cap(t)}
-                  </span>
-                ))
-              ) : (
-                <span className="text-purple-900 text-sm">No especificado</span>
-              )}
-            </div>
-          </div>
-
-          {/* Presupuesto */}
           <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-4 border border-green-200">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-green-600" />
               <span className="text-xs font-semibold text-green-700">Presupuesto</span>
             </div>
-            <p className="text-green-900 font-bold text-lg">
-              ${nfAR.format(profile.budget_min || 0)} - ${nfAR.format(profile.budget_max || 0)}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-xs text-green-600">Mínimo</span>
+                <p className="text-green-900 font-bold text-lg">${nfAR.format(profile.budget_min || 0)}</p>
+              </div>
+              <div>
+                <span className="text-xs text-green-600">Máximo</span>
+                <p className="text-green-900 font-bold text-lg">${nfAR.format(profile.budget_max || 0)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-semibold text-blue-700">Ocupantes</span>
+            </div>
+            <p className="text-blue-900 font-bold text-lg">
+              {profile.occupants ? `${profile.occupants} persona${profile.occupants > 1 ? 's' : ''}` : 'No especificado'}
             </p>
           </div>
         </div>
 
-        {/* Detalles Rápidos */}
         <div className="flex items-center gap-4 text-sm text-gray-700 mb-4 flex-wrap">
-          {(profile.rooms_min || profile.rooms_max) && (
-            <span className="flex items-center gap-1">
-              <Home className="w-4 h-4" />
-              {profile.rooms_min || 0}-{profile.rooms_max || '∞'} amb
-            </span>
-          )}
           {(profile.bedroom_min || profile.bedroom_max) && (
             <span className="flex items-center gap-1">
               <Bed className="w-4 h-4" />
-              {profile.bedroom_min || 0}-{profile.bedroom_max || '∞'} dorm
+              {profile.bedroom_min || 0} - {profile.bedroom_max || '∞'} dorm
+            </span>
+          )}
+          {(profile.rooms_min || profile.rooms_max) && (
+            <span className="flex items-center gap-1">
+              <Home className="w-4 h-4" />
+              {profile.rooms_min || 0} - {profile.rooms_max || '∞'} amb
             </span>
           )}
           {(profile.bathrooms_min || profile.bathrooms_max) && (
             <span className="flex items-center gap-1">
               <Bath className="w-4 h-4" />
-              {profile.bathrooms_min || 0}-{profile.bathrooms_max || '∞'} baños
+              {profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'} baño
             </span>
           )}
           {profile.lease_term_months && (
@@ -626,7 +566,6 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
           )}
         </div>
 
-        {/* Características Destacadas */}
         <div className="flex flex-wrap gap-2 mb-4">
           {profile.furnished && <Badge icon={<Sparkles />} label="Amoblado" color="blue" />}
           {profile.pets_allowed && <Badge icon={<Check />} label="Mascotas" color="green" />}
@@ -635,7 +574,6 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
           {profile.terrace && <Badge icon={<Waves />} label="Terraza" color="teal" />}
         </div>
 
-        {/* Botones de Acción */}
         <div className="grid grid-cols-3 gap-3">
           <button
             onClick={onViewDetail}
@@ -691,10 +629,10 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
     );
   };
 
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col">
-        {/* Header */}
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-lg">
@@ -710,9 +648,7 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
           </button>
         </div>
 
-        {/* Contenido con scroll */}
         <div className="p-6 space-y-5 overflow-y-auto">
-          {/* Información Personal */}
           <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-blue-600" />
@@ -732,7 +668,6 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
             </div>
           </div>
 
-          {/* Ubicación */}
           {(profile.city || profile.neighborhood) && (
             <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200">
               <div className="flex items-center gap-2 mb-4">
@@ -756,7 +691,6 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
             </div>
           )}
 
-          {/* Economía */}
           <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200">
             <div className="flex items-center gap-2 mb-4">
               <DollarSign className="w-5 h-5 text-green-600" />
@@ -787,25 +721,12 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
             </div>
           </div>
 
-          {/* Propiedad Buscada */}
           <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-5 border border-orange-200">
             <div className="flex items-center gap-2 mb-4">
               <Building2 className="w-5 h-5 text-orange-600" />
               <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Propiedad Buscada</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profile.property_types && profile.property_types.length > 0 && (
-                <div className="md:col-span-2">
-                  <span className="text-orange-700 font-semibold text-sm block mb-2">Tipos:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.property_types.map(t => (
-                      <span key={t} className="px-3 py-1.5 bg-orange-200 text-orange-800 rounded-lg text-xs font-medium">
-                        {cap(t)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
               {(profile.bedroom_min || profile.bedroom_max) && (
                 <div className="flex items-center gap-2">
                   <Bed className="w-4 h-4 text-orange-600" />
@@ -843,7 +764,6 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
             </div>
           </div>
 
-          {/* Preferencias del Inquilino */}
           <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-5 border border-amber-200">
             <div className="flex items-center gap-2 mb-4">
               <Shield className="w-5 h-5 text-amber-600" />
@@ -891,24 +811,12 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
             </div>
           </div>
 
-          {/* Comodidades */}
           {(profile.amenities?.length || profile.balcony || profile.terrace || profile.laundry || profile.security || profile.elevator) && (
             <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-5 border border-teal-200">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-teal-600" />
                 <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Comodidades Deseadas</h3>
               </div>
-              {profile.amenities && profile.amenities.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex flex-wrap gap-2">
-                    {profile.amenities.map(a => (
-                      <span key={a} className="px-3 py-1.5 bg-teal-200 text-teal-800 rounded-lg text-xs font-medium">
-                        {cap(a)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {profile.balcony && (
                   <div className="flex items-center gap-2">
@@ -944,7 +852,6 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
             </div>
           )}
 
-          {/* Notas adicionales */}
           {(profile.metadata?.preferencias || profile.metadata?.notas) && (
             <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border border-slate-200">
               <div className="flex items-center gap-2 mb-4">
@@ -968,7 +875,6 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
             </div>
           )}
 
-          {/* Fecha de creación */}
           {profile.created_at && (
             <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
               Perfil creado el {new Date(profile.created_at).toLocaleDateString('es-ES', {
@@ -980,7 +886,6 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
           )}
         </div>
 
-        {/* Footer con acciones */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex-shrink-0">
           <div className="grid grid-cols-3 gap-3">
             <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold">

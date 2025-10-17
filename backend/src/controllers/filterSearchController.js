@@ -6,7 +6,7 @@ const GetAllSearch = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
@@ -19,11 +19,11 @@ const GetAllSearch = async (req, res) => {
       });
     }
 
-    // Aplanar los datos
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
     
     res.json({ 
@@ -45,7 +45,7 @@ const FilterByType = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .contains('property_types', [req.params.type])
     .eq('status', 'activo')
@@ -62,7 +62,8 @@ const FilterByType = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -84,7 +85,7 @@ const FilterByRoomsRange = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .lte('rooms_min', req.params.max)
     .gte('rooms_max', req.params.min)
@@ -102,7 +103,8 @@ const FilterByRoomsRange = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -126,7 +128,7 @@ const FilterByBedroomsRange = async (req, res) => {
       .from('tenant_search_profiles')
       .select(`
         *,
-        profile:profiles(status, full_name)
+        profile:profiles(id, status, full_name, is_banned)
       `)
       .lte('bedroom_min', max)
       .gte('bedroom_max', min)
@@ -139,7 +141,8 @@ const FilterByBedroomsRange = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ success:true, data: flattenedData, count: flattenedData.length });
@@ -154,7 +157,7 @@ const FilterByBathrooms = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .lte('bathrooms_min', req.params.max)
     .gte('bathrooms_max', req.params.min)
@@ -172,7 +175,8 @@ const FilterByBathrooms = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -196,7 +200,7 @@ const FilterByPriceRange = async (req, res) => {
       .from('tenant_search_profiles')
       .select(`
         *,
-        profile:profiles(status, full_name)
+        profile:profiles(id, status, full_name, is_banned)
       `)
       .lte('budget_min', max)
       .gte('budget_max', min)
@@ -209,7 +213,8 @@ const FilterByPriceRange = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ success:true, data: flattenedData, count: flattenedData.length });
@@ -224,7 +229,7 @@ const FilterByLeaseDuration = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('lease_term_months', req.params.duration)
     .eq('status', 'activo')
@@ -241,7 +246,8 @@ const FilterByLeaseDuration = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -264,7 +270,7 @@ const FilterBychildren = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('children', has_children)
     .eq('status', 'activo')
@@ -281,7 +287,8 @@ const FilterBychildren = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -304,7 +311,7 @@ const FilterByFurnished = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('furnished', is_furnished)
     .eq('status', 'activo')
@@ -321,7 +328,8 @@ const FilterByFurnished = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -344,7 +352,7 @@ const FilterByPets = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('pets_allowed', allows_pets)
     .eq('status', 'activo')
@@ -361,7 +369,8 @@ const FilterByPets = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
  
     res.json({ 
@@ -384,7 +393,7 @@ const FilterByAmenities = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .contains('amenities', amenities)
     .eq('status', 'activo')
@@ -401,7 +410,8 @@ const FilterByAmenities = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -424,7 +434,7 @@ const FilterBySmoking = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('smokers_allowed', allows_smoking)
     .eq('status', 'activo')
@@ -441,7 +451,8 @@ const FilterBySmoking = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -463,7 +474,7 @@ const FilterByCities = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('city', req.params.city)
     .eq('status', 'activo')
@@ -480,7 +491,8 @@ const FilterByCities = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -502,7 +514,7 @@ const FilterByNeighborhood = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('neighborhood', req.params.neighborhood)
     .eq('status', 'activo')
@@ -519,7 +531,8 @@ const FilterByNeighborhood = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -542,7 +555,7 @@ const FilterByBalcony = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('balcony', has_balcony)
     .eq('status', 'activo')
@@ -559,7 +572,8 @@ const FilterByBalcony = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -582,7 +596,7 @@ const FilterByTerrace = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('terrace', has_terrace)
     .eq('status', 'activo')
@@ -599,7 +613,8 @@ const FilterByTerrace = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -621,7 +636,7 @@ const FliterByOccupants = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('occupants', req.params.occupants)
     .eq('status', 'activo')
@@ -638,7 +653,8 @@ const FliterByOccupants = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -660,7 +676,7 @@ const FilterByVerificatedUser = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('require_verified_landlord', true)
     .eq('status', 'activo')
@@ -677,7 +693,8 @@ const FilterByVerificatedUser = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -699,7 +716,7 @@ const FilterByElevator = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('elevator', true)
     .eq('status', 'activo')
@@ -716,7 +733,8 @@ const FilterByElevator = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -738,7 +756,7 @@ const FilterBySecurity = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('security', true)
     .eq('status', 'activo')
@@ -755,7 +773,8 @@ const FilterBySecurity = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -777,7 +796,7 @@ const FilterByArea = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .lte('area_max', req.params.max)
     .gte('area_min', req.params.min)
@@ -795,7 +814,8 @@ const FilterByArea = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -818,7 +838,7 @@ const FilterByStudents = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('students', are_students)
     .eq('status', 'activo')
@@ -835,7 +855,8 @@ const FilterByStudents = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -858,7 +879,7 @@ const FilterByParkingNeeded = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('parking_needed', needs_parking)
     .eq('status', 'activo')
@@ -875,7 +896,8 @@ const FilterByParkingNeeded = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -898,7 +920,7 @@ const FilterByLaundry = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(status, full_name)
+      profile:profiles(id, status, full_name, is_banned)
     `)
     .eq('laundry', has_laundry)
     .eq('status', 'activo')
@@ -915,7 +937,8 @@ const FilterByLaundry = async (req, res) => {
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     res.json({ 
@@ -933,18 +956,16 @@ const FilterByLaundry = async (req, res) => {
 
 const AdvancedSearch = async (req, res) => {
   try {
-    console.log("Filtros recibidos:", req.body);
+    console.log("Filtros recibidos del propietario:", req.body);
     const filters = req.body;
 
-    // JOIN con profiles para traer el nombre y status de verificación
     let query = supabase
       .from('tenant_search_profiles')
       .select(`
         *,
-        profile:profiles(status, full_name)
+        profile:profiles(id, status, full_name, is_banned)
       `);
 
-    // ========== FILTROS DE UBICACIÓN ==========
     if (filters.city && filters.city !== '') {
       query = query.eq('city', filters.city);
     }
@@ -952,133 +973,96 @@ const AdvancedSearch = async (req, res) => {
       query = query.eq('neighborhood', filters.neighborhood);
     }
 
-    // ========== FILTROS DE TIPO DE PROPIEDAD ==========
-    if (filters.property_types && filters.property_types.length > 0) {
-      query = query.contains('property_types', filters.property_types);
-    }
-
-    // ========== FILTROS DE RANGO DE PRECIO ==========
-    if (filters.budget_min !== undefined) {
-      query = query.gte('budget_max', filters.budget_min);
-    }
-    if (filters.budget_max !== undefined) {
-      query = query.lte('budget_min', filters.budget_max);
-    }
-
-    // ========== FILTROS DE HABITACIONES ==========
-    if (filters.rooms_min !== undefined && filters.rooms_max !== undefined) {
+    if (filters.rent_cost !== undefined && filters.rent_cost !== null) {
       query = query
-        .lte('rooms_min', filters.rooms_max)
-        .gte('rooms_max', filters.rooms_min);
-    } else if (filters.rooms_min !== undefined) {
-      query = query.gte('rooms_max', filters.rooms_min);
-    } else if (filters.rooms_max !== undefined) {
-      query = query.lte('rooms_min', filters.rooms_max);
+        .lte('budget_min', filters.rent_cost)
+        .gte('budget_max', filters.rent_cost);
     }
 
-    // ========== FILTROS DE DORMITORIOS ==========
-    if (filters.bedroom_min !== undefined && filters.bedroom_max !== undefined) {
+    if (filters.bedrooms !== undefined && filters.bedrooms !== null) {
       query = query
-        .lte('bedroom_min', filters.bedroom_max)
-        .gte('bedroom_max', filters.bedroom_min);
-    } else if (filters.bedroom_min !== undefined) {
-      query = query.gte('bedroom_max', filters.bedroom_min);
-    } else if (filters.bedroom_max !== undefined) {
-      query = query.lte('bedroom_min', filters.bedroom_max);
+        .lte('bedroom_min', filters.bedrooms)
+        .gte('bedroom_max', filters.bedrooms);
     }
 
-    // ========== FILTROS DE BAÑOS ==========
-    if (filters.bathrooms_min !== undefined && filters.bathrooms_max !== undefined) {
+    if (filters.rooms !== undefined && filters.rooms !== null) {
       query = query
-        .lte('bathrooms_min', filters.bathrooms_max)
-        .gte('bathrooms_max', filters.bathrooms_min);
-    } else if (filters.bathrooms_min !== undefined) {
-      query = query.gte('bathrooms_max', filters.bathrooms_min);
-    } else if (filters.bathrooms_max !== undefined) {
-      query = query.lte('bathrooms_min', filters.bathrooms_max);
+        .lte('rooms_min', filters.rooms)
+        .gte('rooms_max', filters.rooms);
     }
 
-    // ========== FILTROS DE ÁREA ==========
-    if (filters.area_min !== undefined) {
-      query = query.gte('area_max', filters.area_min);
-    }
-    if (filters.area_max !== undefined) {
-      query = query.lte('area_min', filters.area_max);
+    if (filters.bathrooms !== undefined && filters.bathrooms !== null) {
+      query = query
+        .lte('bathrooms_min', filters.bathrooms)
+        .gte('bathrooms_max', filters.bathrooms);
     }
 
-    // ========== FILTROS BOOLEANOS ==========
-    if (filters.furnished !== undefined) {
-      query = query.eq('furnished', filters.furnished);
-    }
-    if (filters.pets_allowed !== undefined) {
-      query = query.eq('pets_allowed', filters.pets_allowed);
-    }
-    if (filters.smokers_allowed !== undefined) {
-      query = query.eq('smokers_allowed', filters.smokers_allowed);
-    }
-    if (filters.children !== undefined) {
-      query = query.eq('children', filters.children);
-    }
-    if (filters.students !== undefined) {
-      query = query.eq('students', filters.students);
-    }
-    if (filters.parking_needed !== undefined) {
-      query = query.eq('parking_needed', filters.parking_needed);
-    }
-    if (filters.balcony !== undefined) {
-      query = query.eq('balcony', filters.balcony);
-    }
-    if (filters.terrace !== undefined) {
-      query = query.eq('terrace', filters.terrace);
-    }
-    if (filters.laundry !== undefined) {
-      query = query.eq('laundry', filters.laundry);
-    }
-    if (filters.elevator !== undefined) {
-      query = query.eq('elevator', filters.elevator);
-    }
-    if (filters.security !== undefined) {
-      query = query.eq('security', filters.security);
+    if (filters.area !== undefined && filters.area !== null) {
+      query = query
+        .lte('area_min', filters.area)
+        .gte('area_max', filters.area);
     }
 
-    // ========== FILTROS DE AMENITIES ==========
+    if (filters.furnished === true) {
+      query = query.eq('furnished', true);
+    }
+
+    if (filters.pets_allowed === true) {
+      query = query.eq('pets_allowed', true);
+    }
+
+    if (filters.smokers_allowed === true) {
+      query = query.eq('smokers_allowed', true);
+    }
+
+    if (filters.children === true) {
+      query = query.eq('children', true);
+    }
+
+    if (filters.students === true) {
+      query = query.eq('students', true);
+    }
+
+    if (filters.parking_needed === true) {
+      query = query.eq('parking_needed', true);
+    }
+
+    if (filters.balcony === true) {
+      query = query.eq('balcony', true);
+    }
+
+    if (filters.terrace === true) {
+      query = query.eq('terrace', true);
+    }
+
+    if (filters.laundry === true) {
+      query = query.eq('laundry', true);
+    }
+
+    if (filters.elevator === true) {
+      query = query.eq('elevator', true);
+    }
+
+    if (filters.security === true) {
+      query = query.eq('security', true);
+    }
+
     if (filters.amenities && filters.amenities.length > 0) {
       query = query.contains('amenities', filters.amenities);
     }
 
-    // ========== FILTROS NUMÉRICOS EXACTOS ==========
-    if (filters.lease_term_months !== undefined) {
+    if (filters.lease_term_months !== undefined && filters.lease_term_months !== null) {
       query = query.eq('lease_term_months', filters.lease_term_months);
     }
-    if (filters.occupants !== undefined) {
+
+    if (filters.occupants !== undefined && filters.occupants !== null) {
       query = query.eq('occupants', filters.occupants);
     }
 
-    // ========== FILTRO DE PERFIL VERIFICADO ==========
-    if (filters.require_verified_landlord === true) {
-      query = query.eq('profile.status', 'verified');
-    }
+    query = query.eq('status', 'activo');
+    query = query.eq('visibility', 'publico');
+    query = query.eq('is_banned', false);
 
-    // ========== FILTROS DE ESTADO Y VISIBILIDAD ==========
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    } else {
-      query = query.eq('status', 'activo');
-    }
-
-    if (filters.visibility) {
-      query = query.eq('visibility', filters.visibility);
-    } else {
-      query = query.eq('visibility', 'publico');
-    }
-
-    if (filters.is_banned !== undefined) {
-      query = query.eq('is_banned', filters.is_banned);
-    } else {
-      query = query.eq('is_banned', false);
-    }
-
-    // ========== EJECUTAR CONSULTA ==========
     const { data, error } = await query;
 
     if (error) {
@@ -1089,11 +1073,11 @@ const AdvancedSearch = async (req, res) => {
       });
     }
 
-    // Aplanar los datos para incluir full_name directamente
     const flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
-      profile_status: item.profile?.status
+      profile_status: item.profile?.status,
+      is_banned: item.profile?.is_banned
     }));
 
     console.log(`Resultados encontrados: ${flattenedData.length}`);
@@ -1102,7 +1086,7 @@ const AdvancedSearch = async (req, res) => {
       success: true,
       data: flattenedData,
       count: flattenedData.length,
-      filters_applied: Object.keys(filters).length
+      filters_applied: Object.keys(filters).filter(k => filters[k] !== undefined && filters[k] !== null).length
     });
 
   } catch (error) {
@@ -1114,31 +1098,30 @@ const AdvancedSearch = async (req, res) => {
   }
 };
 
-  
-  module.exports = { 
-    GetAllSearch,
-    FilterByType,
-    FilterByRoomsRange,
-    FilterByBathrooms,
-    FilterByPriceRange,
-    FilterByLeaseDuration,
-    FilterBychildren,
-    FilterByFurnished,
-    FilterByPets,
-    FilterByAmenities,
-    FilterBySmoking,
-    FilterByBedroomsRange,
-    FilterByCities,
-    FilterByNeighborhood,
-    FilterByBalcony,
-    FilterByTerrace,
-    FliterByOccupants,
-    FilterByVerificatedUser,
-    FilterBySecurity,
-    FilterByElevator,
-    FilterByArea,
-    FilterByStudents,
-    FilterByParkingNeeded,
-    FilterByLaundry,
-    AdvancedSearch
-  };
+module.exports = { 
+  GetAllSearch,
+  FilterByType,
+  FilterByRoomsRange,
+  FilterByBathrooms,
+  FilterByPriceRange,
+  FilterByLeaseDuration,
+  FilterBychildren,
+  FilterByFurnished,
+  FilterByPets,
+  FilterByAmenities,
+  FilterBySmoking,
+  FilterByBedroomsRange,
+  FilterByCities,
+  FilterByNeighborhood,
+  FilterByBalcony,
+  FilterByTerrace,
+  FliterByOccupants,
+  FilterByVerificatedUser,
+  FilterBySecurity,
+  FilterByElevator,
+  FilterByArea,
+  FilterByStudents,
+  FilterByParkingNeeded,
+  FilterByLaundry,
+  AdvancedSearch
+};
