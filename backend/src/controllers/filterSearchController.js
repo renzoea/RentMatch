@@ -963,7 +963,7 @@ const AdvancedSearch = async (req, res) => {
       .from('tenant_search_profiles')
       .select(`
         *,
-        profile:profiles(id, status, full_name, is_banned)
+        profile:profiles(id, status, full_name, email, phone, is_banned)
       `);
 
     if (filters.city && filters.city !== '') {
@@ -1001,6 +1001,10 @@ const AdvancedSearch = async (req, res) => {
       query = query
         .lte('area_min', filters.area)
         .gte('area_max', filters.area);
+    }
+
+    if (filters.property_type && filters.property_type !== '' && filters.property_type !== 'todos') {
+      query = query.contains('property_types', [filters.property_type]);
     }
 
     if (filters.furnished === true) {
@@ -1073,12 +1077,19 @@ const AdvancedSearch = async (req, res) => {
       });
     }
 
-    const flattenedData = data.map(item => ({
+    let flattenedData = data.map(item => ({
       ...item,
       full_name: item.profile?.full_name,
+      email: item.profile?.email,
+      phone: item.profile?.phone,
       profile_status: item.profile?.status,
       is_banned: item.profile?.is_banned
     }));
+
+    // Filtrar por perfiles verificados si se solicita
+    if (filters.only_verified === true) {
+      flattenedData = flattenedData.filter(item => item.profile_status === 'verified');
+    }
 
     console.log(`Resultados encontrados: ${flattenedData.length}`);
 

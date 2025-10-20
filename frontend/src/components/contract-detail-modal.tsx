@@ -182,7 +182,8 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit, onSi
     const token = localStorage.getItem('access_token')
     try {
         const res = await api.post(`/api/contracts/my/${id}/sign`, {}, { headers: { Authorization: `Bearer ${token}` } })
-        localStorage.setItem('contractId', id) // <-- Guarda el id aquí
+        localStorage.setItem('contractId', id)
+        localStorage.setItem('envelopeId', res.data.envelopeId)
         window.location.href = res.data.url
     } catch {
         setError('Error al iniciar la firma del contrato')

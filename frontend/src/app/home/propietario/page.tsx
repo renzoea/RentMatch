@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { 
-  Filter, Home, MapPin, DollarSign, BadgeCheck, Loader2, 
-  Eye, Mail, MessageCircle, X, Check, Bed, Bath, 
+import {
+  Filter, Home, MapPin, DollarSign, BadgeCheck, Loader2,
+  Eye, Mail, MessageCircle, X, Check, Bed, Bath,
   Maximize, Calendar, Users, Sparkles, Building2, Car,
-  Shield, Sun, Waves, Wind, Lock, MoveUp, StickyNote
+  Shield, Sun, Waves, Wind, Lock, MoveUp, StickyNote, AlertCircle
 } from "lucide-react";
 import React from "react";
 
@@ -15,6 +15,8 @@ type TenantProfile = {
   id: string;
   tenant_id: string;
   full_name?: string;
+  email?: string;
+  phone?: string;
   profile_status?: string;
   city?: string;
   neighborhood?: string;
@@ -52,6 +54,7 @@ type TenantProfile = {
 type Filters = {
   city?: string;
   neighborhood?: string;
+  property_type?: string;
   rent_cost?: number;
   bedrooms?: number;
   rooms?: number;
@@ -70,10 +73,19 @@ type Filters = {
   laundry?: boolean;
   elevator?: boolean;
   security?: boolean;
+  only_verified?: boolean;
   amenities: string[];
 };
 
 // const AMENITIES = ["balcón", "pileta", "terraza", "gym", "cochera", "laundry"];
+
+const PROPERTY_TYPES: Record<string, string> = {
+  'departamento': 'Departamento',
+  'ph': 'PH',
+  'duplex': 'Duplex',
+  'casa': 'Casa',
+  'estudio': 'Estudio'
+};
 
 const ARGENTINA_LOCATIONS: Record<string, string[]> = {
   'Buenos Aires': ['Palermo', 'Recoleta', 'Belgrano', 'Caballito', 'Villa Crespo'],
@@ -88,6 +100,9 @@ export default function PropietarioHomePage() {
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [detailProfile, setDetailProfile] = useState<TenantProfile | null>(null);
+  const [contactModal, setContactModal] = useState<{ type: 'whatsapp' | 'email'; profile: TenantProfile } | null>(null);
+  const [landlordStatus, setLandlordStatus] = useState<string | null>(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const cities = useMemo(() => Object.keys(ARGENTINA_LOCATIONS).sort(), []);
   const neighborhoods = useMemo(() => {
@@ -128,9 +143,31 @@ export default function PropietarioHomePage() {
     search();
   }, [search]);
 
+  useEffect(() => {
+    // Obtener el status del propietario desde localStorage
+    const userDataString = localStorage.getItem('user');
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString);
+        setLandlordStatus(userData?.status || null);
+      } catch (error) {
+        console.error('Error al parsear datos del usuario:', error);
+        setLandlordStatus(null);
+      }
+    }
+  }, []);
+
+  const handleContactClick = (type: 'whatsapp' | 'email', profile: TenantProfile) => {
+    if (landlordStatus !== 'verified') {
+      setShowVerificationModal(true);
+      return;
+    }
+    setContactModal({ type, profile });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
@@ -197,6 +234,17 @@ export default function PropietarioHomePage() {
                     options={['', ...neighborhoods]}
                     placeholder="Todos"
                     disabled={!filters.city}
+                  />
+                </FilterSection>
+
+                <FilterSection title="Tipo de Propiedad">
+                  <Select
+                    label="Tipo"
+                    value={filters.property_type || ''}
+                    onChange={(v) => setFilters(f => ({ ...f, property_type: v || undefined }))}
+                    options={['', ...Object.keys(PROPERTY_TYPES)]}
+                    placeholder="Todos los tipos"
+                    renderOption={(value) => value ? PROPERTY_TYPES[value] : 'Todos los tipos'}
                   />
                 </FilterSection>
 
@@ -288,30 +336,36 @@ export default function PropietarioHomePage() {
                 </FilterSection>
 
                 <FilterSection title="Preferencias de Inquilinos">
-                  <Checkbox 
-                    label="Acepta mascotas" 
-                    checked={!!filters.pets_allowed} 
-                    onChange={(c) => setFilters(f => ({ ...f, pets_allowed: c ? true : undefined }))} 
+                  <Checkbox
+                    label="Acepta mascotas"
+                    checked={!!filters.pets_allowed}
+                    onChange={(c) => setFilters(f => ({ ...f, pets_allowed: c ? true : undefined }))}
                   />
-                  <Checkbox 
-                    label="Permite fumadores" 
-                    checked={!!filters.smokers_allowed} 
-                    onChange={(c) => setFilters(f => ({ ...f, smokers_allowed: c ? true : undefined }))} 
+                  <Checkbox
+                    label="Permite fumadores"
+                    checked={!!filters.smokers_allowed}
+                    onChange={(c) => setFilters(f => ({ ...f, smokers_allowed: c ? true : undefined }))}
                   />
-                  <Checkbox 
-                    label="Permite niños" 
-                    checked={!!filters.children} 
-                    onChange={(c) => setFilters(f => ({ ...f, children: c ? true : undefined }))} 
+                  <Checkbox
+                    label="Permite niños"
+                    checked={!!filters.children}
+                    onChange={(c) => setFilters(f => ({ ...f, children: c ? true : undefined }))}
                   />
-                  <Checkbox 
-                    label="Acepta estudiantes" 
-                    checked={!!filters.students} 
-                    onChange={(c) => setFilters(f => ({ ...f, students: c ? true : undefined }))} 
+                  <Checkbox
+                    label="Acepta estudiantes"
+                    checked={!!filters.students}
+                    onChange={(c) => setFilters(f => ({ ...f, students: c ? true : undefined }))}
                   />
                 </FilterSection>
 
                 <FilterSection title="Otros Filtros">
-                  <label className="text-xs font-semibold text-gray-700 block mb-2">Duración del contrato (meses)</label>
+                  <Checkbox
+                    label="Solo perfiles verificados"
+                    checked={!!filters.only_verified}
+                    onChange={(c) => setFilters(f => ({ ...f, only_verified: c ? true : undefined }))}
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2 mt-3">Duración del contrato (meses)</label>
                   <input
                     type="number"
                     value={filters.lease_term_months || ''}
@@ -364,10 +418,11 @@ export default function PropietarioHomePage() {
             ) : (
               <div className="space-y-4">
                 {list.map(profile => (
-                  <ProfileCard 
-                    key={profile.id} 
-                    profile={profile} 
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
                     onViewDetail={() => setDetailProfile(profile)}
+                    onContactClick={handleContactClick}
                   />
                 ))}
               </div>
@@ -377,9 +432,24 @@ export default function PropietarioHomePage() {
       </div>
 
       {detailProfile && (
-        <ProfileDetailModal 
-          profile={detailProfile} 
-          onClose={() => setDetailProfile(null)} 
+        <ProfileDetailModal
+          profile={detailProfile}
+          onClose={() => setDetailProfile(null)}
+          onContactClick={handleContactClick}
+        />
+      )}
+
+      {contactModal && (
+        <ContactModal
+          type={contactModal.type}
+          profile={contactModal.profile}
+          onClose={() => setContactModal(null)}
+        />
+      )}
+
+      {showVerificationModal && (
+        <VerificationRequiredModal
+          onClose={() => setShowVerificationModal(false)}
         />
       )}
     </div>
@@ -449,7 +519,8 @@ function Select({
   onChange,
   options,
   placeholder,
-  disabled
+  disabled,
+  renderOption
 }: {
   label?: string;
   value: string;
@@ -457,6 +528,7 @@ function Select({
   options: string[];
   placeholder?: string;
   disabled?: boolean;
+  renderOption?: (value: string) => string;
 }) {
   return (
     <div>
@@ -469,14 +541,22 @@ function Select({
       >
         <option value="">{placeholder || 'Seleccionar...'}</option>
         {options.filter((o: string) => o).map((o: string) => (
-          <option key={o} value={o}>{o}</option>
+          <option key={o} value={o}>{renderOption ? renderOption(o) : o}</option>
         ))}
       </select>
     </div>
   );
 }
 
-function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onViewDetail: () => void }) {
+function ProfileCard({
+  profile,
+  onViewDetail,
+  onContactClick
+}: {
+  profile: TenantProfile;
+  onViewDetail: () => void;
+  onContactClick: (type: 'whatsapp' | 'email', profile: TenantProfile) => void;
+}) {
   const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
   const cap = (s?: string) => s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
   
@@ -513,6 +593,15 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
                 <MapPin className="w-4 h-4 text-orange-500" />
                 <span>{[profile.neighborhood, profile.city].filter(Boolean).join(', ') || 'Sin especificar'}</span>
               </div>
+              {profile.property_types && profile.property_types.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {profile.property_types.map((type) => (
+                    <span key={type} className="inline-flex items-center px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
+                      {PROPERTY_TYPES[type] || cap(type)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -596,11 +685,17 @@ function ProfileCard({ profile, onViewDetail }: { profile: TenantProfile; onView
             <Eye className="w-4 h-4" />
             Ver Detalle
           </button>
-          <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold">
+          <button
+            onClick={() => onContactClick('whatsapp', profile)}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold"
+          >
             <MessageCircle className="w-4 h-4" />
             WhatsApp
           </button>
-          <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold">
+          <button
+            onClick={() => onContactClick('email', profile)}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold"
+          >
             <Mail className="w-4 h-4" />
             Email
           </button>
@@ -627,7 +722,15 @@ function Badge({ icon, label, color }: { icon: React.ReactElement; label: string
   );
 }
 
-function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onClose: () => void }) {
+function ProfileDetailModal({
+  profile,
+  onClose,
+  onContactClick
+}: {
+  profile: TenantProfile;
+  onClose: () => void;
+  onContactClick: (type: 'whatsapp' | 'email', profile: TenantProfile) => void;
+}) {
   const cap = (s?: string) => s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
   const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
 
@@ -749,6 +852,18 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
               <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Propiedad Buscada</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.property_types && profile.property_types.length > 0 && (
+                <div className="md:col-span-2">
+                  <span className="text-orange-700 font-semibold text-sm block mb-2">Tipos de propiedad:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.property_types.map((type) => (
+                      <span key={type} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                        {PROPERTY_TYPES[type] || cap(type)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {(profile.bedroom_min || profile.bedroom_max) && (
                 <div className="flex items-center gap-2">
                   <Bed className="w-4 h-4 text-orange-600" />
@@ -910,11 +1025,17 @@ function ProfileDetailModal({ profile, onClose }: { profile: TenantProfile; onCl
 
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex-shrink-0">
           <div className="grid grid-cols-3 gap-3">
-            <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold">
+            <button
+              onClick={() => onContactClick('whatsapp', profile)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold"
+            >
               <MessageCircle className="w-4 h-4" />
               WhatsApp
             </button>
-            <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition-all font-semibold">
+            <button
+              onClick={() => onContactClick('email', profile)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition-all font-semibold"
+            >
               <Mail className="w-4 h-4" />
               Email
             </button>
@@ -970,6 +1091,192 @@ function SkeletonCards() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ContactModal({
+  type,
+  profile,
+  onClose
+}: {
+  type: 'whatsapp' | 'email';
+  profile: TenantProfile;
+  onClose: () => void;
+}) {
+  const isWhatsApp = type === 'whatsapp';
+  const contactInfo = isWhatsApp ? profile.phone : profile.email;
+
+  const handleCopyToClipboard = () => {
+    if (contactInfo) {
+      navigator.clipboard.writeText(contactInfo);
+      alert('Copiado al portapapeles');
+    }
+  };
+
+  const handleOpenContact = () => {
+    if (isWhatsApp && profile.phone) {
+      // Limpiar el número de teléfono y abrir WhatsApp
+      const cleanPhone = profile.phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanPhone}`, '_blank');
+    } else if (!isWhatsApp && profile.email) {
+      window.location.href = `mailto:${profile.email}`;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100">
+        <div className={`${isWhatsApp ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-blue-500 to-blue-600'} px-6 py-5 flex items-center justify-between rounded-t-2xl`}>
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              {isWhatsApp ? (
+                <MessageCircle className="w-6 h-6 text-white" />
+              ) : (
+                <Mail className="w-6 h-6 text-white" />
+              )}
+            </div>
+            <h2 className="text-2xl font-bold text-white">
+              {isWhatsApp ? 'WhatsApp' : 'Email'}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/90 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-6">
+            <p className="text-gray-600 text-sm mb-2">Inquilino:</p>
+            <p className="text-gray-900 font-semibold text-lg">{profile.full_name || 'Sin nombre'}</p>
+          </div>
+
+          {contactInfo ? (
+            <>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                <p className="text-gray-600 text-sm mb-1">
+                  {isWhatsApp ? 'Número de teléfono:' : 'Correo electrónico:'}
+                </p>
+                <p className="text-gray-900 font-mono text-lg font-semibold break-all">
+                  {contactInfo}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleCopyToClipboard}
+                  className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold"
+                >
+                  <Check className="w-4 h-4" />
+                  Copiar
+                </button>
+                <button
+                  onClick={handleOpenContact}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 text-white rounded-lg transition-all font-semibold ${
+                    isWhatsApp
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                  }`}
+                >
+                  {isWhatsApp ? (
+                    <>
+                      <MessageCircle className="w-4 h-4" />
+                      Abrir WhatsApp
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4" />
+                      Enviar Email
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <AlertCircle className="w-5 h-5" />
+                <p className="font-medium">
+                  {isWhatsApp
+                    ? 'El inquilino no ha proporcionado un número de teléfono.'
+                    : 'El inquilino no ha proporcionado un correo electrónico.'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Verificación Requerida</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/90 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-orange-900 font-semibold mb-2">
+                  Debes tener tu perfil verificado para ver la información de contacto de los inquilinos.
+                </p>
+                <p className="text-orange-800 text-sm">
+                  La verificación de tu perfil te permite acceder a información de contacto y generar más confianza con los inquilinos.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                // Aquí irá la navegación a la página de verificación
+                console.log('Redirigir a verificación');
+                onClose();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-semibold"
+            >
+              <BadgeCheck className="w-5 h-5" />
+              Verificar Mi Cuenta
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold"
+            >
+              Ahora No
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

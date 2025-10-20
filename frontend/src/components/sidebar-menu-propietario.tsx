@@ -1,6 +1,6 @@
 'use client'
 
-import { Home, Users, FileText, Wallet, User as UserIcon, LogOut, Building2 } from "lucide-react"
+import { Home, Users, FileText, Wallet, User as UserIcon, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
 
@@ -12,10 +12,9 @@ export default function SidebarMenuPropietario({ onLogout }: { onLogout: () => v
   return (
     <aside className="w-72 bg-white border-r border-gray-200 min-h-screen">
       <div className="p-6">
-        {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-white" />
+            <Home className="w-5 h-5 text-white" />
           </div>
           <span className="font-bold text-xl text-gray-900">RentMatch</span>
         </div>
