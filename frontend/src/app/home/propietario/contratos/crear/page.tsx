@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, DragEvent } from 'react';
+import { useState, useEffect, DragEvent, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -17,7 +17,7 @@ type Tenant = {
   email: string;
 }
 
-export default function CrearContratoPage() {
+function CrearContratoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
@@ -696,5 +696,20 @@ export default function CrearContratoPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CrearContratoPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 p-6 md:p-10 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 animate-spin text-orange-500 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <CrearContratoContent />
+    </Suspense>
   );
 }
