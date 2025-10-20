@@ -174,7 +174,7 @@ export default function LandlordContractSignedPage() {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-1">Firma del inquilino</h4>
                 <p className="text-sm text-gray-600">
-                  Una vez que el inquilino firme, el contrato pasará al estado de "Pendiente de Depósito".
+                  Una vez que el inquilino firme, el contrato pasará al estado de &quot;Pendiente de Depósito&quot;.
                 </p>
               </div>
             </div>

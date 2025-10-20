@@ -146,8 +146,9 @@ export default function CrearContratoPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTenant(res.data);
-    } catch (error: any) {
-      setTenantError(error.response?.data?.error || 'Inquilino no encontrado');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      setTenantError(err.response?.data?.error || 'Inquilino no encontrado');
     } finally {
       setSearchingTenant(false);
     }
@@ -255,8 +256,9 @@ export default function CrearContratoPage() {
 
       setContractId(res.data.contract.id);
       alert('Contrato creado correctamente. Ahora puedes firmarlo.');
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al crear el contrato');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      alert(err.response?.data?.error || 'Error al crear el contrato');
     } finally {
       setSending(false);
     }
@@ -281,8 +283,9 @@ export default function CrearContratoPage() {
 
       // Abrir DocuSign en nueva ventana
       window.location.href = res.data.url;
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al iniciar la firma');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      alert(err.response?.data?.error || 'Error al iniciar la firma');
       setSigning(false);
     }
   };
