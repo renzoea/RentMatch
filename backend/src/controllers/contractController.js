@@ -318,14 +318,25 @@ exports.getTenantContractDetail = async (req, res) => {
     if (contract.property_id) {
       const { data: prop, error: propError } = await supabase
         .from('properties')
-        .select('id, address_line, city, neighborhood, rooms, bathrooms, furnished, amenities, property_type, pets_allowed')
+        .select('id, address_line, city, neighborhood, rooms, bathrooms, furnished, amenities, property_type, pets_allowed, notes, wifi, pileta, gimnasio, sum, parrilla, jardin, balcon, terraza, seguridad_24h, cochera, bicicletero, ascensor, calefaccion, aire_acondicionado, portero, mascotas, accesibilidad, lavadero')
         .eq('id', contract.property_id)
         .single();
       if (!propError && prop) property = prop;
     }
 
-    // 3. Devuelve el contrato con la propiedad
-    res.json({ ...contract, property });
+    // 3. Busca información del propietario
+    let landlord = null;
+    if (contract.landlord_id) {
+      const { data: landlordProfile, error: landlordError } = await supabase
+        .from('profiles')
+        .select('full_name, email, phone')
+        .eq('id', contract.landlord_id)
+        .single();
+      if (!landlordError && landlordProfile) landlord = landlordProfile;
+    }
+
+    // 4. Devuelve el contrato con la propiedad y el propietario
+    res.json({ ...contract, property, landlord });
   } catch (err) {
     res.status(500).json({ error: 'Error interno del servidor.' });
   }

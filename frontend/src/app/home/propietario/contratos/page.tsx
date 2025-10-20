@@ -19,6 +19,7 @@ import {
   Edit,
   Trash2
 } from "lucide-react"
+import ContractLandlordDetailModal from "@/components/contract-landlord-detail-modal"
 
 type Contract = {
   id: string
@@ -77,6 +78,8 @@ function formatDate(date: string) {
 export default function LandlordContractsDashboard() {
   const [contracts, setContracts] = useState<Contract[]>([])
   const [loading, setLoading] = useState(true)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const router = useRouter()
 
   const fetchContracts = () => {
@@ -285,6 +288,18 @@ export default function LandlordContractsDashboard() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedId(contract.id)
+                        setDetailOpen(true)
+                      }}
+                      className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                    >
+                      <FileText className="w-4 h-4 mr-1" />
+                      Ver Detalles
+                    </Button>
                     {contract.status === 'draft' && (
                       <>
                         <Button
@@ -316,7 +331,7 @@ export default function LandlordContractsDashboard() {
                       >
                         <a href={contract.document_url} target="_blank" rel="noopener noreferrer">
                           <FileText className="w-4 h-4 mr-1" />
-                          Ver PDF
+                          Descargar PDF
                         </a>
                       </Button>
                     )}
@@ -327,6 +342,13 @@ export default function LandlordContractsDashboard() {
           </div>
         )}
       </div>
+
+      {/* Modal de Detalle */}
+      <ContractLandlordDetailModal
+        open={detailOpen}
+        id={selectedId}
+        onClose={() => setDetailOpen(false)}
+      />
     </div>
   )
 }

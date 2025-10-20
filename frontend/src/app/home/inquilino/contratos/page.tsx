@@ -5,14 +5,15 @@ import { useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  FileText, 
-  Home, 
-  CalendarDays, 
-  CheckCircle2, 
-  Clock, 
-  Archive, 
-  ShieldCheck 
+import {
+  FileText,
+  Home,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Archive,
+  ShieldCheck,
+  User
 } from "lucide-react"
 import ContractDetailModal from "@/components/contract-detail-modal"
 
@@ -23,11 +24,18 @@ type Contract = {
   rent_currency: string
   start_date: string
   end_date: string
+  landlord_signature: string
+  tenant_signature: string
   property?: {
     address_line: string
     city: string
     neighborhood?: string
     property_type: string
+  }
+  landlord?: {
+    full_name: string
+    email: string
+    phone?: string
   }
   document_url?: string
   created_at: string
@@ -36,7 +44,7 @@ type Contract = {
 function getStatusLabel(status: string) {
   switch (status) {
     case "draft": return "Borrador"
-    case "pending_signatures": return "Pendiente de firmas"
+    case "pending_signatures": return "Pendiente de tu firma"
     case "pending_deposit": return "Pendiente de depósito"
     case "active": return "Activo"
     case "terminated": return "Terminado"
@@ -207,10 +215,14 @@ export default function ContractDashboard() {
                           <span className="text-gray-500">• {contract.property.city}</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="capitalize font-medium">
-                          {contract.property?.property_type}
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <User className="w-4 h-4" />
+                        <span className="font-medium">
+                          {contract.landlord?.full_name || 'Sin propietario asignado'}
                         </span>
+                        {contract.landlord?.email && (
+                          <span className="text-gray-500">• {contract.landlord.email}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -232,6 +244,14 @@ export default function ContractDashboard() {
                     </div>
                     <div className="font-bold text-xl text-gray-900">
                       ${contract.rent_amount?.toLocaleString()} {contract.rent_currency}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                      <span className={contract.landlord_signature === 'signed' ? 'text-green-600' : 'text-gray-400'}>
+                        {contract.landlord_signature === 'signed' ? '✓ Firma propietario' : '○ Firma propietario pendiente'}
+                      </span>
+                      <span className={contract.tenant_signature === 'signed' ? 'text-green-600' : 'text-orange-600'}>
+                        {contract.tenant_signature === 'signed' ? '✓ Tu firma' : '○ Tu firma pendiente'}
+                      </span>
                     </div>
                   </div>
                   <div className="flex gap-2">
