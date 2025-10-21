@@ -43,6 +43,7 @@ const uploadRoutes = require('./src/routes/uploadRoutes');
 const MobileRoutes = require('./src/routes/MobileRoutes');
 const MobileUserRoutes = require('./src/routes/MobileProfileRoutes');
 const filterSearchRoutes = require('./src/routes/FilterSearchRoutes');
+const MobileReporterRoutes = require('./src/routes/MobileReportRoutes');
 
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
@@ -52,6 +53,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/mobile-auth', MobileRoutes);
 app.use('/api/mobile-user', MobileUserRoutes);
 app.use('/api/filter-search', filterSearchRoutes);
+app.use('/api/Mobile-Reporter', MobileReporterRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
