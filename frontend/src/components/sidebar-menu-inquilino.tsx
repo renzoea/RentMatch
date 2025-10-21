@@ -43,11 +43,11 @@ export default function SidebarMenu({ onLogout }: { onLogout: () => void }) {
             <FileText className="w-5 h-5 mr-3" />
             Contratos
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100" onClick={() => window.location.href = "/home/deposito"}>
+          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100" onClick={() => window.location.href = "/home/inquilino/depositos"}>
             <Wallet className="w-5 h-5 mr-3" />
             Depósito
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100" onClick={() => window.location.href = "/home/cuenta"}>
+          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100" onClick={() => window.location.href = "/home/inquilino/cuenta"}>
             <UserIcon className="w-5 h-5 mr-3" />
             Mi Cuenta
           </Button>
