@@ -17,9 +17,11 @@ import {
   Plus,
   User,
   Edit,
-  Trash2
+  Trash2,
+  AlertCircle
 } from "lucide-react"
 import ContractLandlordDetailModal from "@/components/contract-landlord-detail-modal"
+import PDFViewerModal from "@/components/pdf-viewer-modal"
 
 type Contract = {
   id: string
@@ -80,6 +82,8 @@ export default function LandlordContractsDashboard() {
   const [loading, setLoading] = useState(true)
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null)
   const router = useRouter()
 
   const fetchContracts = () => {
@@ -110,6 +114,20 @@ export default function LandlordContractsDashboard() {
       fetchContracts()
     } catch (error) {
       alert('Error al eliminar el contrato')
+    }
+  }
+
+  const handleSignContract = async (contractId: string) => {
+    const token = localStorage.getItem('access_token')
+    try {
+      const res = await api.post(`/api/contracts/landlord/my/${contractId}/sign`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      localStorage.setItem('contractId', contractId)
+      localStorage.setItem('envelopeId', res.data.envelopeId)
+      window.location.href = res.data.url
+    } catch (error) {
+      alert('Error al iniciar la firma del contrato')
     }
   }
 
@@ -300,7 +318,7 @@ export default function LandlordContractsDashboard() {
                       <FileText className="w-4 h-4 mr-1" />
                       Ver Detalles
                     </Button>
-                    {contract.status === 'draft' && (
+                    {contract.status === 'draft' ? (
                       <>
                         <Button
                           variant="outline"
@@ -320,20 +338,33 @@ export default function LandlordContractsDashboard() {
                           <Trash2 className="w-4 h-4 mr-1" />
                           Eliminar
                         </Button>
+                        {contract.document_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSignContract(contract.id)}
+                            className="hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700 border-orange-200 text-orange-600"
+                          >
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                            Firmar Contrato
+                          </Button>
+                        )}
                       </>
-                    )}
-                    {contract.document_url && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700"
-                      >
-                        <a href={contract.document_url} target="_blank" rel="noopener noreferrer">
+                    ) : (
+                      contract.document_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPdfUrl(contract.document_url || null)
+                            setPdfViewerOpen(true)
+                          }}
+                          className="hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700"
+                        >
                           <FileText className="w-4 h-4 mr-1" />
-                          Descargar PDF
-                        </a>
-                      </Button>
+                          Ver Contrato PDF
+                        </Button>
+                      )
                     )}
                   </div>
                 </div>
@@ -348,6 +379,14 @@ export default function LandlordContractsDashboard() {
         open={detailOpen}
         id={selectedId}
         onClose={() => setDetailOpen(false)}
+      />
+
+      {/* Modal de Visor PDF */}
+      <PDFViewerModal
+        open={pdfViewerOpen}
+        pdfUrl={selectedPdfUrl}
+        onClose={() => setPdfViewerOpen(false)}
+        title="Contrato PDF"
       />
     </div>
   )

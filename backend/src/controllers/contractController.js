@@ -263,11 +263,13 @@ exports.deleteContract = async (req, res) => {
 exports.getMyContracts = async (req, res) => {
   try {
     const tenant_id = req.user.id;
-    // 1. Obtén todos los contratos del inquilino
+    // 1. Obtén todos los contratos del inquilino (excluye borradores)
+    // Solo muestra contratos donde el propietario ya firmó
     const { data: contracts, error: contractsError } = await supabase
       .from('contracts')
       .select('*')
       .eq('tenant_id', tenant_id)
+      .neq('status', 'draft')
       .order('created_at', { ascending: false });
 
     if (contractsError) return res.status(400).json({ error: contractsError.message });
@@ -286,10 +288,25 @@ exports.getMyContracts = async (req, res) => {
       properties = props;
     }
 
-    // 3. Une los datos (usa String para comparar UUIDs)
+    // 3. Obtén los datos de los propietarios
+    const landlordIds = contracts.map(c => c.landlord_id).filter(Boolean);
+
+    let landlords = [];
+    if (landlordIds.length > 0) {
+      const { data: landlordProfiles, error: landlordsError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, phone')
+        .in('id', landlordIds);
+
+      if (landlordsError) return res.status(400).json({ error: landlordsError.message });
+      landlords = landlordProfiles || [];
+    }
+
+    // 4. Une los datos (usa String para comparar UUIDs)
     const result = contracts.map(contract => ({
       ...contract,
-      property: properties.find(p => String(p.id) === String(contract.property_id)) || null
+      property: properties.find(p => String(p.id) === String(contract.property_id)) || null,
+      landlord: landlords.find(l => String(l.id) === String(contract.landlord_id)) || null
     }));
 
     res.json(result);
@@ -318,7 +335,7 @@ exports.getTenantContractDetail = async (req, res) => {
     if (contract.property_id) {
       const { data: prop, error: propError } = await supabase
         .from('properties')
-        .select('id, address_line, city, neighborhood, rooms, bathrooms, furnished, amenities, property_type, pets_allowed, notes, wifi, pileta, gimnasio, sum, parrilla, jardin, balcon, terraza, seguridad_24h, cochera, bicicletero, ascensor, calefaccion, aire_acondicionado, portero, mascotas, accesibilidad, lavadero')
+        .select('*')
         .eq('id', contract.property_id)
         .single();
       if (!propError && prop) property = prop;

@@ -24,6 +24,7 @@ import {
   Phone
 } from 'lucide-react'
 import api from '@/lib/api'
+import PDFViewerModal from './pdf-viewer-modal'
 
 type ContractDetail = {
   id: string
@@ -168,6 +169,7 @@ export default function ContractLandlordDetailModal({ open, id, onClose }: Props
   const [data, setData] = useState<ContractDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
 
   useEffect(() => {
     if (!open || !id) return
@@ -269,41 +271,57 @@ export default function ContractLandlordDetailModal({ open, id, onClose }: Props
                   <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Propiedad</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="font-medium text-blue-700">Dirección:</span>{" "}
-                    <span className="text-blue-900">{data.property?.address_line || "—"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-700">Barrio:</span>{" "}
-                    <span className="text-blue-900">{data.property?.neighborhood || "—"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-700">Ciudad:</span>{" "}
-                    <span className="text-blue-900">{data.property?.city || "—"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-700">Tipo:</span>{" "}
-                    <span className="text-blue-900">{data.property?.property_type || "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Bed className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium text-blue-700">Ambientes:</span>{" "}
-                    <span className="text-blue-900">{data.property?.rooms ?? "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Bath className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium text-blue-700">Baños:</span>{" "}
-                    <span className="text-blue-900">{data.property?.bathrooms ?? "—"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-700">Amoblado:</span>{" "}
-                    <BooleanBadge value={data.property?.furnished} />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Dog className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium text-blue-700">Mascotas:</span>{" "}
-                    <BooleanBadge value={data.property?.pets_allowed} />
-                  </div>
+                  {data.property?.address_line && (
+                    <div>
+                      <span className="font-medium text-blue-700">Dirección:</span>{" "}
+                      <span className="text-blue-900">{data.property.address_line}</span>
+                    </div>
+                  )}
+                  {data.property?.neighborhood && (
+                    <div>
+                      <span className="font-medium text-blue-700">Barrio:</span>{" "}
+                      <span className="text-blue-900">{data.property.neighborhood}</span>
+                    </div>
+                  )}
+                  {data.property?.city && (
+                    <div>
+                      <span className="font-medium text-blue-700">Ciudad:</span>{" "}
+                      <span className="text-blue-900">{data.property.city}</span>
+                    </div>
+                  )}
+                  {data.property?.property_type && (
+                    <div>
+                      <span className="font-medium text-blue-700">Tipo:</span>{" "}
+                      <span className="text-blue-900">{data.property.property_type}</span>
+                    </div>
+                  )}
+                  {data.property?.rooms !== undefined && data.property?.rooms !== null && (
+                    <div className="flex items-center gap-1">
+                      <Bed className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-700">Ambientes:</span>{" "}
+                      <span className="text-blue-900">{data.property.rooms}</span>
+                    </div>
+                  )}
+                  {data.property?.bathrooms !== undefined && data.property?.bathrooms !== null && (
+                    <div className="flex items-center gap-1">
+                      <Bath className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-700">Baños:</span>{" "}
+                      <span className="text-blue-900">{data.property.bathrooms}</span>
+                    </div>
+                  )}
+                  {data.property?.furnished !== undefined && data.property?.furnished !== null && (
+                    <div>
+                      <span className="font-medium text-blue-700">Amoblado:</span>{" "}
+                      <BooleanBadge value={data.property.furnished} />
+                    </div>
+                  )}
+                  {data.property?.pets_allowed !== undefined && data.property?.pets_allowed !== null && (
+                    <div className="flex items-center gap-1">
+                      <Dog className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-700">Mascotas:</span>{" "}
+                      <BooleanBadge value={data.property.pets_allowed} />
+                    </div>
+                  )}
                 </div>
                 {/* Comodidades */}
                 {(data.property?.amenities?.length ||
@@ -345,31 +363,35 @@ export default function ContractLandlordDetailModal({ open, id, onClose }: Props
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Contrato</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="font-medium text-gray-700">Monto:</span>{" "}
-                    ${data.rent_amount?.toLocaleString()} {data.rent_currency}
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Fechas:</span>{" "}
-                    {formatDate(data.start_date)} - {formatDate(data.end_date)}
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Términos:</span>{" "}
-                    {data.terms || "—"}
-                  </div>
+                  {data.rent_amount !== undefined && data.rent_amount !== null && (
+                    <div>
+                      <span className="font-medium text-gray-700">Monto:</span>{" "}
+                      ${data.rent_amount.toLocaleString()} {data.rent_currency || 'ARS'}
+                    </div>
+                  )}
+                  {data.start_date && data.end_date && (
+                    <div>
+                      <span className="font-medium text-gray-700">Fechas:</span>{" "}
+                      {formatDate(data.start_date)} - {formatDate(data.end_date)}
+                    </div>
+                  )}
+                  {data.terms && (
+                    <div className="md:col-span-2">
+                      <span className="font-medium text-gray-700">Términos:</span>{" "}
+                      <span className="text-gray-900">{data.terms}</span>
+                    </div>
+                  )}
                 </div>
                 {data.document_url && (
                 <div className="mt-4">
-                    <a
-                    href={data.document_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-100 text-orange-700 font-medium hover:bg-orange-200 transition-colors"
-                    download
+                    <Button
+                      variant="outline"
+                      onClick={() => setPdfViewerOpen(true)}
+                      className="bg-orange-100 text-orange-700 font-medium hover:bg-orange-200 border-orange-200"
                     >
-                    <FileText className="w-4 h-4" />
-                    Descargar contrato (PDF)
-                    </a>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Ver Contrato PDF
+                    </Button>
                 </div>
                 )}
               </div>
@@ -395,6 +417,16 @@ export default function ContractLandlordDetailModal({ open, id, onClose }: Props
           )}
         </div>
       </div>
+
+      {/* Modal de Visor PDF */}
+      {data?.document_url && (
+        <PDFViewerModal
+          open={pdfViewerOpen}
+          pdfUrl={data.document_url}
+          onClose={() => setPdfViewerOpen(false)}
+          title="Contrato PDF"
+        />
+      )}
     </div>
   )
 }
