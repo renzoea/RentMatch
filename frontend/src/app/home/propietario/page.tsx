@@ -166,7 +166,7 @@ export default function PropietarioHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1600px] mx-auto px-6 py-6">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -670,11 +670,11 @@ function ProfileCard({
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {profile.furnished && <Badge icon={<Sparkles />} label="Amoblado" color="blue" />}
-          {profile.pets_allowed && <Badge icon={<Check />} label="Mascotas" color="green" />}
-          {profile.parking_needed && <Badge icon={<Car />} label="Cochera" color="purple" />}
-          {profile.balcony && <Badge icon={<Sun />} label="Balcón" color="yellow" />}
-          {profile.terrace && <Badge icon={<Waves />} label="Terraza" color="teal" />}
+          {profile.furnished && <Badge icon={<Sparkles />} label="Amoblado" />}
+          {profile.pets_allowed && <Badge icon={<Check />} label="Mascotas" />}
+          {profile.parking_needed && <Badge icon={<Car />} label="Cochera" />}
+          {profile.balcony && <Badge icon={<Sun />} label="Balcón" />}
+          {profile.terrace && <Badge icon={<Waves />} label="Terraza" />}
         </div>
 
         <div className="grid grid-cols-3 gap-3">
@@ -705,17 +705,9 @@ function ProfileCard({
   );
 }
 
-function Badge({ icon, label, color }: { icon: React.ReactElement; label: string; color: string }) {
-  const colors = {
-    blue: 'bg-blue-100 text-blue-700 border-blue-300',
-    green: 'bg-green-100 text-green-700 border-green-300',
-    purple: 'bg-purple-100 text-purple-700 border-purple-300',
-    yellow: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-    teal: 'bg-teal-100 text-teal-700 border-teal-300',
-  };
-
+function Badge({ icon, label }: { icon: React.ReactElement; label: string }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium ${colors[color as keyof typeof colors]}`}>
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium bg-gray-100 text-gray-700 border-gray-300">
       {React.cloneElement(icon, { className: "w-3 h-3" } as React.HTMLAttributes<HTMLElement>)}
       {label}
     </span>
@@ -774,90 +766,90 @@ function ProfileDetailModal({
         </div>
 
         <div className="p-6 space-y-5 overflow-y-auto">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Users className="w-5 h-5 text-blue-600" />
-              <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Información Personal</h3>
+              <Users className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información Personal</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="text-blue-700 font-semibold text-sm">Nombre:</span>
-                <p className="text-blue-900 text-sm mt-1">{profile.full_name || 'No especificado'}</p>
+                <span className="text-gray-700 font-medium text-sm">Nombre:</span>
+                <p className="text-gray-900 text-sm mt-1">{profile.full_name || 'No especificado'}</p>
               </div>
               {profile.occupants && (
                 <div>
-                  <span className="text-blue-700 font-semibold text-sm">Ocupantes:</span>
-                  <p className="text-blue-900 text-sm mt-1">{profile.occupants} persona{profile.occupants > 1 ? 's' : ''}</p>
+                  <span className="text-gray-700 font-medium text-sm">Ocupantes:</span>
+                  <p className="text-gray-900 text-sm mt-1">{profile.occupants} persona{profile.occupants > 1 ? 's' : ''}</p>
                 </div>
               )}
             </div>
           </div>
 
           {(profile.city || profile.neighborhood) && (
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-purple-600" />
-                <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Ubicación Deseada</h3>
+                <MapPin className="w-5 h-5 text-orange-600" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ubicación Deseada</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {profile.city && (
                   <div>
-                    <span className="text-purple-700 font-semibold text-sm">Ciudad:</span>
-                    <p className="text-purple-900 text-sm mt-1">{cap(profile.city)}</p>
+                    <span className="text-gray-700 font-medium text-sm">Ciudad:</span>
+                    <p className="text-gray-900 text-sm mt-1">{cap(profile.city)}</p>
                   </div>
                 )}
                 {profile.neighborhood && (
                   <div>
-                    <span className="text-purple-700 font-semibold text-sm">Barrio:</span>
-                    <p className="text-purple-900 text-sm mt-1">{cap(profile.neighborhood)}</p>
+                    <span className="text-gray-700 font-medium text-sm">Barrio:</span>
+                    <p className="text-gray-900 text-sm mt-1">{cap(profile.neighborhood)}</p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200">
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="text-sm font-bold text-green-900 uppercase tracking-wide">Presupuesto</h3>
+              <DollarSign className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Presupuesto</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {profile.budget_min && (
                 <div>
-                  <span className="text-green-700 font-semibold text-sm">Mínimo:</span>
-                  <p className="text-green-900 font-bold text-lg">${nfAR.format(profile.budget_min)}</p>
+                  <span className="text-gray-700 font-medium text-sm">Mínimo:</span>
+                  <p className="text-gray-900 font-bold text-lg">${nfAR.format(profile.budget_min)}</p>
                 </div>
               )}
               {profile.budget_max && (
                 <div>
-                  <span className="text-green-700 font-semibold text-sm">Máximo:</span>
-                  <p className="text-green-900 font-bold text-lg">${nfAR.format(profile.budget_max)}</p>
+                  <span className="text-gray-700 font-medium text-sm">Máximo:</span>
+                  <p className="text-gray-900 font-bold text-lg">${nfAR.format(profile.budget_max)}</p>
                 </div>
               )}
               {profile.lease_term_months && (
                 <div className="md:col-span-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-green-600" />
-                    <span className="text-green-700 font-semibold text-sm">Duración del contrato:</span>
-                    <span className="text-green-900 text-sm">{profile.lease_term_months} meses</span>
+                    <Calendar className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-700 font-medium text-sm">Duración del contrato:</span>
+                    <span className="text-gray-900 text-sm">{profile.lease_term_months} meses</span>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-5 border border-orange-200">
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <Building2 className="w-5 h-5 text-orange-600" />
-              <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Propiedad Buscada</h3>
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Propiedad Buscada</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {profile.property_types && profile.property_types.length > 0 && (
                 <div className="md:col-span-2">
-                  <span className="text-orange-700 font-semibold text-sm block mb-2">Tipos de propiedad:</span>
+                  <span className="text-gray-700 font-medium text-sm block mb-2">Tipos de propiedad:</span>
                   <div className="flex flex-wrap gap-2">
                     {profile.property_types.map((type) => (
-                      <span key={type} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                      <span key={type} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                         {PROPERTY_TYPES[type] || cap(type)}
                       </span>
                     ))}
@@ -867,81 +859,81 @@ function ProfileDetailModal({
               {(profile.bedroom_min || profile.bedroom_max) && (
                 <div className="flex items-center gap-2">
                   <Bed className="w-4 h-4 text-orange-600" />
-                  <span className="text-orange-700 font-semibold text-sm">Dormitorios:</span>
-                  <span className="text-orange-900 text-sm">{profile.bedroom_min || 0} - {profile.bedroom_max || '∞'}</span>
+                  <span className="text-gray-700 font-medium text-sm">Dormitorios:</span>
+                  <span className="text-gray-900 text-sm">{profile.bedroom_min || 0} - {profile.bedroom_max || '∞'}</span>
                 </div>
               )}
               {(profile.rooms_min || profile.rooms_max) && (
                 <div className="flex items-center gap-2">
                   <Home className="w-4 h-4 text-orange-600" />
-                  <span className="text-orange-700 font-semibold text-sm">Ambientes:</span>
-                  <span className="text-orange-900 text-sm">{profile.rooms_min || 0} - {profile.rooms_max || '∞'}</span>
+                  <span className="text-gray-700 font-medium text-sm">Ambientes:</span>
+                  <span className="text-gray-900 text-sm">{profile.rooms_min || 0} - {profile.rooms_max || '∞'}</span>
                 </div>
               )}
               {(profile.bathrooms_min || profile.bathrooms_max) && (
                 <div className="flex items-center gap-2">
                   <Bath className="w-4 h-4 text-orange-600" />
-                  <span className="text-orange-700 font-semibold text-sm">Baños:</span>
-                  <span className="text-orange-900 text-sm">{profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'}</span>
+                  <span className="text-gray-700 font-medium text-sm">Baños:</span>
+                  <span className="text-gray-900 text-sm">{profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'}</span>
                 </div>
               )}
               {(profile.area_min || profile.area_max) && (
                 <div className="flex items-center gap-2">
                   <Maximize className="w-4 h-4 text-orange-600" />
-                  <span className="text-orange-700 font-semibold text-sm">Área (m²):</span>
-                  <span className="text-orange-900 text-sm">{profile.area_min || 0} - {profile.area_max || '∞'}</span>
+                  <span className="text-gray-700 font-medium text-sm">Área (m²):</span>
+                  <span className="text-gray-900 text-sm">{profile.area_min || 0} - {profile.area_max || '∞'}</span>
                 </div>
               )}
               {profile.furnished !== undefined && (
                 <div className="flex items-center gap-2">
-                  <span className="text-orange-700 font-semibold text-sm">Amoblado:</span>
+                  <span className="text-gray-700 font-medium text-sm">Amoblado:</span>
                   <BooleanBadge value={profile.furnished} />
                 </div>
               )}
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-5 border border-amber-200">
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Shield className="w-5 h-5 text-amber-600" />
-              <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide">Preferencias</h3>
+              <Shield className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Preferencias</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {profile.pets_allowed !== undefined && (
                 <div className="flex items-center gap-2">
-                  <span className="text-amber-700 font-semibold text-sm">Mascotas:</span>
+                  <span className="text-gray-700 font-medium text-sm">Mascotas:</span>
                   <BooleanBadge value={profile.pets_allowed} />
                 </div>
               )}
               {profile.smokers_allowed !== undefined && (
                 <div className="flex items-center gap-2">
-                  <span className="text-amber-700 font-semibold text-sm">Fumadores:</span>
+                  <span className="text-gray-700 font-medium text-sm">Fumadores:</span>
                   <BooleanBadge value={profile.smokers_allowed} />
                 </div>
               )}
               {profile.children !== undefined && (
                 <div className="flex items-center gap-2">
-                  <span className="text-amber-700 font-semibold text-sm">Niños:</span>
+                  <span className="text-gray-700 font-medium text-sm">Niños:</span>
                   <BooleanBadge value={profile.children} />
                 </div>
               )}
               {profile.students !== undefined && (
                 <div className="flex items-center gap-2">
-                  <span className="text-amber-700 font-semibold text-sm">Estudiantes:</span>
+                  <span className="text-gray-700 font-medium text-sm">Estudiantes:</span>
                   <BooleanBadge value={profile.students} />
                 </div>
               )}
               {profile.parking_needed !== undefined && (
                 <div className="flex items-center gap-2">
-                  <Car className="w-4 h-4 text-amber-600" />
-                  <span className="text-amber-700 font-semibold text-sm">Cochera:</span>
+                  <Car className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Cochera:</span>
                   <BooleanBadge value={profile.parking_needed} trueText="Necesaria" falseText="Opcional" />
                 </div>
               )}
               {profile.require_verified_landlord !== undefined && (
                 <div className="flex items-center gap-2">
-                  <BadgeCheck className="w-4 h-4 text-amber-600" />
-                  <span className="text-amber-700 font-semibold text-sm">Propietario verificado:</span>
+                  <BadgeCheck className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Propietario verificado:</span>
                   <BooleanBadge value={profile.require_verified_landlord} />
                 </div>
               )}
@@ -949,40 +941,40 @@ function ProfileDetailModal({
           </div>
 
           {(profile.amenities?.length || profile.balcony || profile.terrace || profile.laundry || profile.security || profile.elevator) && (
-            <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-5 border border-teal-200">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-teal-600" />
-                <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Comodidades Deseadas</h3>
+                <Sparkles className="w-5 h-5 text-orange-600" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Comodidades Deseadas</h3>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {profile.balcony && (
                   <div className="flex items-center gap-2">
-                    <Sun className="w-4 h-4 text-teal-600" />
-                    <span className="text-teal-900 text-sm">Balcón</span>
+                    <Sun className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Balcón</span>
                   </div>
                 )}
                 {profile.terrace && (
                   <div className="flex items-center gap-2">
-                    <Waves className="w-4 h-4 text-teal-600" />
-                    <span className="text-teal-900 text-sm">Terraza</span>
+                    <Waves className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Terraza</span>
                   </div>
                 )}
                 {profile.laundry && (
                   <div className="flex items-center gap-2">
-                    <Wind className="w-4 h-4 text-teal-600" />
-                    <span className="text-teal-900 text-sm">Lavadero</span>
+                    <Wind className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Lavadero</span>
                   </div>
                 )}
                 {profile.security && (
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-teal-600" />
-                    <span className="text-teal-900 text-sm">Seguridad</span>
+                    <Lock className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Seguridad</span>
                   </div>
                 )}
                 {profile.elevator && (
                   <div className="flex items-center gap-2">
-                    <MoveUp className="w-4 h-4 text-teal-600" />
-                    <span className="text-teal-900 text-sm">Ascensor</span>
+                    <MoveUp className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Ascensor</span>
                   </div>
                 )}
               </div>
@@ -990,22 +982,22 @@ function ProfileDetailModal({
           )}
 
           {(profile.metadata?.preferencias || profile.metadata?.notas) && (
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border border-slate-200">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <StickyNote className="w-5 h-5 text-slate-600" />
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Notas Adicionales</h3>
+                <StickyNote className="w-5 h-5 text-orange-600" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Notas Adicionales</h3>
               </div>
               <div className="space-y-3">
                 {profile.metadata?.preferencias && (
-                  <div className="bg-white p-3 rounded-lg border border-slate-200">
-                    <span className="text-slate-700 font-semibold text-sm block mb-1">Preferencias:</span>
-                    <p className="text-slate-600 text-sm leading-relaxed">{profile.metadata.preferencias}</p>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <span className="text-gray-700 font-medium text-sm block mb-1">Preferencias:</span>
+                    <p className="text-gray-600 text-sm leading-relaxed">{profile.metadata.preferencias}</p>
                   </div>
                 )}
                 {profile.metadata?.notas && (
-                  <div className="bg-white p-3 rounded-lg border border-slate-200">
-                    <span className="text-slate-700 font-semibold text-sm block mb-1">Notas:</span>
-                    <p className="text-slate-600 text-sm leading-relaxed">{profile.metadata.notas}</p>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <span className="text-gray-700 font-medium text-sm block mb-1">Notas:</span>
+                    <p className="text-gray-600 text-sm leading-relaxed">{profile.metadata.notas}</p>
                   </div>
                 )}
               </div>

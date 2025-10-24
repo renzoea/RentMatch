@@ -295,7 +295,7 @@ function CrearContratoContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 p-6 md:p-10 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin text-orange-500 mx-auto mb-4" />
           <p className="text-gray-600">Cargando contrato...</p>
@@ -305,7 +305,7 @@ function CrearContratoContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 p-6 md:p-10">
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -712,7 +712,7 @@ function CrearContratoContent() {
 export default function CrearContratoPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 p-6 md:p-10 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin text-orange-500 mx-auto mb-4" />
           <p className="text-gray-600">Cargando...</p>

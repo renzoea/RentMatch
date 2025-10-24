@@ -24,7 +24,7 @@ export default function PropietarioLayout({ children }: { children: React.ReactN
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar del propietario */}
       <SidebarMenuPropietario onLogout={handleLogout} />
 

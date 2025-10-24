@@ -128,7 +128,7 @@ export default function ContractDashboard() {
   const terminados = contracts.filter(c => c.status === 'terminated').length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -148,45 +148,45 @@ export default function ContractDashboard() {
         {/* Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-6 border border-green-200 shadow-sm">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center text-center gap-3">
               <div className="bg-green-500 p-3 rounded-lg">
                 <CheckCircle2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-green-700">Activos</p>
+                <p className="text-sm font-semibold text-green-700 mb-1">Activos</p>
                 <p className="text-3xl font-bold text-green-900">{activos}</p>
               </div>
             </div>
           </div>
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 rounded-xl p-6 border border-yellow-200 shadow-sm">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center text-center gap-3">
               <div className="bg-yellow-500 p-3 rounded-lg">
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-yellow-700">Pendientes de firma</p>
+                <p className="text-sm font-semibold text-yellow-700 mb-1">Pendientes de firma</p>
                 <p className="text-3xl font-bold text-yellow-900">{pendientes}</p>
               </div>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-6 border border-blue-200 shadow-sm">
-            <div className="flex items-center gap-4">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="flex flex-col items-center text-center gap-3">
               <div className="bg-blue-500 p-3 rounded-lg">
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-blue-700">Pendientes de depósito</p>
+                <p className="text-sm font-semibold text-blue-700 mb-1">Pendientes de depósito</p>
                 <p className="text-3xl font-bold text-blue-900">{depositos}</p>
               </div>
             </div>
           </div>
           <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center text-center gap-3">
               <div className="bg-gray-500 p-3 rounded-lg">
                 <Archive className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-700">Terminados</p>
+                <p className="text-sm font-semibold text-gray-700 mb-1">Terminados</p>
                 <p className="text-3xl font-bold text-gray-900">{terminados}</p>
               </div>
             </div>

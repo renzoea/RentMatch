@@ -258,86 +258,86 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit, onSi
 
               {/* Información del Propietario */}
               {data.landlord && (
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200">
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <User className="w-5 h-5 text-purple-600" />
-                    <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Propietario</h3>
+                    <User className="w-5 h-5 text-orange-600" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Propietario</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-purple-600" />
-                      <span className="font-medium text-purple-700">Nombre:</span>{" "}
-                      <span className="text-purple-900">{data.landlord.full_name || "—"}</span>
+                      <User className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium text-gray-700">Nombre:</span>{" "}
+                      <span className="text-gray-900">{data.landlord.full_name || "—"}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-purple-600" />
-                      <span className="font-medium text-purple-700">Email:</span>{" "}
-                      <span className="text-purple-900">{data.landlord.email || "—"}</span>
+                      <Mail className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium text-gray-700">Email:</span>{" "}
+                      <span className="text-gray-900">{data.landlord.email || "—"}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-purple-600" />
-                      <span className="font-medium text-purple-700">Teléfono:</span>{" "}
-                      <span className="text-purple-900">{data.landlord.phone || "—"}</span>
+                      <Phone className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium text-gray-700">Teléfono:</span>{" "}
+                      <span className="text-gray-900">{data.landlord.phone || "—"}</span>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Propiedad */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <Home className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Propiedad</h3>
+                  <Home className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Propiedad</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {data.property?.address_line && (
                     <div>
-                      <span className="font-medium text-blue-700">Dirección:</span>{" "}
-                      <span className="text-blue-900">{data.property.address_line}</span>
+                      <span className="font-medium text-gray-700">Dirección:</span>{" "}
+                      <span className="text-gray-900">{data.property.address_line}</span>
                     </div>
                   )}
                   {data.property?.neighborhood && (
                     <div>
-                      <span className="font-medium text-blue-700">Barrio:</span>{" "}
-                      <span className="text-blue-900">{data.property.neighborhood}</span>
+                      <span className="font-medium text-gray-700">Barrio:</span>{" "}
+                      <span className="text-gray-900">{data.property.neighborhood}</span>
                     </div>
                   )}
                   {data.property?.city && (
                     <div>
-                      <span className="font-medium text-blue-700">Ciudad:</span>{" "}
-                      <span className="text-blue-900">{data.property.city}</span>
+                      <span className="font-medium text-gray-700">Ciudad:</span>{" "}
+                      <span className="text-gray-900">{data.property.city}</span>
                     </div>
                   )}
                   {data.property?.property_type && (
                     <div>
-                      <span className="font-medium text-blue-700">Tipo:</span>{" "}
-                      <span className="text-blue-900">{data.property.property_type}</span>
+                      <span className="font-medium text-gray-700">Tipo:</span>{" "}
+                      <span className="text-gray-900">{data.property.property_type}</span>
                     </div>
                   )}
                   {data.property?.rooms !== undefined && data.property?.rooms !== null && (
                     <div className="flex items-center gap-1">
-                      <Bed className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium text-blue-700">Ambientes:</span>{" "}
-                      <span className="text-blue-900">{data.property.rooms}</span>
+                      <Bed className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium text-gray-700">Ambientes:</span>{" "}
+                      <span className="text-gray-900">{data.property.rooms}</span>
                     </div>
                   )}
                   {data.property?.bathrooms !== undefined && data.property?.bathrooms !== null && (
                     <div className="flex items-center gap-1">
-                      <Bath className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium text-blue-700">Baños:</span>{" "}
-                      <span className="text-blue-900">{data.property.bathrooms}</span>
+                      <Bath className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium text-gray-700">Baños:</span>{" "}
+                      <span className="text-gray-900">{data.property.bathrooms}</span>
                     </div>
                   )}
                   {data.property?.furnished !== undefined && data.property?.furnished !== null && (
                     <div>
-                      <span className="font-medium text-blue-700">Amoblado:</span>{" "}
+                      <span className="font-medium text-gray-700">Amoblado:</span>{" "}
                       <BooleanBadge value={data.property.furnished} />
                     </div>
                   )}
                   {data.property?.pets_allowed !== undefined && data.property?.pets_allowed !== null && (
                     <div className="flex items-center gap-1">
-                      <Dog className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium text-blue-700">Mascotas:</span>{" "}
+                      <Dog className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium text-gray-700">Mascotas:</span>{" "}
                       <BooleanBadge value={data.property.pets_allowed} />
                     </div>
                   )}
@@ -345,16 +345,16 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit, onSi
                 {/* Comodidades */}
                 {(data.property?.amenities?.length ||
                   BOOLEAN_AMENITIES.some(a => data.property?.[a.key as keyof typeof data.property])) && (
-                  <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-5 border border-teal-200 mt-4">
+                  <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 mt-4">
                     <div className="flex items-center gap-2 mb-4">
-                      <Sparkles className="w-5 h-5 text-teal-600" />
-                      <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Comodidades</h3>
+                      <Sparkles className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Comodidades</h3>
                     </div>
                     {data.property?.amenities && data.property.amenities.length > 0 && (
                       <div className="mb-4">
                         <div className="flex flex-wrap gap-2">
                           {data.property.amenities.map(a => (
-                            <span key={a} className="px-3 py-1.5 bg-teal-200 text-teal-800 rounded-lg text-xs font-medium">
+                            <span key={a} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
                               {AMENITY_LABELS[a] || a.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </span>
                           ))}
@@ -376,10 +376,10 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit, onSi
               </div>
 
               {/* Contrato */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-5 border border-gray-200">
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5 text-gray-600" />
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Contrato</h3>
+                  <FileText className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Contrato</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {data.rent_amount !== undefined && data.rent_amount !== null && (
@@ -417,10 +417,10 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit, onSi
 
               {/* Notas de la propiedad */}
               {data.property?.notes && (
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border border-slate-200">
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <StickyNote className="w-5 h-5 text-slate-600" />
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Notas de la propiedad</h3>
+                    <StickyNote className="w-5 h-5 text-orange-600" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Notas de la propiedad</h3>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-slate-200">
                     <p className="text-slate-600 text-sm leading-relaxed">{data.property.notes}</p>

@@ -85,7 +85,7 @@ export default function SearchProfileDashboard() {
   const archivados = searchProfiles.filter(p => p.status === 'archivado').length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">

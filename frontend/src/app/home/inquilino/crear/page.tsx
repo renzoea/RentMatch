@@ -193,7 +193,7 @@ export default function CrearPerfilBusqueda() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -232,10 +232,10 @@ export default function CrearPerfilBusqueda() {
           )}
 
           {/* Ubicación */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-6 border border-blue-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
-              <MapPin className="w-5 h-5 text-blue-600" />
-              <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Ubicación</h3>
+              <MapPin className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ubicación</h3>
             </div>
             <LocationSelector
               selectedCity={form.city}
@@ -247,10 +247,10 @@ export default function CrearPerfilBusqueda() {
           </div>
 
           {/* Economía */}
-          <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-6 border border-green-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="text-sm font-bold text-green-900 uppercase tracking-wide">Economía & Estado</h3>
+              <DollarSign className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Economía & Estado</h3>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -301,10 +301,10 @@ export default function CrearPerfilBusqueda() {
           </div>
 
           {/* Tipos de Propiedad */}
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-6 border border-purple-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
-              <Building2 className="w-5 h-5 text-purple-600" />
-              <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Tipos de Propiedad *</h3>
+              <Building2 className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Tipos de Propiedad *</h3>
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               {PROPERTY_TYPE_OPTIONS.map(pt => {
@@ -334,10 +334,10 @@ export default function CrearPerfilBusqueda() {
           </div>
 
           {/* Características */}
-          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-6 border border-indigo-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
-              <Building2 className="w-5 h-5 text-indigo-600" />
-              <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide">Características de la Propiedad</h3>
+              <Building2 className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Características de la Propiedad</h3>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -420,10 +420,10 @@ export default function CrearPerfilBusqueda() {
           </div>
 
           {/* Preferencias */}
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-6 border border-amber-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
-              <Users className="w-5 h-5 text-amber-600" />
-              <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide">Preferencias & Condiciones</h3>
+              <Users className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Preferencias & Condiciones</h3>
             </div>
             <div className="grid md:grid-cols-2 gap-3">
               <ToggleSwitch label="Amoblado" fieldKey="furnished" />
@@ -442,10 +442,10 @@ export default function CrearPerfilBusqueda() {
           </div>
 
           {/* Amenidades */}
-          <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-6 border border-teal-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
-              <Sparkles className="w-5 h-5 text-teal-600" />
-              <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Amenidades</h3>
+              <Sparkles className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Amenidades</h3>
             </div>
             <div className="flex flex-wrap gap-2 mb-4">
               {AMENITY_OPTIONS.map(a => {
@@ -528,10 +528,10 @@ export default function CrearPerfilBusqueda() {
           </div>
 
           {/* Notas */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-6 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
-              <StickyNote className="w-5 h-5 text-slate-600" />
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Notas Adicionales</h3>
+              <StickyNote className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Notas Adicionales</h3>
             </div>
             <div className="space-y-4">
               <div>
