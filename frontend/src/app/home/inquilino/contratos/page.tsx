@@ -79,6 +79,7 @@ export default function ContractDashboard() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null)
+  const [signingContractId, setSigningContractId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -105,6 +106,7 @@ export default function ContractDashboard() {
   }
 
   const handleSignContract = async (contractId: string) => {
+    setSigningContractId(contractId)
     const token = localStorage.getItem('access_token')
     try {
       const res = await api.post(`/api/contracts/my/${contractId}/sign`, {}, {
@@ -115,6 +117,7 @@ export default function ContractDashboard() {
       window.location.href = res.data.url
     } catch (error) {
       alert('Error al iniciar la firma del contrato')
+      setSigningContractId(null)
     }
   }
 
@@ -304,10 +307,20 @@ export default function ContractDashboard() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleSignContract(contract.id)}
+                        disabled={signingContractId === contract.id}
                         className="hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700 border-orange-200 text-orange-600"
                       >
-                        <AlertCircle className="w-4 h-4 mr-1" />
-                        Firmar Contrato
+                        {signingContractId === contract.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-600 border-t-transparent mr-1"></div>
+                            Cargando...
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                            Firmar Contrato
+                          </>
+                        )}
                       </Button>
                     )}
                     {contract.status === 'pending_deposit' && (

@@ -10,6 +10,7 @@ import { UploadCloud, FileText, Search, CheckCircle, Loader2, PenTool } from 'lu
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import LocationSelector from '@/components/location-selector';
+import PDFViewerModal from '@/components/pdf-viewer-modal';
 
 type Tenant = {
   id: string;
@@ -30,6 +31,7 @@ function CrearContratoContent() {
   const [signing, setSigning] = useState(false);
   const [contractId, setContractId] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
 
   // Tenant search
   const [tenantEmail, setTenantEmail] = useState('');
@@ -599,7 +601,7 @@ function CrearContratoContent() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(pdfUrl, '_blank')}
+                          onClick={() => setPdfViewerOpen(true)}
                           className="text-blue-600 hover:bg-blue-50"
                         >
                           Ver PDF
@@ -696,6 +698,13 @@ function CrearContratoContent() {
           </CardContent>
         </Card>
       </div>
+
+      <PDFViewerModal
+        open={pdfViewerOpen}
+        pdfUrl={pdfUrl}
+        onClose={() => setPdfViewerOpen(false)}
+        title="Contrato PDF"
+      />
     </div>
   );
 }
