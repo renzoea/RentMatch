@@ -13,9 +13,11 @@ import {
   Clock,
   Archive,
   ShieldCheck,
-  User
+  User,
+  AlertCircle
 } from "lucide-react"
 import ContractDetailModal from "@/components/contract-detail-modal"
+import PDFViewerModal from "@/components/pdf-viewer-modal"
 
 type Contract = {
   id: string
@@ -75,6 +77,8 @@ export default function ContractDashboard() {
   const [loading, setLoading] = useState(true)
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -98,6 +102,20 @@ export default function ContractDashboard() {
       .then(res => setContracts(res.data))
       .catch(() => setContracts([]))
       .finally(() => setLoading(false))
+  }
+
+  const handleSignContract = async (contractId: string) => {
+    const token = localStorage.getItem('access_token')
+    try {
+      const res = await api.post(`/api/contracts/my/${contractId}/sign`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      localStorage.setItem('contractId', contractId)
+      localStorage.setItem('envelopeId', res.data.envelopeId)
+      window.location.href = res.data.url
+    } catch (error) {
+      alert('Error al iniciar la firma del contrato')
+    }
   }
 
   // Métricas por estado
@@ -254,7 +272,7 @@ export default function ContractDashboard() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -271,13 +289,36 @@ export default function ContractDashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        asChild
+                        onClick={() => {
+                          setSelectedPdfUrl(contract.document_url || null)
+                          setPdfViewerOpen(true)
+                        }}
                         className="hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700"
                       >
-                        <a href={contract.document_url} target="_blank" rel="noopener noreferrer">
-                          <FileText className="w-4 h-4 mr-1" />
-                          Descargar PDF
-                        </a>
+                        <FileText className="w-4 h-4 mr-1" />
+                        Ver Contrato PDF
+                      </Button>
+                    )}
+                    {contract.status === 'pending_signatures' && contract.tenant_signature !== 'signed' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSignContract(contract.id)}
+                        className="hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700 border-orange-200 text-orange-600"
+                      >
+                        <AlertCircle className="w-4 h-4 mr-1" />
+                        Firmar Contrato
+                      </Button>
+                    )}
+                    {contract.status === 'pending_deposit' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push("/home/inquilino/depositos")}
+                        className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 border-blue-200 text-blue-600"
+                      >
+                        <AlertCircle className="w-4 h-4 mr-1" />
+                        Realizar Depósito
                       </Button>
                     )}
                   </div>
@@ -295,6 +336,14 @@ export default function ContractDashboard() {
         onClose={() => setDetailOpen(false)}
         onDeposit={() => router.push("/home/inquilino/depositos")}
         onSigned={handleSigned}
+      />
+
+      {/* Modal de Visor PDF */}
+      <PDFViewerModal
+        open={pdfViewerOpen}
+        pdfUrl={selectedPdfUrl}
+        onClose={() => setPdfViewerOpen(false)}
+        title="Contrato PDF"
       />
     </div>
   )

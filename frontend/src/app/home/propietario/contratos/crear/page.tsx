@@ -255,7 +255,8 @@ function CrearContratoContent() {
       });
 
       setContractId(res.data.contract.id);
-      alert('Contrato creado correctamente. Ahora puedes firmarlo.');
+      alert('Contrato creado correctamente.');
+      router.push('/home/propietario/contratos');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
       alert(err.response?.data?.error || 'Error al crear el contrato');
