@@ -48,7 +48,6 @@ const getActiveRentals = async (req, res) => {
                 start_date: contract.start_date,
                 end_date: contract.end_date,
                 rent_amount: contract.rent_amount,
-                rent_currency: contract.rent_currency,
                 status: contract.status,
                 // Datos de la propiedad para la card
                 address: property?.address_line || 'No especificada',
@@ -119,7 +118,6 @@ const getRentalHistory = async (req, res) => {
                 start_date: contract.start_date,
                 end_date: contract.end_date,
                 rent_amount: contract.rent_amount,
-                rent_currency: contract.rent_currency,
                 status: contract.status,
                 // Datos de la propiedad para la card
                 address: property?.address_line || 'No especificada',

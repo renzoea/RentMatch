@@ -2,6 +2,7 @@ const supabase = require('../config/supabase');
 const axios = require('axios');
 const docusign = require('docusign-esign');
 const fs = require('fs');
+const { createDeposit } = require('./depositController');
 
 // Helper: Descargar PDF firmado de DocuSign y subirlo a Supabase
 async function downloadAndSaveSignedPDF(envelopeId, contractId) {
@@ -119,9 +120,7 @@ exports.createContract = async (req, res) => {
       tenant_id,
       property, // objeto con los datos de la propiedad
       rent_amount,
-      rent_currency,
       deposit_amount,
-      deposit_currency,
       payment_day,
       start_date,
       end_date,
@@ -150,9 +149,7 @@ exports.createContract = async (req, res) => {
         tenant_id,
         property_id: propertyData.id,
         rent_amount,
-        rent_currency,
         deposit_amount,
-        deposit_currency,
         payment_day,
         start_date,
         end_date,
@@ -506,7 +503,18 @@ exports.confirmTenantSignature = async (req, res) => {
   const { signatureUrl, envelopeId } = req.body;
 
   try {
-    // Si tenemos envelopeId, descargar el PDF firmado
+    // 1. Obtener datos del contrato antes de actualizar
+    const { data: contract, error: contractFetchError } = await supabase
+      .from('contracts')
+      .select('tenant_id, deposit_amount')
+      .eq('id', id)
+      .single();
+
+    if (contractFetchError || !contract) {
+      return res.status(404).json({ error: 'Contrato no encontrado.' });
+    }
+
+    // 2. Si tenemos envelopeId, descargar el PDF firmado
     let signedPdfUrl = null;
     if (envelopeId) {
       try {
@@ -517,6 +525,7 @@ exports.confirmTenantSignature = async (req, res) => {
       }
     }
 
+    // 3. Actualizar el contrato
     const updateData = {
       tenant_signature: 'signed',
       tenant_signed_at: new Date(),
@@ -538,7 +547,24 @@ exports.confirmTenantSignature = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: 'Contrato actualizado correctamente.' });
+    // 4. CREAR EL DEPÓSITO AUTOMÁTICAMENTE
+    try {
+      const deposit = await createDeposit(
+        id, // contract_id
+        contract.tenant_id, // tenant_id
+        contract.deposit_amount // amount
+      );
+      console.log('Depósito creado automáticamente:', deposit.id);
+    } catch (depositError) {
+      console.error('Error al crear depósito:', depositError);
+      // No retornamos error porque el contrato ya se actualizó correctamente
+      // El depósito se puede crear manualmente después si es necesario
+    }
+
+    res.json({
+      message: 'Contrato actualizado correctamente. Depósito creado.',
+      contract_id: id
+    });
   } catch (err) {
     console.error('Error en confirmTenantSignature:', err);
     res.status(500).json({ error: 'Error interno del servidor.' });

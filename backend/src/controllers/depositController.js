@@ -1,0 +1,470 @@
+const supabase = require('../config/supabase');
+
+/**
+ * FUNCIÓN INTERNA: Crear depósito (llamada desde contractController)
+ * Se ejecuta automáticamente cuando el inquilino firma el contrato
+ */
+exports.createDeposit = async (contractId, tenantId, amount) => {
+  try {
+    const { data, error } = await supabase
+      .from('deposits')
+      .insert([{
+        contract_id: contractId,
+        amount: amount,
+        status: 'pending_payment',
+        submitted_by: tenantId,
+        outcome: 'undecided'
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error al crear depósito:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Error en createDeposit:', err);
+    throw err;
+  }
+};
+
+/**
+ * GET /api/deposits/my
+ * Obtener depósitos del usuario actual (inquilino o propietario)
+ */
+exports.getMyDeposits = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Obtener perfil del usuario para saber su rol
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      return res.status(404).json({ error: 'Perfil no encontrado.' });
+    }
+
+    let deposits = [];
+
+    if (profile.role === 'inquilino') {
+      // Si es inquilino, buscar depósitos donde él es el submitted_by
+      const { data, error } = await supabase
+        .from('deposits')
+        .select('*')
+        .eq('submitted_by', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      deposits = data || [];
+    } else if (profile.role === 'propietario') {
+      // Si es propietario, buscar depósitos de contratos donde él es el landlord
+      // Primero obtener contratos del propietario
+      const { data: contracts, error: contractError } = await supabase
+        .from('contracts')
+        .select('id')
+        .eq('landlord_id', userId);
+
+      if (contractError) {
+        return res.status(400).json({ error: contractError.message });
+      }
+
+      const contractIds = contracts.map(c => c.id);
+
+      if (contractIds.length === 0) {
+        return res.json([]);
+      }
+
+      // Obtener depósitos de esos contratos
+      const { data, error } = await supabase
+        .from('deposits')
+        .select('*')
+        .in('contract_id', contractIds)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      deposits = data || [];
+    } else {
+      return res.status(403).json({ error: 'Rol no autorizado.' });
+    }
+
+    // Enriquecer con datos del contrato y propiedad
+    const contractIds = deposits.map(d => d.contract_id);
+
+    if (contractIds.length === 0) {
+      return res.json([]);
+    }
+
+    const { data: contracts, error: contractsError } = await supabase
+      .from('contracts')
+      .select('id, property_id, tenant_id, landlord_id, start_date, end_date, status, rent_amount')
+      .in('id', contractIds);
+
+    if (contractsError) {
+      return res.status(400).json({ error: contractsError.message });
+    }
+
+    const propertyIds = contracts.map(c => c.property_id).filter(id => id);
+
+    const { data: properties, error: propertiesError } = await supabase
+      .from('properties')
+      .select('id, address_line, city, neighborhood, property_type')
+      .in('id', propertyIds);
+
+    if (propertiesError) {
+      return res.status(400).json({ error: propertiesError.message });
+    }
+
+    // Obtener perfiles (inquilinos y propietarios)
+    const tenantIds = contracts.map(c => c.tenant_id);
+    const landlordIds = contracts.map(c => c.landlord_id);
+    const allUserIds = [...new Set([...tenantIds, ...landlordIds])];
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', allUserIds);
+
+    if (profilesError) {
+      return res.status(400).json({ error: profilesError.message });
+    }
+
+    // Mapear datos
+    const propertyMap = {};
+    properties.forEach(p => {
+      propertyMap[p.id] = p;
+    });
+
+    const contractMap = {};
+    contracts.forEach(c => {
+      contractMap[c.id] = c;
+    });
+
+    const profileMap = {};
+    profiles.forEach(p => {
+      profileMap[p.id] = p;
+    });
+
+    // Combinar todo
+    const enrichedDeposits = deposits.map(deposit => {
+      const contract = contractMap[deposit.contract_id];
+      const property = contract ? propertyMap[contract.property_id] : null;
+      const tenant = contract ? profileMap[contract.tenant_id] : null;
+      const landlord = contract ? profileMap[contract.landlord_id] : null;
+
+      return {
+        ...deposit,
+        contract: contract || null,
+        property: property || null,
+        tenant: tenant || null,
+        landlord: landlord || null
+      };
+    });
+
+    res.json(enrichedDeposits);
+  } catch (err) {
+    console.error('Error en getMyDeposits:', err);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};
+
+/**
+ * GET /api/deposits/:id
+ * Obtener detalle de un depósito específico
+ */
+exports.getDepositDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Obtener depósito
+    const { data: deposit, error } = await supabase
+      .from('deposits')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !deposit) {
+      return res.status(404).json({ error: 'Depósito no encontrado.' });
+    }
+
+    // Obtener contrato asociado para verificar permisos
+    const { data: contract, error: contractError } = await supabase
+      .from('contracts')
+      .select('*, property:properties(*)')
+      .eq('id', deposit.contract_id)
+      .single();
+
+    if (contractError || !contract) {
+      return res.status(404).json({ error: 'Contrato no encontrado.' });
+    }
+
+    // Verificar que el usuario sea el inquilino o el propietario
+    if (contract.tenant_id !== userId && contract.landlord_id !== userId) {
+      return res.status(403).json({ error: 'No tienes permiso para ver este depósito.' });
+    }
+
+    // Obtener perfiles
+    const { data: tenant } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('id', contract.tenant_id)
+      .single();
+
+    const { data: landlord } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('id', contract.landlord_id)
+      .single();
+
+    res.json({
+      ...deposit,
+      contract,
+      tenant,
+      landlord
+    });
+  } catch (err) {
+    console.error('Error en getDepositDetail:', err);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};
+
+/**
+ * POST /api/deposits/:id/mark-as-paid
+ * El inquilino marca el depósito como pagado
+ * Esto activa el depósito y el contrato
+ */
+exports.markAsPaid = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { proof_url } = req.body; // Opcional: URL del comprobante
+
+    // Obtener depósito
+    const { data: deposit, error: depositError } = await supabase
+      .from('deposits')
+      .select('*, contract:contracts(*)')
+      .eq('id', id)
+      .single();
+
+    if (depositError || !deposit) {
+      return res.status(404).json({ error: 'Depósito no encontrado.' });
+    }
+
+    // Verificar que el usuario sea el inquilino
+    if (deposit.contract.tenant_id !== userId) {
+      return res.status(403).json({ error: 'Solo el inquilino puede marcar el depósito como pagado.' });
+    }
+
+    // Verificar que el depósito esté en estado pending_payment
+    if (deposit.status !== 'pending_payment') {
+      return res.status(400).json({
+        error: `El depósito no puede ser marcado como pagado. Estado actual: ${deposit.status}`
+      });
+    }
+
+    // 1. Actualizar depósito a 'held'
+    const updateData = {
+      status: 'held',
+      verified_at: new Date().toISOString()
+    };
+
+    if (proof_url) {
+      updateData.proof_url = proof_url;
+    }
+
+    const { error: updateError } = await supabase
+      .from('deposits')
+      .update(updateData)
+      .eq('id', id);
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    // 2. Actualizar contrato a 'active'
+    const { error: contractError } = await supabase
+      .from('contracts')
+      .update({ status: 'active' })
+      .eq('id', deposit.contract_id);
+
+    if (contractError) {
+      console.error('Error al actualizar contrato:', contractError);
+      return res.status(400).json({ error: contractError.message });
+    }
+
+    res.json({
+      message: 'Depósito marcado como pagado. El contrato está ahora activo.',
+      deposit_id: id,
+      contract_id: deposit.contract_id
+    });
+  } catch (err) {
+    console.error('Error en markAsPaid:', err);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};
+
+/**
+ * POST /api/deposits/:id/release
+ * Liberar el depósito al finalizar el contrato
+ * Solo el propietario puede ejecutar esto
+ */
+exports.releaseDeposit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { outcome, tenant_share, landlord_share, notes } = req.body;
+
+    // Validar outcome
+    const validOutcomes = ['return_to_tenant', 'return_to_landlord', 'split'];
+    if (!outcome || !validOutcomes.includes(outcome)) {
+      return res.status(400).json({
+        error: 'Outcome inválido. Debe ser: return_to_tenant, return_to_landlord, o split'
+      });
+    }
+
+    // Si es split, validar shares
+    if (outcome === 'split') {
+      if (!tenant_share || !landlord_share) {
+        return res.status(400).json({
+          error: 'Para outcome "split" debes especificar tenant_share y landlord_share'
+        });
+      }
+
+      const totalShare = parseFloat(tenant_share) + parseFloat(landlord_share);
+      if (Math.abs(totalShare - 100) > 0.01) {
+        return res.status(400).json({
+          error: 'La suma de tenant_share y landlord_share debe ser 100%'
+        });
+      }
+    }
+
+    // Obtener depósito
+    const { data: deposit, error: depositError } = await supabase
+      .from('deposits')
+      .select('*, contract:contracts(*)')
+      .eq('id', id)
+      .single();
+
+    if (depositError || !deposit) {
+      return res.status(404).json({ error: 'Depósito no encontrado.' });
+    }
+
+    // Verificar que el usuario sea el propietario
+    if (deposit.contract.landlord_id !== userId) {
+      return res.status(403).json({ error: 'Solo el propietario puede liberar el depósito.' });
+    }
+
+    // Verificar que el depósito esté en estado 'held'
+    if (deposit.status !== 'held') {
+      return res.status(400).json({
+        error: `El depósito no puede ser liberado. Estado actual: ${deposit.status}`
+      });
+    }
+
+    // Determinar el nuevo status basado en outcome
+    let newStatus;
+    if (outcome === 'return_to_tenant') {
+      newStatus = 'returned_to_tenant';
+    } else if (outcome === 'return_to_landlord') {
+      newStatus = 'returned_to_landlord';
+    } else if (outcome === 'split') {
+      newStatus = 'returned_to_tenant'; // Usamos este status, pero el split se refleja en los shares
+    }
+
+    // Actualizar depósito
+    const updateData = {
+      status: newStatus,
+      outcome: outcome,
+      released_by: userId,
+      released_at: new Date().toISOString(),
+      notes: notes || null
+    };
+
+    if (outcome === 'split') {
+      updateData.tenant_share = parseFloat(tenant_share);
+      updateData.landlord_share = parseFloat(landlord_share);
+    }
+
+    const { error: updateError } = await supabase
+      .from('deposits')
+      .update(updateData)
+      .eq('id', id);
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({
+      message: 'Depósito liberado correctamente.',
+      deposit_id: id,
+      outcome: outcome
+    });
+  } catch (err) {
+    console.error('Error en releaseDeposit:', err);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};
+
+/**
+ * DELETE /api/deposits/:id/cancel
+ * Cancelar un depósito que nunca fue pagado
+ * Solo el inquilino o propietario pueden cancelar
+ */
+exports.cancelDeposit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Obtener depósito
+    const { data: deposit, error: depositError } = await supabase
+      .from('deposits')
+      .select('*, contract:contracts(*)')
+      .eq('id', id)
+      .single();
+
+    if (depositError || !deposit) {
+      return res.status(404).json({ error: 'Depósito no encontrado.' });
+    }
+
+    // Verificar que el usuario sea el inquilino o propietario
+    if (deposit.contract.tenant_id !== userId && deposit.contract.landlord_id !== userId) {
+      return res.status(403).json({ error: 'No tienes permiso para cancelar este depósito.' });
+    }
+
+    // Solo se puede cancelar si está en pending_payment
+    if (deposit.status !== 'pending_payment') {
+      return res.status(400).json({
+        error: `No se puede cancelar. El depósito ya fue procesado. Estado: ${deposit.status}`
+      });
+    }
+
+    // Eliminar el depósito
+    const { error: deleteError } = await supabase
+      .from('deposits')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      return res.status(400).json({ error: deleteError.message });
+    }
+
+    res.json({
+      message: 'Depósito cancelado correctamente.',
+      deposit_id: id
+    });
+  } catch (err) {
+    console.error('Error en cancelDeposit:', err);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};

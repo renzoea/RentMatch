@@ -39,6 +39,7 @@ app.use(cors({
 const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const contractRoutes = require('./src/routes/contractRoutes');
+const depositRoutes = require('./src/routes/depositRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
 const MobileRoutes = require('./src/routes/MobileRoutes');
 const MobileUserRoutes = require('./src/routes/MobileProfileRoutes');
@@ -49,6 +50,7 @@ const MobileReporterRoutes = require('./src/routes/MobileReportRoutes');
 app.use('/api/search-profiles', searchProfileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/deposits', depositRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/mobile-auth', MobileRoutes);
 app.use('/api/mobile-user', MobileUserRoutes);

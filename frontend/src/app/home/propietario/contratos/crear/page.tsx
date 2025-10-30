@@ -55,9 +55,7 @@ function CrearContratoContent() {
 
     // Contrato
     rent_amount: '',
-    rent_currency: 'ARS',
     deposit_amount: '',
-    deposit_currency: 'ARS',
     payment_day: 1,
     start_date: '',
     duration_months: 36, // Duración en meses (por defecto 36 = 3 años)
@@ -115,9 +113,7 @@ function CrearContratoContent() {
         amenities: contract.property?.amenities || [],
         notes: contract.property?.notes || '',
         rent_amount: contract.rent_amount?.toString() || '',
-        rent_currency: contract.rent_currency || 'ARS',
         deposit_amount: contract.deposit_amount?.toString() || '',
-        deposit_currency: contract.deposit_currency || 'ARS',
         payment_day: contract.payment_day || 1,
         start_date: contract.start_date || '',
         duration_months: monthsDiff || 36,
@@ -242,9 +238,7 @@ function CrearContratoContent() {
           notes: formData.notes || null,
         },
         rent_amount: parseFloat(formData.rent_amount),
-        rent_currency: formData.rent_currency,
         deposit_amount: parseFloat(formData.deposit_amount || formData.rent_amount),
-        deposit_currency: formData.deposit_currency,
         payment_day: parseInt(formData.payment_day.toString()),
         start_date: formData.start_date,
         end_date: endDate.toISOString().split('T')[0],
@@ -496,7 +490,7 @@ function CrearContratoContent() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="rent_amount">Monto del Alquiler *</Label>
+                    <Label htmlFor="rent_amount">Monto del Alquiler (ARS) *</Label>
                     <Input
                       id="rent_amount"
                       type="number"
@@ -507,7 +501,7 @@ function CrearContratoContent() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="deposit_amount">Monto del Depósito</Label>
+                    <Label htmlFor="deposit_amount">Monto del Depósito (ARS)</Label>
                     <Input
                       id="deposit_amount"
                       type="number"

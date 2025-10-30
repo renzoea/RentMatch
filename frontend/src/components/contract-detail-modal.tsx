@@ -31,6 +31,7 @@ type ContractDetail = {
   status: string
   rent_amount: number
   rent_currency: string
+  deposit_amount: number
   start_date: string
   end_date: string
   terms?: string
@@ -384,8 +385,14 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit, onSi
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {data.rent_amount !== undefined && data.rent_amount !== null && (
                     <div>
-                      <span className="font-medium text-gray-700">Monto:</span>{" "}
-                      ${data.rent_amount.toLocaleString()} {data.rent_currency || 'ARS'}
+                      <span className="font-medium text-gray-700">Alquiler mensual:</span>{" "}
+                      ${data.rent_amount.toLocaleString()} ARS
+                    </div>
+                  )}
+                  {data.deposit_amount !== undefined && data.deposit_amount !== null && (
+                    <div>
+                      <span className="font-medium text-gray-700">Depósito:</span>{" "}
+                      ${data.deposit_amount.toLocaleString()} ARS
                     </div>
                   )}
                   {data.start_date && data.end_date && (
