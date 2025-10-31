@@ -444,7 +444,7 @@ export default function PropietarioHomePage() {
                         <strong>1. Usa los filtros:</strong> Filtra por ubicación, presupuesto, tipo de propiedad y características específicas para encontrar inquilinos que coincidan con tu propiedad.
                       </p>
                       <p>
-                        <strong>2. Revisa perfiles verificados:</strong> Los inquilinos con badge "Verificado" han completado su proceso de verificación.
+                        <strong>2. Revisa perfiles verificados:</strong> Los inquilinos con badge &quot;Verificado&quot; han completado su proceso de verificación.
                       </p>
                       <p>
                         <strong>3. Contacta directamente:</strong> Puedes contactar a los inquilinos por WhatsApp o email. Nota: necesitas tener tu perfil verificado para poder contactar.

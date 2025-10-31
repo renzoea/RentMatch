@@ -127,7 +127,7 @@ export default function LandlordContractsDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       })
       fetchContracts()
-    } catch (error) {
+    } catch {
       alert('Error al eliminar el contrato')
     }
   }
@@ -142,7 +142,7 @@ export default function LandlordContractsDashboard() {
       localStorage.setItem('contractId', contractId)
       localStorage.setItem('envelopeId', res.data.envelopeId)
       window.location.href = res.data.url
-    } catch (error) {
+    } catch {
       alert('Error al iniciar la firma del contrato')
       setSigningContractId(null)
     }
