@@ -173,22 +173,22 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
             <div className="space-y-5">
               {/* Ubicación */}
               {(data.city || data.neighborhood) && (
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <MapPin className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Ubicación</h3>
+                    <MapPin className="w-5 h-5 text-orange-600" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ubicación</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {data.city && (
                       <div className="flex items-start gap-2">
-                        <span className="text-blue-700 font-semibold text-sm">Ciudad:</span>
-                        <span className="text-blue-900 text-sm">{cap(data.city)}</span>
+                        <span className="text-gray-700 font-medium text-sm">Ciudad:</span>
+                        <span className="text-gray-900 text-sm">{cap(data.city)}</span>
                       </div>
                     )}
                     {data.neighborhood && (
                       <div className="flex items-start gap-2">
-                        <span className="text-blue-700 font-semibold text-sm">Barrio:</span>
-                        <span className="text-blue-900 text-sm">{cap(data.neighborhood)}</span>
+                        <span className="text-gray-700 font-medium text-sm">Barrio:</span>
+                        <span className="text-gray-900 text-sm">{cap(data.neighborhood)}</span>
                       </div>
                     )}
                   </div>
@@ -197,29 +197,29 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
 
               {/* Economía */}
               {(data.budget_min || data.budget_max || data.lease_term_months) && (
-                <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200">
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <DollarSign className="w-5 h-5 text-green-600" />
-                    <h3 className="text-sm font-bold text-green-900 uppercase tracking-wide">Economía</h3>
+                    <DollarSign className="w-5 h-5 text-orange-600" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Economía</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {data.budget_min && (
                       <div className="flex items-center gap-2">
-                        <span className="text-green-700 font-semibold text-sm">Presupuesto Mín:</span>
-                        <span className="text-green-900 font-bold text-sm">${data.budget_min.toLocaleString()}</span>
+                        <span className="text-gray-700 font-medium text-sm">Presupuesto Mín:</span>
+                        <span className="text-gray-900 font-bold text-sm">${data.budget_min.toLocaleString()}</span>
                       </div>
                     )}
                     {data.budget_max && (
                       <div className="flex items-center gap-2">
-                        <span className="text-green-700 font-semibold text-sm">Presupuesto Máx:</span>
-                        <span className="text-green-900 font-bold text-sm">${data.budget_max.toLocaleString()}</span>
+                        <span className="text-gray-700 font-medium text-sm">Presupuesto Máx:</span>
+                        <span className="text-gray-900 font-bold text-sm">${data.budget_max.toLocaleString()}</span>
                       </div>
                     )}
                     {data.lease_term_months && (
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-green-600" />
-                        <span className="text-green-700 font-semibold text-sm">Contrato:</span>
-                        <span className="text-green-900 text-sm">{data.lease_term_months} meses</span>
+                        <Calendar className="w-4 h-4 text-orange-600" />
+                        <span className="text-gray-700 font-medium text-sm">Contrato:</span>
+                        <span className="text-gray-900 text-sm">{data.lease_term_months} meses</span>
                       </div>
                     )}
                   </div>
@@ -227,18 +227,18 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
               )}
 
               {/* Propiedad */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200">
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <Building2 className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Propiedad</h3>
+                  <Building2 className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Propiedad</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {data.property_types?.length > 0 && (
                     <div className="md:col-span-2">
-                      <span className="text-purple-700 font-semibold text-sm block mb-2">Tipos:</span>
+                      <span className="text-gray-700 font-medium text-sm block mb-2">Tipos:</span>
                       <div className="flex flex-wrap gap-2">
                         {data.property_types.map(t => (
-                          <span key={t} className="px-3 py-1.5 bg-purple-200 text-purple-800 rounded-lg text-xs font-medium">
+                          <span key={t} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
                             {cap(t)}
                           </span>
                         ))}
@@ -247,35 +247,35 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
                   )}
                   {(data.bedroom_min || data.bedroom_max) && (
                     <div className="flex items-center gap-2">
-                      <Bed className="w-4 h-4 text-purple-600" />
-                      <span className="text-purple-700 font-semibold text-sm">Dormitorios:</span>
-                      <span className="text-purple-900 text-sm">{data.bedroom_min || 0} - {data.bedroom_max || '∞'}</span>
+                      <Bed className="w-4 h-4 text-orange-600" />
+                      <span className="text-gray-700 font-medium text-sm">Dormitorios:</span>
+                      <span className="text-gray-900 text-sm">{data.bedroom_min || 0} - {data.bedroom_max || '∞'}</span>
                     </div>
                   )}
                   {(data.rooms_min || data.rooms_max) && (
                     <div className="flex items-center gap-2">
-                      <Home className="w-4 h-4 text-purple-600" />
-                      <span className="text-purple-700 font-semibold text-sm">Ambientes:</span>
-                      <span className="text-purple-900 text-sm">{data.rooms_min || 0} - {data.rooms_max || '∞'}</span>
+                      <Home className="w-4 h-4 text-orange-600" />
+                      <span className="text-gray-700 font-medium text-sm">Ambientes:</span>
+                      <span className="text-gray-900 text-sm">{data.rooms_min || 0} - {data.rooms_max || '∞'}</span>
                     </div>
                   )}
                   {(data.bathrooms_min || data.bathrooms_max) && (
                     <div className="flex items-center gap-2">
-                      <Bath className="w-4 h-4 text-purple-600" />
-                      <span className="text-purple-700 font-semibold text-sm">Baños:</span>
-                      <span className="text-purple-900 text-sm">{data.bathrooms_min || 0} - {data.bathrooms_max || '∞'}</span>
+                      <Bath className="w-4 h-4 text-orange-600" />
+                      <span className="text-gray-700 font-medium text-sm">Baños:</span>
+                      <span className="text-gray-900 text-sm">{data.bathrooms_min || 0} - {data.bathrooms_max || '∞'}</span>
                     </div>
                   )}
                   {(data.area_min || data.area_max) && (
                     <div className="flex items-center gap-2">
-                      <Maximize className="w-4 h-4 text-purple-600" />
-                      <span className="text-purple-700 font-semibold text-sm">Área (m²):</span>
-                      <span className="text-purple-900 text-sm">{data.area_min || 0} - {data.area_max || '∞'}</span>
+                      <Maximize className="w-4 h-4 text-orange-600" />
+                      <span className="text-gray-700 font-medium text-sm">Área (m²):</span>
+                      <span className="text-gray-900 text-sm">{data.area_min || 0} - {data.area_max || '∞'}</span>
                     </div>
                   )}
                   {data.furnished !== undefined && (
                     <div className="flex items-center gap-2">
-                      <span className="text-purple-700 font-semibold text-sm">Amoblado:</span>
+                      <span className="text-gray-700 font-medium text-sm">Amoblado:</span>
                       <BooleanBadge value={data.furnished} />
                     </div>
                   )}
@@ -283,47 +283,47 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
               </div>
 
               {/* Preferencias */}
-              <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-5 border border-amber-200">
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <Users className="w-5 h-5 text-amber-600" />
-                  <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide">Preferencias</h3>
+                  <Users className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Preferencias</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {data.pets_allowed !== undefined && (
                     <div className="flex items-center gap-2">
-                      <span className="text-amber-700 font-semibold text-sm">Mascotas:</span>
+                      <span className="text-gray-700 font-medium text-sm">Mascotas:</span>
                       <BooleanBadge value={data.pets_allowed} />
                     </div>
                   )}
                   {data.smokers_allowed !== undefined && (
                     <div className="flex items-center gap-2">
-                      <span className="text-amber-700 font-semibold text-sm">Fumadores:</span>
+                      <span className="text-gray-700 font-medium text-sm">Fumadores:</span>
                       <BooleanBadge value={data.smokers_allowed} />
                     </div>
                   )}
                   {data.children !== undefined && (
                     <div className="flex items-center gap-2">
-                      <span className="text-amber-700 font-semibold text-sm">Niños:</span>
+                      <span className="text-gray-700 font-medium text-sm">Niños:</span>
                       <BooleanBadge value={data.children} />
                     </div>
                   )}
                   {data.students !== undefined && (
                     <div className="flex items-center gap-2">
-                      <span className="text-amber-700 font-semibold text-sm">Estudiantes:</span>
+                      <span className="text-gray-700 font-medium text-sm">Estudiantes:</span>
                       <BooleanBadge value={data.students} />
                     </div>
                   )}
                   {data.parking_needed !== undefined && (
                     <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-amber-600" />
-                      <span className="text-amber-700 font-semibold text-sm">Estacionamiento:</span>
+                      <Car className="w-4 h-4 text-orange-600" />
+                      <span className="text-gray-700 font-medium text-sm">Estacionamiento:</span>
                       <BooleanBadge value={data.parking_needed} trueText="Necesario" falseText="Opcional" />
                     </div>
                   )}
                   {data.require_verified_landlord !== undefined && (
                     <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-amber-600" />
-                      <span className="text-amber-700 font-semibold text-sm">Landlord verificado:</span>
+                      <Shield className="w-4 h-4 text-orange-600" />
+                      <span className="text-gray-700 font-medium text-sm">Landlord verificado:</span>
                       <BooleanBadge value={data.require_verified_landlord} />
                     </div>
                   )}
@@ -332,16 +332,16 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
 
               {/* Comodidades */}
               {(data.amenities?.length || data.balcony || data.terrace || data.laundry || data.security || data.elevator) && (
-                <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-5 border border-teal-200">
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-5 h-5 text-teal-600" />
-                    <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Comodidades</h3>
+                    <Sparkles className="w-5 h-5 text-orange-600" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Comodidades</h3>
                   </div>
                   {data.amenities && data.amenities.length > 0 && (
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-2">
                         {data.amenities.map(a => (
-                          <span key={a} className="px-3 py-1.5 bg-teal-200 text-teal-800 rounded-lg text-xs font-medium">
+                          <span key={a} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
                             {cap(a)}
                           </span>
                         ))}
@@ -351,32 +351,32 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {data.balcony && (
                       <div className="flex items-center gap-2">
-                        <Sun className="w-4 h-4 text-teal-600" />
-                        <span className="text-teal-900 text-sm">Balcón</span>
+                        <Sun className="w-4 h-4 text-orange-600" />
+                        <span className="text-gray-900 text-sm">Balcón</span>
                       </div>
                     )}
                     {data.terrace && (
                       <div className="flex items-center gap-2">
-                        <Waves className="w-4 h-4 text-teal-600" />
-                        <span className="text-teal-900 text-sm">Terraza</span>
+                        <Waves className="w-4 h-4 text-orange-600" />
+                        <span className="text-gray-900 text-sm">Terraza</span>
                       </div>
                     )}
                     {data.laundry && (
                       <div className="flex items-center gap-2">
-                        <Wind className="w-4 h-4 text-teal-600" />
-                        <span className="text-teal-900 text-sm">Lavadero</span>
+                        <Wind className="w-4 h-4 text-orange-600" />
+                        <span className="text-gray-900 text-sm">Lavadero</span>
                       </div>
                     )}
                     {data.security && (
                       <div className="flex items-center gap-2">
-                        <Lock className="w-4 h-4 text-teal-600" />
-                        <span className="text-teal-900 text-sm">Seguridad</span>
+                        <Lock className="w-4 h-4 text-orange-600" />
+                        <span className="text-gray-900 text-sm">Seguridad</span>
                       </div>
                     )}
                     {data.elevator && (
                       <div className="flex items-center gap-2">
-                        <MoveUp className="w-4 h-4 text-teal-600" />
-                        <span className="text-teal-900 text-sm">Ascensor</span>
+                        <MoveUp className="w-4 h-4 text-orange-600" />
+                        <span className="text-gray-900 text-sm">Ascensor</span>
                       </div>
                     )}
                   </div>
@@ -385,22 +385,22 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
 
               {/* Notas */}
               {(data.metadata?.preferencias || data.metadata?.notas) && (
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border border-slate-200">
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <StickyNote className="w-5 h-5 text-slate-600" />
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Notas</h3>
+                    <StickyNote className="w-5 h-5 text-orange-600" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Notas</h3>
                   </div>
                   <div className="space-y-3">
                     {data.metadata?.preferencias && (
-                      <div className="bg-white p-3 rounded-lg border border-slate-200">
-                        <span className="text-slate-700 font-semibold text-sm block mb-1">Preferencias:</span>
-                        <p className="text-slate-600 text-sm leading-relaxed">{data.metadata.preferencias}</p>
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <span className="text-gray-700 font-medium text-sm block mb-1">Preferencias:</span>
+                        <p className="text-gray-600 text-sm leading-relaxed">{data.metadata.preferencias}</p>
                       </div>
                     )}
                     {data.metadata?.notas && (
-                      <div className="bg-white p-3 rounded-lg border border-slate-200">
-                        <span className="text-slate-700 font-semibold text-sm block mb-1">Notas:</span>
-                        <p className="text-slate-600 text-sm leading-relaxed">{data.metadata.notas}</p>
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <span className="text-gray-700 font-medium text-sm block mb-1">Notas:</span>
+                        <p className="text-gray-600 text-sm leading-relaxed">{data.metadata.notas}</p>
                       </div>
                     )}
                   </div>

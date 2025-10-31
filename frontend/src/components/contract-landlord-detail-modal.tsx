@@ -66,7 +66,7 @@ type ContractDetail = {
     accesibilidad?: boolean
     lavadero?: boolean
   }
-  landlord?: {
+  tenant?: {
     full_name: string
     email: string
     phone: string
@@ -79,7 +79,6 @@ interface Props {
   open: boolean
   id: string | null
   onClose: () => void
-  onDeposit?: () => void
 }
 
 function formatDate(date: string) {
@@ -115,8 +114,8 @@ const BooleanBadge = ({ value, trueText = 'Sí', falseText = 'No' }: { value?: b
   if (value === undefined) return null
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-      value 
-        ? 'bg-green-100 text-green-700' 
+      value
+        ? 'bg-green-100 text-green-700'
         : 'bg-gray-100 text-gray-600'
     }`}>
       {value && <CheckCircle2 className="w-3 h-3" />}
@@ -167,11 +166,10 @@ const BOOLEAN_AMENITIES = [
   { key: 'lavadero', label: 'Lavadero', icon: <Wind className="w-4 h-4 text-teal-600" /> }
 ];
 
-export default function ContractDetailModal({ open, id, onClose, onDeposit }: Props) {
+export default function ContractLandlordDetailModal({ open, id, onClose }: Props) {
   const [data, setData] = useState<ContractDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [signing, setSigning] = useState(false)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
 
   useEffect(() => {
@@ -180,35 +178,19 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
     setError(null)
     setData(null)
     const token = localStorage.getItem('access_token')
-    api.get(`/api/contracts/my/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get(`/api/contracts/landlord/my/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setData(res.data))
       .catch(() => setError('Error obteniendo el contrato'))
       .finally(() => setLoading(false))
   }, [open, id])
 
-  const handleSign = async () => {
-    if (!id) return
-    setSigning(true)
-    const token = localStorage.getItem('access_token')
-    try {
-        const res = await api.post(`/api/contracts/my/${id}/sign`, {}, { headers: { Authorization: `Bearer ${token}` } })
-        localStorage.setItem('contractId', id)
-        localStorage.setItem('envelopeId', res.data.envelopeId)
-        window.location.href = res.data.url
-    } catch {
-        setError('Error al iniciar la firma del contrato')
-    } finally {
-        setSigning(false)
-    }
-    }
-
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-blue-100 max-h-[90vh] flex flex-col">
+      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-orange-100 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex items-center justify-between rounded-t-2xl flex-shrink-0">
+        <div className="bg-gradient-to-r from-orange-600 to-orange-500 px-6 py-5 flex items-center justify-between rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-lg">
               <ClipboardCheck className="w-6 h-6 text-white" />
@@ -226,7 +208,7 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
         <div className="p-6 space-y-5 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
               <p className="mt-4 text-gray-500 text-sm">Cargando información...</p>
             </div>
           )}
@@ -256,28 +238,28 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
                 )}
               </div>
 
-              {/* Información del Propietario */}
-              {data.landlord && (
+              {/* Información del Inquilino */}
+              {data.tenant && (
                 <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <User className="w-5 h-5 text-orange-600" />
-                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Propietario</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Inquilino</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-orange-600" />
                       <span className="font-medium text-gray-700">Nombre:</span>{" "}
-                      <span className="text-gray-900">{data.landlord.full_name || "—"}</span>
+                      <span className="text-gray-900">{data.tenant.full_name || "—"}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-orange-600" />
                       <span className="font-medium text-gray-700">Email:</span>{" "}
-                      <span className="text-gray-900">{data.landlord.email || "—"}</span>
+                      <span className="text-gray-900">{data.tenant.email || "—"}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-orange-600" />
                       <span className="font-medium text-gray-700">Teléfono:</span>{" "}
-                      <span className="text-gray-900">{data.landlord.phone || "—"}</span>
+                      <span className="text-gray-900">{data.tenant.phone || "—"}</span>
                     </div>
                   </div>
                 </div>
@@ -354,7 +336,7 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
                       <div className="mb-4">
                         <div className="flex flex-wrap gap-2">
                           {data.property.amenities.map(a => (
-                            <span key={a} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                            <span key={a} className="px-3 py-1.5 bg-teal-200 text-teal-800 rounded-lg text-xs font-medium">
                               {AMENITY_LABELS[a] || a.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </span>
                           ))}
@@ -412,7 +394,7 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
                     <Button
                       variant="outline"
                       onClick={() => setPdfViewerOpen(true)}
-                      className="bg-blue-100 text-blue-700 font-medium hover:bg-blue-200 border-blue-200"
+                      className="bg-orange-100 text-orange-700 font-medium hover:bg-orange-200 border-orange-200"
                     >
                       <FileText className="w-4 h-4 mr-2" />
                       Ver Contrato PDF
@@ -436,23 +418,6 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
 
               {/* Acciones */}
               <div className="flex justify-end pt-4 border-t border-gray-200 gap-2">
-                {data.status === "pending_signatures" && (
-                  <Button variant="default" onClick={handleSign} disabled={signing}>
-                    {signing ? (
-                      <span className="flex items-center gap-2">
-                        <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                        Firmando...
-                      </span>
-                    ) : (
-                      "Firmar Contrato"
-                    )}
-                  </Button>
-                )}
-                {data.status === "pending_deposit" && (
-                  <Button variant="default" onClick={onDeposit}>
-                    Ir a Depósitos
-                  </Button>
-                )}
                 <Button variant="outline" onClick={onClose}>Cerrar</Button>
               </div>
             </div>

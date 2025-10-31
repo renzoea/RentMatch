@@ -1,42 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Filter, Home, MapPin, Calendar, DollarSign, BadgeCheck, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Filter, Home, MapPin, DollarSign, BadgeCheck, Loader2,
+  Eye, Mail, MessageCircle, X, Check, Bed, Bath,
+  Maximize, Calendar, Users, Sparkles, Building2, Car,
+  Shield, Sun, Waves, Wind, Lock, MoveUp, StickyNote, AlertCircle, Info
+} from "lucide-react";
+import React from "react";
+
 import api from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
-import LocationSelector from "@/components/location-selector";
 
-// Formato de dinero
-const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
-const moneyAR = (n: number) => `$${nfAR.format(n)}`;
-
-// ============ Tipos ============
-type TenantProfileCard = {
+type TenantProfile = {
   id: string;
-  initials: string;
-  color: string;
-  name: string;
-  verified?: boolean;
-  seenAgo: string;
-  propertyType: string;
-  budgetMin: number;
-  budgetMax: number;
-  location: string;
-  available: string;
-  amb: number;
-  dorm: number;
-  bath: number;
-  amenities: string[];
-};
-
-// ============ Filtros ============
-type Filters = {
-  property_types: string[];            // enum[]: departamento | ph | duplex | casa | estudio
+  tenant_id: string;
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  profile_status?: string;
   city?: string;
   neighborhood?: string;
   budget_min?: number;
   budget_max?: number;
+  property_types?: string[];
   rooms_min?: number;
   rooms_max?: number;
   bedroom_min?: number;
@@ -45,6 +32,35 @@ type Filters = {
   bathrooms_max?: number;
   area_min?: number;
   area_max?: number;
+  furnished?: boolean;
+  pets_allowed?: boolean;
+  smokers_allowed?: boolean;
+  children?: boolean;
+  students?: boolean;
+  parking_needed?: boolean;
+  require_verified_landlord?: boolean;
+  amenities?: string[];
+  lease_term_months?: number;
+  occupants?: number;
+  balcony?: boolean;
+  terrace?: boolean;
+  laundry?: boolean;
+  security?: boolean;
+  elevator?: boolean;
+  metadata?: { preferencias?: string; notas?: string };
+  created_at?: string;
+  status?: string;
+};
+
+type Filters = {
+  city?: string;
+  neighborhood?: string;
+  property_type?: string;
+  rent_cost?: number;
+  bedrooms?: number;
+  rooms?: number;
+  bathrooms?: number;
+  area?: number;
   lease_term_months?: number;
   occupants?: number;
   furnished?: boolean;
@@ -58,580 +74,1233 @@ type Filters = {
   laundry?: boolean;
   elevator?: boolean;
   security?: boolean;
-  // enums reales de tu BD:
-  visibility?: "publico" | "privado";
-  status?: "activo" | "pausado" | "archivado";
-  // filtro extra
-  require_verified_landlord?: boolean;
-  amenities: string[]; // ojo con tildes: deben coincidir con lo almacenado en DB
+  only_verified?: boolean;
+  amenities: string[];
 };
 
-// ====== Enums y arrays EXACTOS según tu BD ======
-const PROPERTY_TYPES = [
-  { label: "Departamento", value: "departamento" },
-  { label: "PH", value: "ph" },
-  { label: "Dúplex", value: "duplex" },
-  { label: "Casa", value: "casa" },
-  { label: "Estudio", value: "estudio" },
-];
+// const AMENITIES = ["balcón", "pileta", "terraza", "gym", "cochera", "laundry"];
 
-const VISIBILITIES: { label: string; value: Filters["visibility"] }[] = [
-  { label: "Público", value: "publico" },
-  { label: "Privado", value: "privado" },
-];
+const PROPERTY_TYPES: Record<string, string> = {
+  'departamento': 'Departamento',
+  'ph': 'PH',
+  'duplex': 'Duplex',
+  'casa': 'Casa',
+  'estudio': 'Estudio'
+};
 
-const STATUSES: { label: string; value: Filters["status"] }[] = [
-  { label: "Activo", value: "activo" },
-  { label: "Pausado", value: "pausado" },
-  { label: "Archivado", value: "archivado" },
-];
+const ARGENTINA_LOCATIONS: Record<string, string[]> = {
+  'Buenos Aires': ['Palermo', 'Recoleta', 'Belgrano', 'Caballito', 'Villa Crespo'],
+  'Córdoba': ['Nueva Córdoba', 'General Paz', 'Cerro de las Rosas'],
+  'Rosario': ['Centro', 'Pichincha', 'Fisherton']
+};
 
-// Asegurate que estos strings coincidan 1:1 con lo que guardás en tenant_search_profiles.amenities
-const AMENITIES = ["balcón", "pileta", "terraza", "amoblado", "cochera", "acepta mascotas"];
-
-const DURACIONES = ["6", "12", "18", "24"];
-
-// ==================== COMPONENTE ====================
 export default function PropietarioHomePage() {
-  const [filters, setFilters] = useState<Filters>({
-    property_types: [],
-    amenities: [],
-  });
-
+  const [filters, setFilters] = useState<Filters>({ amenities: [] });
   const [loading, setLoading] = useState(false);
-  const [list, setList] = useState<TenantProfileCard[]>([]);
+  const [list, setList] = useState<TenantProfile[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [detailProfile, setDetailProfile] = useState<TenantProfile | null>(null);
+  const [contactModal, setContactModal] = useState<{ type: 'whatsapp' | 'email'; profile: TenantProfile } | null>(null);
+  const [landlordStatus, setLandlordStatus] = useState<string | null>(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
-  // ---------- Helpers ----------
-  const setNumber = (key: keyof Filters, v: string) =>
-    setFilters((f) => ({ ...f, [key]: v ? Number(v) : undefined }));
+  const cities = useMemo(() => Object.keys(ARGENTINA_LOCATIONS).sort(), []);
+  const neighborhoods = useMemo(() => {
+    if (!filters.city) return [];
+    return ARGENTINA_LOCATIONS[filters.city] || [];
+  }, [filters.city]);
 
-  const toggleBoolean = (key: keyof Filters) =>
-    setFilters((f) => ({ ...f, [key]: !f[key] }));
+  const clearFilters = () => setFilters({ amenities: [] });
 
-  const toggleAmenity = (amenity: string) =>
-    setFilters((f) => {
-      const has = f.amenities?.includes(amenity);
-      const next = has ? f.amenities.filter((a) => a !== amenity) : [...(f.amenities || []), amenity];
-      return { ...f, amenities: next };
-    });
-
-  const setSelectOrPush = (arrKey: keyof Filters, value: string) =>
-    setFilters((f) => {
-      if (!value) return { ...f, [arrKey]: [] };
-      return { ...f, [arrKey]: [value] };
-    });
-
-  const handleCityChange = (city: string) => setFilters((f) => ({ ...f, city, neighborhood: "" }));
-  const handleNeighborhoodChange = (neighborhood: string) => setFilters((f) => ({ ...f, neighborhood }));
-
-  const clearFilters = () =>
-    setFilters({
-      property_types: [],
-      amenities: [],
-      // no seteamos enums/booleanos para que no filtren
-    });
-
-  // ---------- Adaptador de datos ----------
-  const adapt = (row: Record<string, unknown>): TenantProfileCard => {
-    const name = (row.full_name as string) || "Inquilino/a";
-    const initials =
-      name
-        .split(" ")
-        .map((s: string) => s[0]?.toUpperCase())
-        .slice(0, 2)
-        .join("") || "IN";
-
-    const propertyType = Array.isArray(row.property_types) 
-      ? (row.property_types as string[]).join(", ") 
-      : "—";
-
-    const location = [row.neighborhood as string, row.city as string].filter(Boolean).join(", ");
-
-    return {
-      id: (row.id as string) || crypto.randomUUID(),
-      initials,
-      color: "bg-orange-500",
-      name,
-      // si querés mostrar “verificado” cuando el perfil pide propietario verificado:
-      verified: !!row.require_verified_landlord,
-      seenAgo: "—",
-      propertyType,
-      budgetMin: Number(row.budget_min ?? 0),
-      budgetMax: Number(row.budget_max ?? 0),
-      location: location || "—",
-      available: "—",
-      amb: Number(row.rooms_max ?? row.rooms_min ?? 0),
-      dorm: Number(row.bedroom_max ?? row.bedroom_min ?? 0),
-      bath: Number(row.bathrooms_max ?? row.bathrooms_min ?? 0),
-      amenities: Array.isArray(row.amenities) ? (row.amenities as string[]) : [],
-    };
-  };
-
-  // ---------- Fetch usando axios (api) ----------
-  const search = async () => {
+  const search = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("access_token");
-
-      // Limpiar filtros vacíos y preparar el body
       const cleanFilters: Record<string, string | number | boolean | string[]> = {};
-
       Object.entries(filters).forEach(([key, value]) => {
-        if (value === undefined || value === null) return;
-        if (value === "") return;
+        if (value === undefined || value === null || value === "") return;
         if (Array.isArray(value) && value.length === 0) return;
-        // Evitar mandar booleanos false (no filtrar)
         if (typeof value === "boolean" && value === false) return;
-        cleanFilters[key] = value as string | number | boolean | string[];
+        cleanFilters[key] = value;
       });
 
+      const token = localStorage.getItem('access_token');
       const response = await api.post("/api/filter-search/advanced/", cleanFilters, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
       const rows = Array.isArray(response.data?.data) ? response.data.data : [];
-      setList(rows.map(adapt));
-    } catch (e: unknown) {
-      if (typeof e === "object" && e !== null) {
-        const err = e as { response?: { data?: { error?: string } }; message?: string };
-        setError(err?.response?.data?.error || err?.message || "Error al buscar");
-      } else {
-        setError("Error al buscar");
-      }
+      setList(rows);
+    } catch (e) {
+      const error = e as { response?: { data?: { error?: string } }; message?: string };
+      setError(error?.response?.data?.error || error?.message || "Error al buscar");
       setList([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  // Búsqueda inicial
   useEffect(() => {
     search();
+  }, [search]);
+
+  useEffect(() => {
+    // Obtener el status del propietario desde localStorage
+    const userDataString = localStorage.getItem('user');
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString);
+        setLandlordStatus(userData?.status || null);
+      } catch (error) {
+        console.error('Error al parsear datos del usuario:', error);
+        setLandlordStatus(null);
+      }
+    }
   }, []);
 
-  // Si activás "Solo verificados" (local)
-  const finalList = useMemo(() => {
-    if (filters.require_verified_landlord) {
-      return list.filter((p) => p.verified);
+  const handleContactClick = (type: 'whatsapp' | 'email', profile: TenantProfile) => {
+    if (landlordStatus !== 'verified') {
+      setShowVerificationModal(true);
+      return;
     }
-    return list;
-  }, [list, filters.require_verified_landlord]);
+    setContactModal({ type, profile });
+  };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-3 sm:px-4 md:px-6 py-5">
-      {/* Título */}
-      <div className="mb-4">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Perfiles de Inquilinos</h1>
-        <p className="text-gray-600">Encontrá inquilinos ideales para tus propiedades</p>
-      </div>
-
-      {/* Filtros */}
-      <section className="mb-4">
-        <div className="bg-white border border-gray-300 rounded-xl p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-5 w-5 text-gray-700" />
-            <h2 className="font-bold text-lg">Filtros de Búsqueda</h2>
-            <Button
-              variant="secondary"
-              className="ml-auto bg-orange-500 hover:bg-orange-600 text-white h-8 px-3 rounded-md"
-              onClick={search}
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
-                </span>
-              ) : (
-                "Buscar"
-              )}
-            </Button>
-          </div>
-
-          {/* Selects principales */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <SelectBox
-              label="Tipo de Propiedad"
-              value={filters.property_types[0] || ""}
-              onChange={(v) => setSelectOrPush("property_types", v)}
-              options={["", ...PROPERTY_TYPES.map((pt) => pt.value)]}
-              placeholder="Todos los tipos"
-            />
-
-            <div className="sm:col-span-2 lg:col-span-2">
-              <LocationSelector
-                selectedCity={filters.city}
-                selectedNeighborhood={filters.neighborhood}
-                onCityChange={handleCityChange}
-                onNeighborhoodChange={handleNeighborhoodChange}
-              />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-orange-500 p-2.5 rounded-lg">
+                <Users className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Inquilinos Disponibles</h1>
+                <p className="text-sm text-gray-600">Encuentra inquilinos que se ajusten a tu propiedad</p>
+              </div>
             </div>
-
-            {/* NUEVOS selects alineados con enums de tu BD */}
-            <SelectBox
-              label="Visibilidad"
-              value={filters.visibility ?? ""}
-              onChange={(v) =>
-                setFilters((f) => ({ ...f, visibility: (v || undefined) as Filters["visibility"] }))
-              }
-              options={["", ...VISIBILITIES.map((v) => v.value!)]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Estado del perfil"
-              value={filters.status ?? ""}
-              onChange={(v) =>
-                setFilters((f) => ({ ...f, status: (v || undefined) as Filters["status"] }))
-              }
-              options={["", ...STATUSES.map((s) => s.value!)]}
-              placeholder="Cualquiera"
-            />
-
-            <SelectBox
-              label="Presupuesto Mínimo"
-              value={String(filters.budget_min ?? "")}
-              onChange={(v) => setNumber("budget_min", v)}
-              options={["", "200000", "400000", "600000", "800000", "1000000"]}
-              placeholder="Ej: $400.000"
-            />
-            <SelectBox
-              label="Presupuesto Máximo"
-              value={String(filters.budget_max ?? "")}
-              onChange={(v) => setNumber("budget_max", v)}
-              options={["", "400000", "600000", "800000", "1000000", "1500000"]}
-              placeholder="Ej: $800.000"
-            />
-            <SelectBox
-              label="Ambientes (mín)"
-              value={String(filters.rooms_min ?? "")}
-              onChange={(v) => setNumber("rooms_min", v)}
-              options={["", "1", "2", "3", "4", "5"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Ambientes (máx)"
-              value={String(filters.rooms_max ?? "")}
-              onChange={(v) => setNumber("rooms_max", v)}
-              options={["", "1", "2", "3", "4", "5"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Dormitorios (mín)"
-              value={String(filters.bedroom_min ?? "")}
-              onChange={(v) => setNumber("bedroom_min", v)}
-              options={["", "0", "1", "2", "3", "4"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Dormitorios (máx)"
-              value={String(filters.bedroom_max ?? "")}
-              onChange={(v) => setNumber("bedroom_max", v)}
-              options={["", "0", "1", "2", "3", "4"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Baños (mín)"
-              value={String(filters.bathrooms_min ?? "")}
-              onChange={(v) => setNumber("bathrooms_min", v)}
-              options={["", "1", "2", "3"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Baños (máx)"
-              value={String(filters.bathrooms_max ?? "")}
-              onChange={(v) => setNumber("bathrooms_max", v)}
-              options={["", "1", "2", "3"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Superficie mínima (m²)"
-              value={String(filters.area_min ?? "")}
-              onChange={(v) => setNumber("area_min", v)}
-              options={["", "20", "30", "40", "50", "60", "80", "100"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Superficie máxima (m²)"
-              value={String(filters.area_max ?? "")}
-              onChange={(v) => setNumber("area_max", v)}
-              options={["", "30", "40", "50", "60", "80", "100", "150"]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Duración (meses)"
-              value={String(filters.lease_term_months ?? "")}
-              onChange={(v) => setNumber("lease_term_months", v)}
-              options={["", ...DURACIONES]}
-              placeholder="Cualquiera"
-            />
-            <SelectBox
-              label="Ocupantes"
-              value={String(filters.occupants ?? "")}
-              onChange={(v) => setNumber("occupants", v)}
-              options={["", "1", "2", "3", "4", "5", "6"]}
-              placeholder="Cualquiera"
-            />
-          </div>
-
-          {/* Booleanos */}
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
-            <BoolChip label="Amoblado" checked={!!filters.furnished} onChange={() => toggleBoolean("furnished")} />
-            <BoolChip label="Acepta mascotas" checked={!!filters.pets_allowed} onChange={() => toggleBoolean("pets_allowed")} />
-            <BoolChip label="Permite fumadores" checked={!!filters.smokers_allowed} onChange={() => toggleBoolean("smokers_allowed")} />
-            <BoolChip label="Niños" checked={!!filters.children} onChange={() => toggleBoolean("children")} />
-            <BoolChip label="Estudiantes" checked={!!filters.students} onChange={() => toggleBoolean("students")} />
-            <BoolChip label="Necesita cochera" checked={!!filters.parking_needed} onChange={() => toggleBoolean("parking_needed")} />
-            <BoolChip label="Balcón" checked={!!filters.balcony} onChange={() => toggleBoolean("balcony")} />
-            <BoolChip label="Terraza" checked={!!filters.terrace} onChange={() => toggleBoolean("terrace")} />
-            <BoolChip label="Laundry" checked={!!filters.laundry} onChange={() => toggleBoolean("laundry")} />
-            <BoolChip label="Ascensor" checked={!!filters.elevator} onChange={() => toggleBoolean("elevator")} />
-            <BoolChip label="Seguridad" checked={!!filters.security} onChange={() => toggleBoolean("security")} />
-          </div>
-
-          {/* Amenities */}
-          <div className="mt-3">
-            <p className="text-sm text-gray-700 mb-2">Comodidades</p>
-            <div className="flex flex-wrap gap-2">
-              {AMENITIES.map((a) => {
-                const active = filters.amenities.includes(a);
-                return (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => toggleAmenity(a)}
-                    className={`px-2 py-1 rounded-md border text-xs ${
-                      active ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-gray-50 text-gray-700 border-gray-300"
-                    }`}
-                  >
-                    {a}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Acciones */}
-          <div className="mt-4 flex items-center gap-2">
             <button
-              onClick={() =>
-                setFilters((f) => ({ ...f, require_verified_landlord: !f.require_verified_landlord }))
-              }
-              className={`text-xs font-semibold px-3 py-1.5 rounded-md border ${
-                filters.require_verified_landlord
-                  ? "bg-green-100 text-green-700 border-green-300"
-                  : "bg-gray-100 text-gray-700 border-gray-300"
-              }`}
+              onClick={() => setShowFilters(!showFilters)}
+              className="lg:hidden bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-orange-600 transition-colors"
             >
-              Solo perfiles verificados
+              <Filter className="w-4 h-4" />
+              Filtros
             </button>
-
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" className="h-9" onClick={clearFilters}>
-                Limpiar filtros
-              </Button>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white h-9" onClick={search} disabled={loading}>
-                {loading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
-                  </span>
-                ) : (
-                  "Buscar"
-                )}
-              </Button>
-            </div>
           </div>
 
-          {error && (
-            <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-              {error}
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard icon={<Users />} label="Total" value={list.length} color="blue" />
+            <MetricCard
+              icon={<BadgeCheck />}
+              label="Verificados"
+              value={list.filter(p => p.profile_status === 'verified').length}
+              color="green"
+            />
+            <MetricCard
+              icon={<Home />}
+              label="Activos"
+              value={list.filter(p => p.status === 'activo').length}
+              color="orange"
+            />
+          </div>
         </div>
-      </section>
 
-      {/* Cards */}
-      <section className="space-y-4">
-        {loading && finalList.length === 0 && <SkeletonCards />}
+        <div className="flex gap-6">
+          <aside className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-80 flex-shrink-0`}>
+            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 sticky top-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-orange-500" />
+                  Filtros
+                </h2>
+                <button onClick={() => setShowFilters(false)} className="lg:hidden">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-        {!loading && finalList.length === 0 && (
-          <div className="text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg p-6 text-center">
-            No encontramos perfiles con esos filtros. Probá ampliando la búsqueda.
-          </div>
-        )}
+              <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+                <FilterSection title="Ubicación">
+                  <Select
+                    label="Ciudad"
+                    value={filters.city || ''}
+                    onChange={(v) => setFilters(f => ({ ...f, city: v || undefined, neighborhood: undefined }))}
+                    options={['', ...cities]}
+                    placeholder="Todas"
+                  />
+                  <Select
+                    label="Barrio"
+                    value={filters.neighborhood || ''}
+                    onChange={(v) => setFilters(f => ({ ...f, neighborhood: v || undefined }))}
+                    options={['', ...neighborhoods]}
+                    placeholder="Todos"
+                    disabled={!filters.city}
+                  />
+                </FilterSection>
 
-        {finalList.map((p) => (
-          <Card key={p.id} className="border-gray-300">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-full ${p.color} text-white flex items-center justify-center font-bold`}>
-                    {p.initials}
+                <FilterSection title="Tipo de Propiedad">
+                  <Select
+                    label="Tipo"
+                    value={filters.property_type || ''}
+                    onChange={(v) => setFilters(f => ({ ...f, property_type: v || undefined }))}
+                    options={['', ...Object.keys(PROPERTY_TYPES)]}
+                    placeholder="Todos los tipos"
+                    renderOption={(value) => value ? PROPERTY_TYPES[value] : 'Todos los tipos'}
+                  />
+                </FilterSection>
+
+                <FilterSection title="Costo del Alquiler">
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">Precio mensual ($)</label>
+                  <input
+                    type="number"
+                    value={filters.rent_cost || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, rent_cost: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 5000"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </FilterSection>
+
+                <FilterSection title="Características">
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Dormitorios</label>
+                  <input
+                    type="number"
+                    value={filters.bedrooms || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, bedrooms: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 2"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Ambientes</label>
+                  <input
+                    type="number"
+                    value={filters.rooms || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, rooms: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 3"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Baños</label>
+                  <input
+                    type="number"
+                    value={filters.bathrooms || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, bathrooms: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 1"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Área (m²)</label>
+                  <input
+                    type="number"
+                    value={filters.area || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, area: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 60"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </FilterSection>
+
+                <FilterSection title="Amenidades">
+                  <Checkbox 
+                    label="Amoblado" 
+                    checked={!!filters.furnished} 
+                    onChange={(c) => setFilters(f => ({ ...f, furnished: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Balcón" 
+                    checked={!!filters.balcony} 
+                    onChange={(c) => setFilters(f => ({ ...f, balcony: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Terraza" 
+                    checked={!!filters.terrace} 
+                    onChange={(c) => setFilters(f => ({ ...f, terrace: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Lavadero" 
+                    checked={!!filters.laundry} 
+                    onChange={(c) => setFilters(f => ({ ...f, laundry: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Ascensor" 
+                    checked={!!filters.elevator} 
+                    onChange={(c) => setFilters(f => ({ ...f, elevator: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Seguridad" 
+                    checked={!!filters.security} 
+                    onChange={(c) => setFilters(f => ({ ...f, security: c ? true : undefined }))} 
+                  />
+                  <Checkbox 
+                    label="Cochera" 
+                    checked={!!filters.parking_needed} 
+                    onChange={(c) => setFilters(f => ({ ...f, parking_needed: c ? true : undefined }))} 
+                  />
+                </FilterSection>
+
+                <FilterSection title="Preferencias de Inquilinos">
+                  <Checkbox
+                    label="Acepta mascotas"
+                    checked={!!filters.pets_allowed}
+                    onChange={(c) => setFilters(f => ({ ...f, pets_allowed: c ? true : undefined }))}
+                  />
+                  <Checkbox
+                    label="Permite fumadores"
+                    checked={!!filters.smokers_allowed}
+                    onChange={(c) => setFilters(f => ({ ...f, smokers_allowed: c ? true : undefined }))}
+                  />
+                  <Checkbox
+                    label="Permite niños"
+                    checked={!!filters.children}
+                    onChange={(c) => setFilters(f => ({ ...f, children: c ? true : undefined }))}
+                  />
+                  <Checkbox
+                    label="Acepta estudiantes"
+                    checked={!!filters.students}
+                    onChange={(c) => setFilters(f => ({ ...f, students: c ? true : undefined }))}
+                  />
+                </FilterSection>
+
+                <FilterSection title="Otros Filtros">
+                  <Checkbox
+                    label="Solo perfiles verificados"
+                    checked={!!filters.only_verified}
+                    onChange={(c) => setFilters(f => ({ ...f, only_verified: c ? true : undefined }))}
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2 mt-3">Duración del contrato (meses)</label>
+                  <input
+                    type="number"
+                    value={filters.lease_term_months || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, lease_term_months: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 12"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                  />
+
+                  <label className="text-xs font-semibold text-gray-700 block mb-2">Número de ocupantes</label>
+                  <input
+                    type="number"
+                    value={filters.occupants || ''}
+                    onChange={(e) => setFilters(f => ({ ...f, occupants: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="Ej: 2"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </FilterSection>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
+                <button
+                  onClick={search}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-2.5 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Filter className="w-4 h-4" />}
+                  {loading ? 'Buscando...' : 'Aplicar Filtros'}
+                </button>
+                <button
+                  onClick={clearFilters}
+                  className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-semibold hover:bg-gray-50"
+                >
+                  Limpiar Filtros
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          <main className="flex-1 min-w-0">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+
+            {loading && list.length === 0 ? (
+              <SkeletonCards />
+            ) : list.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <div className="space-y-4">
+                {list.map(profile => (
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
+                    onViewDetail={() => setDetailProfile(profile)}
+                    onContactClick={handleContactClick}
+                  />
+                ))}
+              </div>
+            )}
+
+            <Card className="mt-6 border-blue-200 bg-blue-50">
+              <CardContent className="pt-6">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="bg-blue-500 p-2 rounded-lg">
+                      <Info className="w-5 h-5 text-white" />
+                    </div>
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-lg">{p.name}</h3>
-                      {p.verified && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-green-100 text-green-700 border border-green-300 px-2 py-0.5 rounded-full">
-                          <BadgeCheck className="h-3 w-3" /> Verificado
-                        </span>
-                      )}
-                      <span className="text-xs text-gray-500">{p.seenAgo}</span>
+                    <h3 className="font-semibold text-gray-900 mb-2">¿Cómo funciona la búsqueda de inquilinos?</h3>
+                    <div className="text-sm text-gray-700 space-y-2">
+                      <p>
+                        <strong>1. Usa los filtros:</strong> Filtra por ubicación, presupuesto, tipo de propiedad y características específicas para encontrar inquilinos que coincidan con tu propiedad.
+                      </p>
+                      <p>
+                        <strong>2. Revisa perfiles verificados:</strong> Los inquilinos con badge &quot;Verificado&quot; han completado su proceso de verificación.
+                      </p>
+                      <p>
+                        <strong>3. Contacta directamente:</strong> Puedes contactar a los inquilinos por WhatsApp o email. Nota: necesitas tener tu perfil verificado para poder contactar.
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          </main>
+        </div>
+      </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-sm text-gray-800">
-{/* Tipo de Propiedad como chips */}
-{/* Tipo de Propiedad como chips (resalta lo elegido en el filtro) */}
-<div className="flex items-center gap-2">
-  <Home className="h-4 w-4 text-gray-700" />
-  {p.propertyType && p.propertyType !== "—" ? (
-    <div className="flex flex-wrap gap-2">
-      {(() => {
-        const activeTypes = new Set((filters.property_types || []).map(s => s.toLowerCase()));
-        return p.propertyType
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean)
-          .map((t) => {
-            const isActive = activeTypes.has(t.toLowerCase());
-            return (
-              <span
-                key={t}
-                className={`px-2 py-0.5 rounded-lg border text-xs
-                  ${isActive
-                    ? "bg-orange-100 text-orange-700 border-orange-300"
-                    : "bg-gray-100 text-gray-700 border-gray-300"
-                  }`}
-              >
-                {t}
-              </span>
-            );
-          });
-      })()}
-    </div>
-  ) : (
-    <span className="text-gray-700">—</span>
-  )}
-</div>
+      {detailProfile && (
+        <ProfileDetailModal
+          profile={detailProfile}
+          onClose={() => setDetailProfile(null)}
+          onContactClick={handleContactClick}
+        />
+      )}
 
-                <Row icon={<DollarSign className="h-4 w-4 text-gray-700" />} text={`${moneyAR(p.budgetMin)} – ${moneyAR(p.budgetMax)}`} />
-                <Row icon={<MapPin className="h-4 w-4 text-red-500" />} text={p.location} />
-                <Row icon={<Calendar className="h-4 w-4 text-gray-700" />} text={p.available} />
-                <div className="col-span-2 text-gray-700">
-                  <span className="mr-3">{p.amb} amb.</span>
-                  <span className="mr-3">{p.dorm} dorm.</span>
-                  <span>
-                    {p.bath} baño{p.bath > 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className="col-span-2 flex flex-wrap gap-2">
-                  {p.amenities.map((a) => (
-                    <span key={a} className="px-2 py-0.5 bg-gray-100 rounded-lg border text-xs">
-                      {a}
-                    </span>
-                  ))}
-                </div>
-              </div>
+      {contactModal && (
+        <ContactModal
+          type={contactModal.type}
+          profile={contactModal.profile}
+          onClose={() => setContactModal(null)}
+        />
+      )}
 
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <Button className="bg-[#25D366] hover:opacity-90 text-white">Whatsapp</Button>
-                <Button variant="outline" className="border-gray-300">
-                  Email
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
+      {showVerificationModal && (
+        <VerificationRequiredModal
+          onClose={() => setShowVerificationModal(false)}
+        />
+      )}
     </div>
   );
 }
 
-/* ==== Subcomponentes ==== */
-function Row({ icon, text }: { icon: React.ReactNode; text: string }) {
+function MetricCard({ icon, label, value, color }: { icon: React.ReactElement; label: string; value: number; color: string }) {
+  const colors = {
+    blue: 'bg-blue-500',
+    green: 'bg-green-500',
+    orange: 'bg-orange-500'
+  };
+
   return (
-    <div className="flex items-center gap-2">
-      {icon}
-      <span>{text}</span>
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-gray-600 mb-1">{label}</p>
+            <p className="text-3xl font-bold text-gray-900">{value}</p>
+          </div>
+          <div className={`${colors[color as keyof typeof colors]} p-2 rounded-lg`}>
+            {React.cloneElement(icon, { className: "w-5 h-5 text-white" } as React.HTMLAttributes<HTMLElement>)}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">{title}</h3>
+      <div className="space-y-2">{children}</div>
     </div>
   );
 }
 
-function SelectBox({
+function Checkbox({
+  label,
+  checked,
+  onChange,
+}: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 cursor-pointer group select-none">
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <div
+        className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+          checked ? 'bg-orange-500 border-orange-500' : 'border-gray-300 group-hover:border-orange-400'
+        }`}
+        aria-hidden="true"
+      >
+        {checked && <Check className="w-3 h-3 text-white" />}
+      </div>
+      <span className="text-sm text-gray-700">{label}</span>
+    </label>
+  );
+}
+
+function Select({
   label,
   value,
   onChange,
   options,
   placeholder,
+  disabled,
+  renderOption
 }: {
-  label: string;
+  label?: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (value: string) => void;
   options: string[];
   placeholder?: string;
+  disabled?: boolean;
+  renderOption?: (value: string) => string;
 }) {
   return (
-    <label className="text-sm">
-      <span className="block text-gray-700 mb-1">{label}</span>
+    <div>
+      {label && <label className="text-xs font-semibold text-gray-700 block mb-1">{label}</label>}
       <select
-        className="w-full h-10 rounded-md border border-gray-300 px-3 text-gray-800 bg-white"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
       >
-        {placeholder !== undefined && <option value="">{placeholder}</option>}
-        {options
-          .filter((o) => o !== "")
-          .map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
+        <option value="">{placeholder || 'Seleccionar...'}</option>
+        {options.filter((o: string) => o).map((o: string) => (
+          <option key={o} value={o}>{renderOption ? renderOption(o) : o}</option>
+        ))}
       </select>
-    </label>
+    </div>
   );
 }
 
-function BoolChip({
-  label,
-  checked,
-  onChange,
+function ProfileCard({
+  profile,
+  onViewDetail,
+  onContactClick
 }: {
-  label: string;
-  checked: boolean;
-  onChange: () => void;
+  profile: TenantProfile;
+  onViewDetail: () => void;
+  onContactClick: (type: 'whatsapp' | 'email', profile: TenantProfile) => void;
 }) {
+  const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+  const cap = (s?: string) => s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
+  
+  const initials = (profile.full_name || 'IN')
+    .split(' ')
+    .map(s => s[0]?.toUpperCase())
+    .slice(0, 2)
+    .join('');
+
+  const isVerified = profile.profile_status && profile.profile_status === 'verified';
+
   return (
-    <button
-      type="button"
-      onClick={onChange}
-      className={`px-3 py-1.5 rounded-md border text-xs font-semibold ${
-        checked ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-gray-100 text-gray-700 border-gray-300"
-      }`}
-    >
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">
+              {initials}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-lg text-gray-900">{profile.full_name || 'Inquilino'}</h3>
+                {isVerified ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                    <Check className="w-3 h-3" /> Verificado
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
+                    <X className="w-3 h-3" /> No verificado
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-gray-600 text-sm mt-1">
+                <MapPin className="w-4 h-4 text-orange-500" />
+                <span>{[profile.neighborhood, profile.city].filter(Boolean).join(', ') || 'Sin especificar'}</span>
+              </div>
+            </div>
+          </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            profile.status === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+          }`}>
+            {cap(profile.status || 'activo')}
+          </span>
+        </div>
+
+        {profile.property_types && profile.property_types.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {profile.property_types.map((type) => (
+              <span key={type} className="inline-flex items-center px-2 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-medium border border-orange-200 capitalize">
+                {PROPERTY_TYPES[type] || cap(type)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-4 h-4 text-green-600" />
+              <span className="text-xs font-semibold text-green-700">Presupuesto</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-xs text-green-600">Mínimo</span>
+                <p className="text-green-900 font-bold text-base">${nfAR.format(profile.budget_min || 0)}</p>
+              </div>
+              <div>
+                <span className="text-xs text-green-600">Máximo</span>
+                <p className="text-green-900 font-bold text-base">${nfAR.format(profile.budget_max || 0)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-semibold text-blue-700">Ocupantes</span>
+            </div>
+            <p className="text-blue-900 font-bold text-base">
+              {profile.occupants ? `${profile.occupants} persona${profile.occupants > 1 ? 's' : ''}` : 'No especificado'}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
+          {(profile.bedroom_min || profile.bedroom_max) && (
+            <div className="flex items-center gap-1.5">
+              <Bed className="w-4 h-4 text-orange-500" />
+              <span>{profile.bedroom_min || 0} - {profile.bedroom_max || '∞'} dorm</span>
+            </div>
+          )}
+          {(profile.rooms_min || profile.rooms_max) && (
+            <div className="flex items-center gap-1.5">
+              <Home className="w-4 h-4 text-orange-500" />
+              <span>{profile.rooms_min || 0} - {profile.rooms_max || '∞'} amb</span>
+            </div>
+          )}
+          {(profile.bathrooms_min || profile.bathrooms_max) && (
+            <div className="flex items-center gap-1.5">
+              <Bath className="w-4 h-4 text-orange-500" />
+              <span>{profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'} baño</span>
+            </div>
+          )}
+          {profile.lease_term_months && (
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-orange-500" />
+              <span>{profile.lease_term_months} meses</span>
+            </div>
+          )}
+        </div>
+
+        {(profile.furnished || profile.pets_allowed || profile.parking_needed || profile.balcony || profile.terrace) && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {profile.furnished && <Badge icon={<Sparkles />} label="Amoblado" />}
+            {profile.pets_allowed && <Badge icon={<Check />} label="Mascotas" />}
+            {profile.parking_needed && <Badge icon={<Car />} label="Cochera" />}
+            {profile.balcony && <Badge icon={<Sun />} label="Balcón" />}
+            {profile.terrace && <Badge icon={<Waves />} label="Terraza" />}
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-200">
+          <button
+            onClick={onViewDetail}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+          >
+            <Eye className="w-4 h-4" />
+            <span className="hidden sm:inline">Ver</span>
+          </button>
+          <button
+            onClick={() => onContactClick('whatsapp', profile)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </button>
+          <button
+            onClick={() => onContactClick('email', profile)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold"
+          >
+            <Mail className="w-4 h-4" />
+            <span className="hidden sm:inline">Email</span>
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Badge({ icon, label }: { icon: React.ReactElement; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300">
+      {React.cloneElement(icon, { className: "w-3 h-3" } as React.HTMLAttributes<HTMLElement>)}
       {label}
-    </button>
+    </span>
+  );
+}
+
+function ProfileDetailModal({
+  profile,
+  onClose,
+  onContactClick
+}: {
+  profile: TenantProfile;
+  onClose: () => void;
+  onContactClick: (type: 'whatsapp' | 'email', profile: TenantProfile) => void;
+}) {
+  const cap = (s?: string) => s ? s.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
+  const nfAR = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+
+  const BooleanBadge = ({
+    value,
+    trueText = 'Sí',
+    falseText = 'No'
+  }: {
+    value?: boolean;
+    trueText?: string;
+    falseText?: string;
+  }) => {
+    if (value === undefined) return null;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+        value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+      }`}>
+        {value && <Check className="w-3 h-3" />}
+        {value ? trueText : falseText}
+      </span>
+    );
+  };
+
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-200 max-h-[90vh] flex flex-col">
+        <div className="bg-white px-6 py-5 flex items-center justify-between border-b border-gray-200 rounded-t-2xl flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-orange-500 p-2 rounded-lg">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Perfil del Inquilino</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5 overflow-y-auto">
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información Personal</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span className="text-gray-700 font-medium text-sm">Nombre:</span>
+                <p className="text-gray-900 text-sm mt-1">{profile.full_name || 'No especificado'}</p>
+              </div>
+              {profile.occupants && (
+                <div>
+                  <span className="text-gray-700 font-medium text-sm">Ocupantes:</span>
+                  <p className="text-gray-900 text-sm mt-1">{profile.occupants} persona{profile.occupants > 1 ? 's' : ''}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {(profile.city || profile.neighborhood) && (
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="w-5 h-5 text-orange-600" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ubicación Deseada</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {profile.city && (
+                  <div>
+                    <span className="text-gray-700 font-medium text-sm">Ciudad:</span>
+                    <p className="text-gray-900 text-sm mt-1">{cap(profile.city)}</p>
+                  </div>
+                )}
+                {profile.neighborhood && (
+                  <div>
+                    <span className="text-gray-700 font-medium text-sm">Barrio:</span>
+                    <p className="text-gray-900 text-sm mt-1">{cap(profile.neighborhood)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Presupuesto</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.budget_min && (
+                <div>
+                  <span className="text-gray-700 font-medium text-sm">Mínimo:</span>
+                  <p className="text-gray-900 font-bold text-lg">${nfAR.format(profile.budget_min)}</p>
+                </div>
+              )}
+              {profile.budget_max && (
+                <div>
+                  <span className="text-gray-700 font-medium text-sm">Máximo:</span>
+                  <p className="text-gray-900 font-bold text-lg">${nfAR.format(profile.budget_max)}</p>
+                </div>
+              )}
+              {profile.lease_term_months && (
+                <div className="md:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-700 font-medium text-sm">Duración del contrato:</span>
+                    <span className="text-gray-900 text-sm">{profile.lease_term_months} meses</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Building2 className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Propiedad Buscada</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.property_types && profile.property_types.length > 0 && (
+                <div className="md:col-span-2">
+                  <span className="text-gray-700 font-medium text-sm block mb-2">Tipos de propiedad:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.property_types.map((type) => (
+                      <span key={type} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        {PROPERTY_TYPES[type] || cap(type)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(profile.bedroom_min || profile.bedroom_max) && (
+                <div className="flex items-center gap-2">
+                  <Bed className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Dormitorios:</span>
+                  <span className="text-gray-900 text-sm">{profile.bedroom_min || 0} - {profile.bedroom_max || '∞'}</span>
+                </div>
+              )}
+              {(profile.rooms_min || profile.rooms_max) && (
+                <div className="flex items-center gap-2">
+                  <Home className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Ambientes:</span>
+                  <span className="text-gray-900 text-sm">{profile.rooms_min || 0} - {profile.rooms_max || '∞'}</span>
+                </div>
+              )}
+              {(profile.bathrooms_min || profile.bathrooms_max) && (
+                <div className="flex items-center gap-2">
+                  <Bath className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Baños:</span>
+                  <span className="text-gray-900 text-sm">{profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'}</span>
+                </div>
+              )}
+              {(profile.area_min || profile.area_max) && (
+                <div className="flex items-center gap-2">
+                  <Maximize className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Área (m²):</span>
+                  <span className="text-gray-900 text-sm">{profile.area_min || 0} - {profile.area_max || '∞'}</span>
+                </div>
+              )}
+              {profile.furnished !== undefined && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-700 font-medium text-sm">Amoblado:</span>
+                  <BooleanBadge value={profile.furnished} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-5 h-5 text-orange-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Preferencias</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.pets_allowed !== undefined && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-700 font-medium text-sm">Mascotas:</span>
+                  <BooleanBadge value={profile.pets_allowed} />
+                </div>
+              )}
+              {profile.smokers_allowed !== undefined && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-700 font-medium text-sm">Fumadores:</span>
+                  <BooleanBadge value={profile.smokers_allowed} />
+                </div>
+              )}
+              {profile.children !== undefined && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-700 font-medium text-sm">Niños:</span>
+                  <BooleanBadge value={profile.children} />
+                </div>
+              )}
+              {profile.students !== undefined && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-700 font-medium text-sm">Estudiantes:</span>
+                  <BooleanBadge value={profile.students} />
+                </div>
+              )}
+              {profile.parking_needed !== undefined && (
+                <div className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Cochera:</span>
+                  <BooleanBadge value={profile.parking_needed} trueText="Necesaria" falseText="Opcional" />
+                </div>
+              )}
+              {profile.require_verified_landlord !== undefined && (
+                <div className="flex items-center gap-2">
+                  <BadgeCheck className="w-4 h-4 text-orange-600" />
+                  <span className="text-gray-700 font-medium text-sm">Propietario verificado:</span>
+                  <BooleanBadge value={profile.require_verified_landlord} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {(profile.amenities?.length || profile.balcony || profile.terrace || profile.laundry || profile.security || profile.elevator) && (
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-orange-600" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Comodidades Deseadas</h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {profile.balcony && (
+                  <div className="flex items-center gap-2">
+                    <Sun className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Balcón</span>
+                  </div>
+                )}
+                {profile.terrace && (
+                  <div className="flex items-center gap-2">
+                    <Waves className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Terraza</span>
+                  </div>
+                )}
+                {profile.laundry && (
+                  <div className="flex items-center gap-2">
+                    <Wind className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Lavadero</span>
+                  </div>
+                )}
+                {profile.security && (
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Seguridad</span>
+                  </div>
+                )}
+                {profile.elevator && (
+                  <div className="flex items-center gap-2">
+                    <MoveUp className="w-4 h-4 text-orange-600" />
+                    <span className="text-gray-900 text-sm">Ascensor</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(profile.metadata?.preferencias || profile.metadata?.notas) && (
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <StickyNote className="w-5 h-5 text-orange-600" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Notas Adicionales</h3>
+              </div>
+              <div className="space-y-3">
+                {profile.metadata?.preferencias && (
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <span className="text-gray-700 font-medium text-sm block mb-1">Preferencias:</span>
+                    <p className="text-gray-600 text-sm leading-relaxed">{profile.metadata.preferencias}</p>
+                  </div>
+                )}
+                {profile.metadata?.notas && (
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <span className="text-gray-700 font-medium text-sm block mb-1">Notas:</span>
+                    <p className="text-gray-600 text-sm leading-relaxed">{profile.metadata.notas}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {profile.created_at && (
+            <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
+              Perfil creado el {new Date(profile.created_at).toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex-shrink-0">
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => onContactClick('whatsapp', profile)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold"
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </button>
+            <button
+              onClick={() => onContactClick('email', profile)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-white transition-all font-semibold"
+            >
+              <Mail className="w-4 h-4" />
+              Email
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <Card className="border-2 border-dashed border-gray-300">
+      <CardContent className="pt-12 pb-12">
+        <div className="flex flex-col items-center text-center">
+          <div className="bg-orange-100 p-6 rounded-full mb-6">
+            <Users className="w-12 h-12 text-orange-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">No se encontraron inquilinos</h3>
+          <p className="text-gray-600 max-w-md">
+            Intenta ajustar los filtros de búsqueda para encontrar más perfiles que coincidan con tus criterios.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function SkeletonCards() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {[...Array(3)].map((_, i) => (
-        <div key={i} className="border border-gray-200 rounded-xl p-4 animate-pulse">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gray-200" />
-            <div className="h-4 w-48 bg-gray-200 rounded" />
+        <div key={i} className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-full bg-gray-200" />
+            <div className="flex-1">
+              <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
+              <div className="h-3 bg-gray-200 rounded w-1/4" />
+            </div>
           </div>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div className="h-3 bg-gray-200 rounded" />
-            <div className="h-3 bg-gray-200 rounded" />
-            <div className="h-3 bg-gray-200 rounded col-span-2" />
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="h-20 bg-gray-200 rounded-xl" />
+            <div className="h-20 bg-gray-200 rounded-xl" />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="h-10 bg-gray-200 rounded-lg" />
+            <div className="h-10 bg-gray-200 rounded-lg" />
+            <div className="h-10 bg-gray-200 rounded-lg" />
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ContactModal({
+  type,
+  profile,
+  onClose
+}: {
+  type: 'whatsapp' | 'email';
+  profile: TenantProfile;
+  onClose: () => void;
+}) {
+  const isWhatsApp = type === 'whatsapp';
+  const contactInfo = isWhatsApp ? profile.phone : profile.email;
+
+  const handleCopyToClipboard = () => {
+    if (contactInfo) {
+      navigator.clipboard.writeText(contactInfo);
+      alert('Copiado al portapapeles');
+    }
+  };
+
+  const handleOpenContact = () => {
+    if (isWhatsApp && profile.phone) {
+      // Limpiar el número de teléfono y abrir WhatsApp
+      const cleanPhone = profile.phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanPhone}`, '_blank');
+    } else if (!isWhatsApp && profile.email) {
+      window.location.href = `mailto:${profile.email}`;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100">
+        <div className={`${isWhatsApp ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-blue-500 to-blue-600'} px-6 py-5 flex items-center justify-between rounded-t-2xl`}>
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              {isWhatsApp ? (
+                <MessageCircle className="w-6 h-6 text-white" />
+              ) : (
+                <Mail className="w-6 h-6 text-white" />
+              )}
+            </div>
+            <h2 className="text-2xl font-bold text-white">
+              {isWhatsApp ? 'WhatsApp' : 'Email'}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/90 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-6">
+            <p className="text-gray-600 text-sm mb-2">Inquilino:</p>
+            <p className="text-gray-900 font-semibold text-lg">{profile.full_name || 'Sin nombre'}</p>
+          </div>
+
+          {contactInfo ? (
+            <>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                <p className="text-gray-600 text-sm mb-1">
+                  {isWhatsApp ? 'Número de teléfono:' : 'Correo electrónico:'}
+                </p>
+                <p className="text-gray-900 font-mono text-lg font-semibold break-all">
+                  {contactInfo}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleCopyToClipboard}
+                  className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold"
+                >
+                  <Check className="w-4 h-4" />
+                  Copiar
+                </button>
+                <button
+                  onClick={handleOpenContact}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 text-white rounded-lg transition-all font-semibold ${
+                    isWhatsApp
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                  }`}
+                >
+                  {isWhatsApp ? (
+                    <>
+                      <MessageCircle className="w-4 h-4" />
+                      Abrir WhatsApp
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4" />
+                      Enviar Email
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <AlertCircle className="w-5 h-5" />
+                <p className="font-medium">
+                  {isWhatsApp
+                    ? 'El inquilino no ha proporcionado un número de teléfono.'
+                    : 'El inquilino no ha proporcionado un correo electrónico.'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Verificación Requerida</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/90 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-orange-900 font-semibold mb-2">
+                  Debes tener tu perfil verificado para ver la información de contacto de los inquilinos.
+                </p>
+                <p className="text-orange-800 text-sm">
+                  La verificación de tu perfil te permite acceder a información de contacto y generar más confianza con los inquilinos.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                // Aquí irá la navegación a la página de verificación
+                console.log('Redirigir a verificación');
+                onClose();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-semibold"
+            >
+              <BadgeCheck className="w-5 h-5" />
+              Verificar Mi Cuenta
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold"
+            >
+              Ahora No
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

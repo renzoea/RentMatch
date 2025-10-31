@@ -2,17 +2,17 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { 
-  CheckCircle2, 
-  FileText, 
-  Home, 
+import {
+  CheckCircle2,
+  FileText,
+  Home,
   ArrowRight,
   Sparkles,
   Calendar,
-  User
+  Send
 } from "lucide-react";
 
-export default function ContractSignedPage() {
+export default function LandlordContractSignedPage() {
   const [isConfirming, setIsConfirming] = useState(true);
   const router = useRouter();
 
@@ -21,7 +21,7 @@ export default function ContractSignedPage() {
     const envelopeId = localStorage.getItem("envelopeId");
     const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     if (contractId) {
-      fetch(`${API}/api/contracts/${contractId}/confirm-tenant-signature`, {
+      fetch(`${API}/api/contracts/${contractId}/confirm-landlord-signature`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,11 +43,11 @@ export default function ContractSignedPage() {
   }, []);
 
   const handleGoToContracts = () => {
-    router.push('/home/inquilino/contratos');
+    router.push('/home/propietario/contratos');
   };
 
   const handleGoToDashboard = () => {
-    router.push('/home/inquilino');
+    router.push('/home/propietario');
   };
 
   if (isConfirming) {
@@ -81,7 +81,7 @@ export default function ContractSignedPage() {
             ¡Contrato Firmado con Éxito!
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Tu firma digital ha sido registrada correctamente. El contrato ahora está activo y en proceso.
+            Tu firma digital ha sido registrada correctamente. El contrato ahora está esperando la firma del inquilino.
           </p>
         </div>
 
@@ -93,7 +93,7 @@ export default function ContractSignedPage() {
               <h2 className="text-2xl font-bold text-green-900">Estado del Contrato</h2>
             </div>
           </div>
-          
+
           <div className="p-6">
             <div className="grid md:grid-cols-3 gap-6">
               {/* Estado actual */}
@@ -103,12 +103,12 @@ export default function ContractSignedPage() {
                     <CheckCircle2 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Estado Actual</p>
-                    <p className="text-lg font-bold text-green-900">Firmado</p>
+                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Tu Firma</p>
+                    <p className="text-lg font-bold text-green-900">Completada</p>
                   </div>
                 </div>
                 <p className="text-sm text-green-700">
-                  Tu firma ha sido registrada exitosamente
+                  Has firmado el contrato exitosamente
                 </p>
               </div>
 
@@ -116,31 +116,31 @@ export default function ContractSignedPage() {
               <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 rounded-xl p-4 border border-yellow-200">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="bg-yellow-500 p-2 rounded-lg">
-                    <Calendar className="w-5 h-5 text-white" />
+                    <Send className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-yellow-700 uppercase tracking-wide">Próximo Paso</p>
-                    <p className="text-lg font-bold text-yellow-900">Depósito</p>
+                    <p className="text-lg font-bold text-yellow-900">Inquilino</p>
                   </div>
                 </div>
                 <p className="text-sm text-yellow-700">
-                  Ahora debes realizar el pago del depósito
+                  Esperando firma del inquilino
                 </p>
               </div>
 
-              {/* Proceso */}
+              {/* Estado */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="bg-blue-500 p-2 rounded-lg">
-                    <User className="w-5 h-5 text-white" />
+                    <Calendar className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Proceso</p>
-                    <p className="text-lg font-bold text-blue-900">Activo</p>
+                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Estado</p>
+                    <p className="text-lg font-bold text-blue-900">Pendiente</p>
                   </div>
                 </div>
                 <p className="text-sm text-blue-700">
-                  El propietario será notificado de tu firma
+                  El inquilino recibirá una notificación
                 </p>
               </div>
             </div>
@@ -159,33 +159,33 @@ export default function ContractSignedPage() {
                 1
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Espera la confirmación</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">Notificación al inquilino</h4>
                 <p className="text-sm text-gray-600">
-                  El propietario recibirá una notificación de que has firmado el contrato.
+                  El inquilino recibirá una notificación para que pueda revisar y firmar el contrato.
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200">
               <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
                 2
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Prepara el depósito</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">Firma del inquilino</h4>
                 <p className="text-sm text-gray-600">
-                  Tendrás que realizar el pago del depósito para activar completamente el contrato.
+                  Una vez que el inquilino firme, el contrato pasará al estado de &quot;Pendiente de Depósito&quot;.
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl border border-green-200">
               <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
                 3
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 mb-1">¡Listo para mudarte!</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">Depósito y activación</h4>
                 <p className="text-sm text-gray-600">
-                  Una vez completado el depósito, podrás coordinar la entrega de llaves.
+                  Después del pago del depósito, el contrato estará completamente activo.
                 </p>
               </div>
             </div>
@@ -201,7 +201,7 @@ export default function ContractSignedPage() {
             <FileText className="w-5 h-5 mr-2" />
             Ver Mis Contratos
           </Button>
-          
+
           <Button
             variant="outline"
             onClick={handleGoToDashboard}
@@ -216,10 +216,10 @@ export default function ContractSignedPage() {
         <div className="mt-8 text-center">
           <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200">
             <p className="text-sm text-gray-600 mb-2">
-              <strong>Importante:</strong> Recibirás notificaciones por email sobre el progreso de tu contrato.
+              <strong>Importante:</strong> Recibirás notificaciones por email sobre el progreso del contrato.
             </p>
             <p className="text-xs text-gray-500">
-              Si tienes alguna pregunta, no dudes en contactar al propietario a través de la plataforma.
+              Puedes ver el estado del contrato en cualquier momento desde tu panel de contratos.
             </p>
           </div>
         </div>

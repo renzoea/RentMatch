@@ -24,7 +24,7 @@ export default function InquilinoLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50/30 flex">
+    <div className="min-h-screen bg-gray-50 flex">
       <SidebarMenuInquilino onLogout={handleLogout} />
       <div className="flex-1 flex flex-col">
         <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">

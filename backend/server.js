@@ -39,13 +39,27 @@ app.use(cors({
 const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const contractRoutes = require('./src/routes/contractRoutes');
-const filterSearchRoutes = require('./src/routes/filterSearchRoutes');
+const depositRoutes = require('./src/routes/depositRoutes');
+const uploadRoutes = require('./src/routes/uploadRoutes');
+const MobileRoutes = require('./src/routes/MobileRoutes');
+const MobileUserRoutes = require('./src/routes/MobileProfileRoutes');
+const filterSearchRoutes = require('./src/routes/FilterSearchRoutes');
+const MobileReporterRoutes = require('./src/routes/MobileReportRoutes');
+const MobileInicialRoutes = require('./src/routes/MobileInicialRoutes');
+const MobileEndRoutes = require('./src/routes/MobileEndRoutes');
 
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/deposits', depositRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/mobile-auth', MobileRoutes);
+app.use('/api/mobile-user', MobileUserRoutes);
 app.use('/api/filter-search', filterSearchRoutes);
+app.use('/api/Mobile-Reporter', MobileReporterRoutes);
+app.use('/api/mobile-Inicial', MobileInicialRoutes);
+app.use('/api/mobile-End', MobileEndRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {

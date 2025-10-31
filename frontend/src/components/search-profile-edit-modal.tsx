@@ -57,21 +57,6 @@ const AMENITY_OPTIONS = [
   'deposito'
 ]
 
-const Section = ({ title, icon: Icon, color, children }: { 
-  title: string; 
-  icon: React.ElementType;
-  color: string;
-  children: React.ReactNode 
-}) => (
-  <div className={`bg-gradient-to-br ${color} rounded-xl p-5 border-2 border-${color.split('-')[1]}-200`}>
-    <div className="flex items-center gap-2 mb-4">
-      <Icon className={`w-5 h-5 text-${color.split('-')[1]}-600`} />
-      <h3 className={`text-sm font-bold text-${color.split('-')[1]}-900 uppercase tracking-wide`}>{title}</h3>
-    </div>
-    <div className="space-y-4">{children}</div>
-  </div>
-)
-
 const titleCase = (s: string) =>
   s.replace(/_/g, ' ')
     .split(' ')
