@@ -1,6 +1,6 @@
 'use client'
 
-import { Home, Users, FileText, Wallet, User as UserIcon, LogOut } from "lucide-react"
+import { Home, FileText, User as UserIcon, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
 

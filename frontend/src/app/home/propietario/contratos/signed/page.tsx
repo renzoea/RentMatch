@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Sparkles,
   Calendar,
-  User,
   Send
 } from "lucide-react";
 

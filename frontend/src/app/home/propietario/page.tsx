@@ -5,11 +5,12 @@ import {
   Filter, Home, MapPin, DollarSign, BadgeCheck, Loader2,
   Eye, Mail, MessageCircle, X, Check, Bed, Bath,
   Maximize, Calendar, Users, Sparkles, Building2, Car,
-  Shield, Sun, Waves, Wind, Lock, MoveUp, StickyNote, AlertCircle
+  Shield, Sun, Waves, Wind, Lock, MoveUp, StickyNote, AlertCircle, Info
 } from "lucide-react";
 import React from "react";
 
 import api from "@/lib/api";
+import { Card, CardContent } from "@/components/ui/card";
 
 type TenantProfile = {
   id: string;
@@ -170,18 +171,18 @@ export default function PropietarioHomePage() {
       <div className="max-w-[1600px] mx-auto px-6 py-6">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg">
-                <Users className="w-8 h-8 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="bg-orange-500 p-2.5 rounded-lg">
+                <Users className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Inquilinos Disponibles</h1>
-                <p className="text-gray-600">Encuentra inquilinos que se ajusten a tu propiedad</p>
+                <h1 className="text-2xl font-bold text-gray-900">Inquilinos Disponibles</h1>
+                <p className="text-sm text-gray-600">Encuentra inquilinos que se ajusten a tu propiedad</p>
               </div>
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              className="lg:hidden bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-orange-600 transition-colors"
             >
               <Filter className="w-4 h-4" />
               Filtros
@@ -190,17 +191,17 @@ export default function PropietarioHomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <MetricCard icon={<Users />} label="Total" value={list.length} color="blue" />
-            <MetricCard 
-              icon={<BadgeCheck />} 
-              label="Verificados" 
+            <MetricCard
+              icon={<BadgeCheck />}
+              label="Verificados"
               value={list.filter(p => p.profile_status === 'verified').length}
-              color="green" 
+              color="green"
             />
-            <MetricCard 
-              icon={<Home />} 
-              label="Activos" 
-              value={list.filter(p => p.status === 'activo').length} 
-              color="orange" 
+            <MetricCard
+              icon={<Home />}
+              label="Activos"
+              value={list.filter(p => p.status === 'activo').length}
+              color="orange"
             />
           </div>
         </div>
@@ -427,6 +428,32 @@ export default function PropietarioHomePage() {
                 ))}
               </div>
             )}
+
+            <Card className="mt-6 border-blue-200 bg-blue-50">
+              <CardContent className="pt-6">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="bg-blue-500 p-2 rounded-lg">
+                      <Info className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">¿Cómo funciona la búsqueda de inquilinos?</h3>
+                    <div className="text-sm text-gray-700 space-y-2">
+                      <p>
+                        <strong>1. Usa los filtros:</strong> Filtra por ubicación, presupuesto, tipo de propiedad y características específicas para encontrar inquilinos que coincidan con tu propiedad.
+                      </p>
+                      <p>
+                        <strong>2. Revisa perfiles verificados:</strong> Los inquilinos con badge &quot;Verificado&quot; han completado su proceso de verificación.
+                      </p>
+                      <p>
+                        <strong>3. Contacta directamente:</strong> Puedes contactar a los inquilinos por WhatsApp o email. Nota: necesitas tener tu perfil verificado para poder contactar.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </main>
         </div>
       </div>
@@ -458,23 +485,25 @@ export default function PropietarioHomePage() {
 
 function MetricCard({ icon, label, value, color }: { icon: React.ReactElement; label: string; value: number; color: string }) {
   const colors = {
-    blue: 'from-blue-500 to-blue-600',
-    green: 'from-green-500 to-green-600',
-    orange: 'from-orange-500 to-orange-600'
+    blue: 'bg-blue-500',
+    green: 'bg-green-500',
+    orange: 'bg-orange-500'
   };
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className={`bg-gradient-to-br ${colors[color as keyof typeof colors]} p-2.5 rounded-lg`}>
-          {React.cloneElement(icon, { className: "w-5 h-5 text-white" } as React.HTMLAttributes<HTMLElement>)}
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-gray-600 mb-1">{label}</p>
+            <p className="text-3xl font-bold text-gray-900">{value}</p>
+          </div>
+          <div className={`${colors[color as keyof typeof colors]} p-2 rounded-lg`}>
+            {React.cloneElement(icon, { className: "w-5 h-5 text-white" } as React.HTMLAttributes<HTMLElement>)}
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-gray-600">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -569,11 +598,11 @@ function ProfileCard({
   const isVerified = profile.profile_status && profile.profile_status === 'verified';
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 hover:shadow-xl hover:border-orange-200 transition-all overflow-hidden">
-      <div className="bg-gradient-to-r from-orange-50 to-orange-100/50 px-6 py-4 border-b border-orange-200">
-        <div className="flex items-start justify-between">
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-lg">
+            <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">
               {initials}
             </div>
             <div>
@@ -584,7 +613,7 @@ function ProfileCard({
                     <Check className="w-3 h-3" /> Verificado
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
                     <X className="w-3 h-3" /> No verificado
                   </span>
                 )}
@@ -593,15 +622,6 @@ function ProfileCard({
                 <MapPin className="w-4 h-4 text-orange-500" />
                 <span>{[profile.neighborhood, profile.city].filter(Boolean).join(', ') || 'Sin especificar'}</span>
               </div>
-              {profile.property_types && profile.property_types.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {profile.property_types.map((type) => (
-                    <span key={type} className="inline-flex items-center px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
-                      {PROPERTY_TYPES[type] || cap(type)}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -610,11 +630,19 @@ function ProfileCard({
             {cap(profile.status || 'activo')}
           </span>
         </div>
-      </div>
 
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-4 border border-green-200">
+        {profile.property_types && profile.property_types.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {profile.property_types.map((type) => (
+              <span key={type} className="inline-flex items-center px-2 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-medium border border-orange-200 capitalize">
+                {PROPERTY_TYPES[type] || cap(type)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-green-600" />
               <span className="text-xs font-semibold text-green-700">Presupuesto</span>
@@ -622,92 +650,94 @@ function ProfileCard({
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="text-xs text-green-600">Mínimo</span>
-                <p className="text-green-900 font-bold text-lg">${nfAR.format(profile.budget_min || 0)}</p>
+                <p className="text-green-900 font-bold text-base">${nfAR.format(profile.budget_min || 0)}</p>
               </div>
               <div>
                 <span className="text-xs text-green-600">Máximo</span>
-                <p className="text-green-900 font-bold text-lg">${nfAR.format(profile.budget_max || 0)}</p>
+                <p className="text-green-900 font-bold text-base">${nfAR.format(profile.budget_max || 0)}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-blue-600" />
               <span className="text-xs font-semibold text-blue-700">Ocupantes</span>
             </div>
-            <p className="text-blue-900 font-bold text-lg">
+            <p className="text-blue-900 font-bold text-base">
               {profile.occupants ? `${profile.occupants} persona${profile.occupants > 1 ? 's' : ''}` : 'No especificado'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-700 mb-4 flex-wrap">
+        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
           {(profile.bedroom_min || profile.bedroom_max) && (
-            <span className="flex items-center gap-1">
-              <Bed className="w-4 h-4" />
-              {profile.bedroom_min || 0} - {profile.bedroom_max || '∞'} dorm
-            </span>
+            <div className="flex items-center gap-1.5">
+              <Bed className="w-4 h-4 text-orange-500" />
+              <span>{profile.bedroom_min || 0} - {profile.bedroom_max || '∞'} dorm</span>
+            </div>
           )}
           {(profile.rooms_min || profile.rooms_max) && (
-            <span className="flex items-center gap-1">
-              <Home className="w-4 h-4" />
-              {profile.rooms_min || 0} - {profile.rooms_max || '∞'} amb
-            </span>
+            <div className="flex items-center gap-1.5">
+              <Home className="w-4 h-4 text-orange-500" />
+              <span>{profile.rooms_min || 0} - {profile.rooms_max || '∞'} amb</span>
+            </div>
           )}
           {(profile.bathrooms_min || profile.bathrooms_max) && (
-            <span className="flex items-center gap-1">
-              <Bath className="w-4 h-4" />
-              {profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'} baño
-            </span>
+            <div className="flex items-center gap-1.5">
+              <Bath className="w-4 h-4 text-orange-500" />
+              <span>{profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'} baño</span>
+            </div>
           )}
           {profile.lease_term_months && (
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {profile.lease_term_months} meses
-            </span>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-orange-500" />
+              <span>{profile.lease_term_months} meses</span>
+            </div>
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          {profile.furnished && <Badge icon={<Sparkles />} label="Amoblado" />}
-          {profile.pets_allowed && <Badge icon={<Check />} label="Mascotas" />}
-          {profile.parking_needed && <Badge icon={<Car />} label="Cochera" />}
-          {profile.balcony && <Badge icon={<Sun />} label="Balcón" />}
-          {profile.terrace && <Badge icon={<Waves />} label="Terraza" />}
-        </div>
+        {(profile.furnished || profile.pets_allowed || profile.parking_needed || profile.balcony || profile.terrace) && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {profile.furnished && <Badge icon={<Sparkles />} label="Amoblado" />}
+            {profile.pets_allowed && <Badge icon={<Check />} label="Mascotas" />}
+            {profile.parking_needed && <Badge icon={<Car />} label="Cochera" />}
+            {profile.balcony && <Badge icon={<Sun />} label="Balcón" />}
+            {profile.terrace && <Badge icon={<Waves />} label="Terraza" />}
+          </div>
+        )}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-200">
           <button
             onClick={onViewDetail}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-semibold"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
           >
             <Eye className="w-4 h-4" />
-            Ver Detalle
+            <span className="hidden sm:inline">Ver</span>
           </button>
           <button
             onClick={() => onContactClick('whatsapp', profile)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
           >
             <MessageCircle className="w-4 h-4" />
-            WhatsApp
+            <span className="hidden sm:inline">WhatsApp</span>
           </button>
           <button
             onClick={() => onContactClick('email', profile)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold"
           >
             <Mail className="w-4 h-4" />
-            Email
+            <span className="hidden sm:inline">Email</span>
           </button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function Badge({ icon, label }: { icon: React.ReactElement; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium bg-gray-100 text-gray-700 border-gray-300">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300">
       {React.cloneElement(icon, { className: "w-3 h-3" } as React.HTMLAttributes<HTMLElement>)}
       {label}
     </span>
@@ -749,17 +779,17 @@ function ProfileDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col">
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between rounded-t-2xl flex-shrink-0">
+      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-200 max-h-[90vh] flex flex-col">
+        <div className="bg-white px-6 py-5 flex items-center justify-between border-b border-gray-200 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg">
+            <div className="bg-orange-500 p-2 rounded-lg">
               <Users className="w-6 h-6 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Perfil del Inquilino</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Perfil del Inquilino</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-white/90 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1046,17 +1076,19 @@ function ProfileDetailModal({
 
 function EmptyState() {
   return (
-    <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-12">
-      <div className="flex flex-col items-center text-center">
-        <div className="bg-gradient-to-br from-orange-100 to-orange-200 p-6 rounded-full mb-6">
-          <Users className="w-12 h-12 text-orange-600" />
+    <Card className="border-2 border-dashed border-gray-300">
+      <CardContent className="pt-12 pb-12">
+        <div className="flex flex-col items-center text-center">
+          <div className="bg-orange-100 p-6 rounded-full mb-6">
+            <Users className="w-12 h-12 text-orange-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">No se encontraron inquilinos</h3>
+          <p className="text-gray-600 max-w-md">
+            Intenta ajustar los filtros de búsqueda para encontrar más perfiles que coincidan con tus criterios.
+          </p>
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">No se encontraron inquilinos</h3>
-        <p className="text-gray-600 mb-6 max-w-md">
-          Intenta ajustar los filtros de búsqueda para encontrar más perfiles que coincidan con tus criterios.
-        </p>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

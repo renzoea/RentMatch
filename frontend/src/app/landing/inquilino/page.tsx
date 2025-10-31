@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Search, Clock, Users, Shield } from "lucide-react"
-import Link from "next/link"
 import Navbar from "@/components/navbar"
 export default function InquilinosPage() {
     function scrollToSection(sectionId: string): void {

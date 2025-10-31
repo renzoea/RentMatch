@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/navbar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Building2, Clock, Smile, Target, Eye, ShieldCheck } from "lucide-react";
+import { Target, Eye, ShieldCheck } from "lucide-react";
 
 export default function NosotrosPage() {
   return (
