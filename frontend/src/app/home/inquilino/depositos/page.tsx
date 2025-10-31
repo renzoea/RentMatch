@@ -152,9 +152,10 @@ export default function DepositosPage() {
 
       alert('¡Depósito marcado como pagado! Tu contrato ahora está activo.');
       loadDeposits();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error marcando depósito como pagado:', error);
-      alert(error.response?.data?.error || 'Error al marcar el depósito como pagado.');
+      const err = error as { response?: { data?: { error?: string } } };
+      alert(err.response?.data?.error || 'Error al marcar el depósito como pagado.');
     } finally {
       setProcessingId(null);
     }
@@ -360,7 +361,7 @@ export default function DepositosPage() {
                               Acción requerida: Realizar pago del depósito
                             </p>
                             <p className="text-yellow-800">
-                              Una vez que realices el pago del depósito de garantía, haz clic en "Marcar como Pagado"
+                              Una vez que realices el pago del depósito de garantía, haz clic en &quot;Marcar como Pagado&quot;
                               para activar tu contrato automáticamente.
                             </p>
                           </div>

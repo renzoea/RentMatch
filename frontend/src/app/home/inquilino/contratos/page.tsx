@@ -110,16 +110,6 @@ export default function ContractDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Refresca la lista después de firmar
-  const handleSigned = () => {
-    setLoading(true)
-    const token = localStorage.getItem('access_token')
-    api.get("/api/contracts/my", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setContracts(res.data))
-      .catch(() => setContracts([]))
-      .finally(() => setLoading(false))
-  }
-
   const handleSignContract = async (contractId: string) => {
     setSigningContractId(contractId)
     const token = localStorage.getItem('access_token')
@@ -130,7 +120,7 @@ export default function ContractDashboard() {
       localStorage.setItem('contractId', contractId)
       localStorage.setItem('envelopeId', res.data.envelopeId)
       window.location.href = res.data.url
-    } catch (error) {
+    } catch {
       alert('Error al iniciar la firma del contrato')
       setSigningContractId(null)
     }
@@ -400,7 +390,7 @@ export default function ContractDashboard() {
                             Acción requerida: Firmar contrato
                           </p>
                           <p className="text-yellow-800">
-                            El propietario ya firmó el contrato. Haz clic en "Firmar Contrato" para completar tu firma digital.
+                            El propietario ya firmó el contrato. Haz clic en &quot;Firmar Contrato&quot; para completar tu firma digital.
                           </p>
                         </div>
                       </div>
@@ -498,7 +488,6 @@ export default function ContractDashboard() {
         id={selectedId}
         onClose={() => setDetailOpen(false)}
         onDeposit={() => router.push("/home/inquilino/depositos")}
-        onSigned={handleSigned}
       />
 
       {/* Modal de Visor PDF */}

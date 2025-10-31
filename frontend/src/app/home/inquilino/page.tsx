@@ -317,7 +317,7 @@ export default function SearchProfileDashboard() {
                     <strong>1. Crea perfiles específicos:</strong> Puedes tener múltiples perfiles de búsqueda con diferentes criterios (ubicación, presupuesto, tipo de propiedad).
                   </p>
                   <p>
-                    <strong>2. Activa o pausa:</strong> Marca un perfil como "Activo" cuando estés buscando activamente, o "Pausado" para guardar tus criterios sin recibir notificaciones.
+                    <strong>2. Activa o pausa:</strong> Marca un perfil como &quot;Activo&quot; cuando estés buscando activamente, o &quot;Pausado&quot; para guardar tus criterios sin recibir notificaciones.
                   </p>
                   <p>
                     <strong>3. Recibe coincidencias:</strong> El sistema te notificará cuando encuentre propiedades que coincidan con tus perfiles activos.

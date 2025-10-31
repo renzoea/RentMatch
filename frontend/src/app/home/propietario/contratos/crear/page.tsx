@@ -68,6 +68,7 @@ function CrearContratoContent() {
     if (editId) {
       loadContract(editId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId]);
 
   const loadContract = async (id: string) => {
@@ -120,7 +121,7 @@ function CrearContratoContent() {
         end_date: contract.end_date || '',
         terms: contract.terms || '',
       });
-    } catch (error) {
+    } catch {
       alert('Error al cargar el contrato');
       router.push('/home/propietario/contratos');
     } finally {
@@ -193,7 +194,7 @@ function CrearContratoContent() {
 
       setPdfUrl(res.data.url);
       alert('PDF subido correctamente');
-    } catch (error) {
+    } catch {
       alert('Error al subir el PDF');
       setPdf(null);
     } finally {
