@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/navbar";
@@ -97,12 +98,13 @@ export default function LandingPage() {
       >
         <div className="group relative">
           <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-tr from-orange-200/60 via-amber-200/40 to-white blur-2xl transition-opacity group-hover:opacity-90" />
-          <img
+          <Image
             src="/images/foto-home.jpg"
             alt="Hombre profesional sonriente haciendo gesto OK"
+            width={896}
+            height={672}
             className="h-auto w-full max-w-xl sm:max-w-2xl lg:max-w-[48rem] xl:max-w-[56rem] rounded-3xl border border-orange-100 shadow-[0_10px_30px_rgba(249,115,22,0.25)]"
-            loading="eager"
-            decoding="async"
+            priority
           />
         </div>
       </motion.div>

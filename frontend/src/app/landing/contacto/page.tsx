@@ -2,7 +2,7 @@
 
 import { Mail, Phone, MapPin, Clock, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +12,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Navbar from "@/components/navbar";
 
 // ======================================================
@@ -22,7 +22,6 @@ import Navbar from "@/components/navbar";
 
 export default function ContactoPage() {
   const [sending, setSending] = useState(false);
-  const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

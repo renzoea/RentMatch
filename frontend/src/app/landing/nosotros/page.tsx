@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/navbar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Building2, Clock, Smile, Target, Eye, ShieldCheck, Zap, Handshake, Heart } from "lucide-react";
+import { Eye, ShieldCheck, Zap, Heart } from "lucide-react";
 
 export default function NosotrosPage() {
   const currentYear = new Date().getFullYear();
@@ -55,7 +55,7 @@ export default function NosotrosPage() {
               
               <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
                 <p>
-                  RentMatch nació en **2023** de la frustración ante la ineficiencia del sistema tradicional. Después de meses de visitas sin éxito, nos preguntamos: **"¿Por qué no son los propietarios quienes encuentran a los inquilinos ideales?"**
+                  RentMatch nació en **2023** de la frustración ante la ineficiencia del sistema tradicional. Después de meses de visitas sin éxito, nos preguntamos: **&ldquo;¿Por qué no son los propietarios quienes encuentran a los inquilinos ideales?&rdquo;**
                 </p>
                 <blockquote className="border-l-4 border-orange-500 pl-4 py-1 italic font-semibold text-gray-900">
                   <p>

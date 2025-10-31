@@ -3,9 +3,10 @@
 import { useMemo } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Clock, Search, Heart, CheckCircle, Lightbulb, TrendingUp, Handshake, DollarSign } from "lucide-react"
+import { Shield, Clock, CheckCircle, Lightbulb, TrendingUp, Handshake } from "lucide-react"
 import Navbar from "@/components/navbar" // Asumo que `Navbar` acepta `onNavigate` si la quieres igual que en Inquilinos.
 
 /* Variantes para las animaciones (basadas en tu código de Inquilinos) */
@@ -92,13 +93,14 @@ export default function PropietariosPage() {
               <div className="group relative">
                 <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-tr from-orange-200/60 via-amber-200/40 to-white blur-2xl transition-opacity group-hover:opacity-90" />
                 <div className="rounded-[26px] bg-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 p-1 ring-1 ring-orange-100 shadow-[0_12px_36px_rgba(249,115,22,0.15)]">
-                  <img
-                    src="/images/propietario2.jpg" // Cambié .png a .jpg por consistencia (asumiendo que tienes una imagen similar a 'joven_inquilino.jpg')
+                  <Image
+                    src="/images/propietario2.jpg"
                     alt="Propietaria con tablet sonriendo"
+                    width={768}
+                    height={512}
                     className="h-auto w-full max-w-xl sm:max-w-2xl lg:max-w-[48rem] rounded-3xl border border-orange-100 ring-1 ring-orange-200/60 transition-transform duration-300 group-hover:scale-[1.01]"
-                    loading="eager"
-                    decoding="async"
-                  /> 
+                    priority
+                  />
                 </div>
               </div>
             </motion.div>
@@ -129,7 +131,7 @@ export default function PropietariosPage() {
               { title: "Cero Vacancia", desc: "Nuestro matching reduce drásticamente el tiempo que tu propiedad está vacía.", Icon: Clock },
               { title: "Ofertas Dirigidas", desc: "Solo recibes el contacto de inquilinos que buscan exactamente lo que ofreces.", Icon: TrendingUp },
               { title: "Contratos Legales", desc: "Sistema de contratos digitales con validez legal y gestión de depósitos.", Icon: Handshake },
-            ].map(({ title, desc, Icon }, i) => (
+            ].map(({ title, desc, Icon }) => (
               <motion.div key={title} variants={itemFade}>
                 <Card className="group relative overflow-hidden rounded-3xl border-0 bg-white/90 shadow-sm ring-1 ring-orange-100 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:ring-orange-200">
                   <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-orange-100/60 blur-xl transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" />

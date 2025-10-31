@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
 import { AxiosError } from "axios"
 import { motion, AnimatePresence } from "framer-motion"
-import { Home, Building2, Key, Lock } from "lucide-react"
+import { Home, Building2, Key } from "lucide-react"
 
 // ======================================================
 // BG: Íconos flotando (casas, edificios, llaves)
