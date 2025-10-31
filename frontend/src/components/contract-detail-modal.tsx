@@ -80,7 +80,6 @@ interface Props {
   id: string | null
   onClose: () => void
   onDeposit?: () => void
-  onSigned?: () => void
 }
 
 function formatDate(date: string) {
@@ -168,7 +167,7 @@ const BOOLEAN_AMENITIES = [
   { key: 'lavadero', label: 'Lavadero', icon: <Wind className="w-4 h-4 text-teal-600" /> }
 ];
 
-export default function ContractDetailModal({ open, id, onClose, onDeposit, onSigned }: Props) {
+export default function ContractDetailModal({ open, id, onClose, onDeposit }: Props) {
   const [data, setData] = useState<ContractDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
