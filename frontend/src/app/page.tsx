@@ -1,248 +1,281 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import Navbar from "@/components/navbar"
+import { useCallback } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import Navbar from "@/components/navbar";
+import Link from "next/link"
+
+import { Check, Lock, Search, User2, Building2 } from "lucide-react";
+
 export default function LandingPage() {
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId)
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
-    }
-  }
+  const scrollToSection = useCallback((sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header/Navigation */}
-  
-    
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* ===== Background ornaments ===== */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 -right-32 h-[520px] w-[520px] rounded-full bg-gradient-to-br from-orange-400/25 via-orange-300/20 to-yellow-300/10 blur-3xl" />
+        <div className="absolute -bottom-40 -left-32 h-[520px] w-[520px] rounded-full bg-gradient-to-br from-rose-300/20 via-orange-400/15 to-amber-300/10 blur-3xl" />
+      </div>
 
-          {/* Navigation */}
-                <Navbar onNavigate={scrollToSection} />
+      {/* ===== Navbar ===== */}
+      <Navbar onNavigate={scrollToSection} />
+
+      {/* ===== Hero ===== */}
+     <section className="relative">
+  <div className="mx-auto max-w-7xl px-4 pt-20 pb-14 sm:pt-24">
+    <div className="grid items-center gap-10 lg:grid-cols-2">
+      {/* copy */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="order-2 lg:order-1"
+      >
+        <h1 className="mt-3 text-pretty text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">
+          Encontrá tu hogar ideal de una forma{" "}
+          <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+            diferente
+          </span>
+        </h1>
+
+        <p className="mt-5 text-xl leading-relaxed text-gray-600">
+          RentMatch revoluciona el mercado de alquileres. Creá tu perfil de búsqueda y dejá que los propietarios
+          te encuentren a vos.
+        </p>
+
+       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+  {/* Registrarse (crear perfil) */}
+  <Link href="/auth/register">
+    <Button
+      aria-label="Crear perfil de búsqueda (registrarse)"
+      className="group relative h-12 w-full gap-2 overflow-hidden rounded-2xl bg-orange-500 px-6 text-base font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-xl active:translate-y-0 sm:w-auto"
+    >
+      Crear Perfil de Búsqueda
+      <span className="ml-1 inline-flex translate-x-0 transition-transform group-hover:translate-x-1">→</span>
+    </Button>
+  </Link>
+
+  {/* Iniciar sesión */}
+  <Link href="/auth/login">
+    <Button
+      variant="outline"
+      aria-label="Iniciar sesión"
+      className="h-12 w-full rounded-2xl border-orange-200 bg-white px-6 text-base font-semibold text-gray-800 transition-all hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 sm:w-auto"
+    >
+      Soy propietario
+    </Button>
+  </Link>
+</div>
 
 
-     
+        {/* trust row */}
+        <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+          <div className="inline-flex items-center gap-2">
+            <Check className="h-4 w-4 text-green-600" /> Verificación de identidad
+          </div>
+          <div className="hidden h-4 w-px bg-gray-200 sm:block" />
+          <div className="inline-flex items-center gap-2">
+            <Lock className="h-4 w-4 text-gray-700" /> Depósito en escrow protegido
+          </div>
+        </div>
+      </motion.div>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              Encuentra tu hogar ideal de una forma <span className="text-orange-500">diferente</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              RentMatch revoluciona el mercado de alquileres. Crea tu perfil de búsqueda y deja que los propietarios te
-              encuentren a ti.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-lg">
-                Crear Perfil de Búsqueda →
-              </Button>
-              <Button variant="outline" className="border-gray-300 text-gray-700 px-8 py-3 text-lg bg-transparent">
-                Soy propietario
-              </Button>
+      {/* image (dejá tu versión grande actual) */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+        className="order-1 flex justify-center lg:order-2"
+      >
+        <div className="group relative">
+          <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-tr from-orange-200/60 via-amber-200/40 to-white blur-2xl transition-opacity group-hover:opacity-90" />
+          <img
+            src="/images/foto-home.jpg"
+            alt="Hombre profesional sonriente haciendo gesto OK"
+            className="h-auto w-full max-w-xl sm:max-w-2xl lg:max-w-[48rem] xl:max-w-[56rem] rounded-3xl border border-orange-100 shadow-[0_10px_30px_rgba(249,115,22,0.25)]"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      </motion.div>
+    </div>
+  </div>
+
+  {/* subtle divider */}
+  <div className="mx-auto h-px max-w-7xl bg-gradient-to-r from-transparent via-orange-200/70 to-transparent" />
+</section>
+
+
+
+      {/* ===== Features (modern glass + subtle glow) ===== */}
+      <section className="bg-gradient-to-b from-white to-orange-50/40 py-16">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                title: "Creá tu perfil",
+                desc: "Publicá tus preferencias de ubicación, presupuesto y características que buscás.",
+                Icon: User2,
+              },
+              {
+                title: "Propietarios te encuentran",
+                desc: "Los propietarios buscan inquilinos según sus criterios y te contactan directo.",
+                Icon: Search,
+              },
+              {
+                title: "Gestioná en la plataforma",
+                desc: "Desde el contrato al depósito, todo seguro y transparente en un sólo lugar.",
+                Icon: Building2,
+              },
+            ].map(({ title, desc, Icon }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: i * 0.06 }}
+              >
+                <Card className="group relative overflow-hidden rounded-3xl border-0 bg-white/80 shadow-sm ring-1 ring-orange-100 transition-all hover:-translate-y-0.5 hover:shadow-md hover:ring-orange-200">
+                  <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-orange-100/60 blur-xl transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" />
+                  <CardContent className="relative p-7">
+                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 ring-1 ring-orange-200">
+                      <Icon className="h-8 w-8 text-orange-600" />
+                    </div>
+                    <h3 className="mb-2 text-center text-xl font-semibold">{title}</h3>
+                    <p className="text-center text-gray-600">{desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== How it works (numbers visible) ===== */}
+      <section id="como-funciona" className="py-20">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="mx-auto mb-14 max-w-3xl text-center">
+            <h2 className="text-4xl font-bold leading-tight">
+              ¿Cómo funciona <span className="text-orange-600">RentMatch</span>?
+            </h2>
+            <p className="mt-4 text-lg text-gray-600">El proceso que pone al inquilino en el centro de la búsqueda.</p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                n: 1,
+                title: "Creá tu Perfil de Búsqueda",
+                desc: "Definí presupuesto, zonas preferidas, amenities e intereses para matchear mejor.",
+                icon: Search,
+              },
+              {
+                n: 2,
+                title: "Propietarios te contactan",
+                desc: "Si su propiedad calza con lo que buscás, coordinan visitas sin vueltas ni intermediarios.",
+                icon: User2,
+              },
+              {
+                n: 3,
+                title: "Contrato digital seguro",
+                desc: "Firmá 100% online con validez legal. Seguimiento de estados y notificaciones.",
+                icon: Building2,
+              },
+              {
+                n: 4,
+                title: "Depósito protegido",
+                desc: "Escrow con liberación automática al finalizar, auditorías y resolución de incidentes.",
+                icon: Lock,
+              },
+            ].map(({ n, title, desc, icon: Icon }, i) => (
+              <motion.div
+                key={n}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.06 }}
+              >
+                <Card className="group relative overflow-hidden rounded-3xl border border-orange-100/80 bg-white/95 shadow-sm transition-all hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md">
+                  {/* badge visible dentro del card */}
+                  <div
+                    className="absolute top-3 left-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full
+                               bg-orange-600 text-xs font-bold text-white shadow-md ring-2 ring-white/90 transition-transform group-hover:scale-105"
+                    aria-hidden
+                  >
+                    {String(n).padStart(2, "")}
+                  </div>
+
+                  {/* halo sutil */}
+                  <div className="pointer-events-none absolute -inset-px rounded-3xl ring-1 ring-orange-200/60" />
+
+                  <CardContent className="relative p-6 pt-12">
+                    <div className="mt-2 flex items-center justify-center">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 ring-1 ring-orange-200">
+                        <Icon className="h-8 w-8 text-orange-600" />
+                      </div>
+                    </div>
+                    <h3 className="mt-4 text-center text-lg font-semibold">{title}</h3>
+                    <p className="mt-2 text-center text-sm text-gray-600">{desc}</p>
+
+                    {/* underline on hover */}
+                    <div className="mx-auto mt-4 h-px w-14 origin-left scale-x-0 bg-gradient-to-r from-orange-400 to-amber-400 transition-transform duration-300 group-hover:scale-x-100" />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CTA strip ===== */}
+      <section className="py-8">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 to-amber-500 p-1 shadow-lg">
+            <div className="rounded-[22px] bg-white/95 p-6 md:p-8">
+              <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">¿Listo para dar el primer paso?</h3>
+                  <p className="mt-1 text-gray-600">Creá tu perfil, recibí propuestas y decidí con datos y seguridad.</p>
+                </div>
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                  <Link href="/auth/register">
+                  <Button className="group h-11 w-full rounded-2xl bg-orange-600 px-6 font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-orange-700 sm:w-auto">
+                    Empezar ahora
+                    <span className="ml-1 inline-flex transition-transform group-hover:translate-x-1">→</span>
+                  </Button>
+                  </Link>
+
+                  
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex justify-center">
-            <img
-              src="/images/hombre_inicio.png"
-              alt="Hombre profesional sonriente haciendo gesto OK"
-              className="w-full max-w-md"
-            />
-          </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="bg-gray-50 py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center p-6 border-0 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Crea tu perfil</h3>
-                <p className="text-gray-600">
-                  Publica tus preferencias de ubicación, presupuesto y características que buscas
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-6 border-0 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Propietarios te encuentran</h3>
-                <p className="text-gray-600">
-                  Los propietarios buscan inquilinos según sus criterios y te contactan directamente
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-6 border-0 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Gestiona en la plataforma</h3>
-                <p className="text-gray-600">
-                  Desde el contrato hasta el depósito, todo gestionado de forma segura y transparente
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works Section */}
-      <section id="como-funciona" className="py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              ¿Cómo funciona <span className="text-orange-500">RentMatch</span>?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Descubre el proceso revolucionario que pone al inquilino en el centro de la búsqueda de alquileres
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Step 1 */}
-            <Card className="relative p-6 border-2 border-orange-200">
-              <CardContent className="pt-6">
-                <div className="absolute -top-4 left-6 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">
-                  1
-                </div>
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 mt-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Crea tu Perfil de Búsqueda</h3>
-                <p className="text-gray-600 text-sm text-center">
-                  Define exactamente qué buscas: presupuesto, zona preferida, características del inmueble y tus
-                  preferencias personales.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Step 2 */}
-            <Card className="relative p-6 border-2 border-orange-200">
-              <CardContent className="pt-6">
-                <div className="absolute -top-4 left-6 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">
-                  2
-                </div>
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 mt-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Propietarios te Contactan</h3>
-                <p className="text-gray-600 text-sm text-center">
-                  Los propietarios ven tu perfil y si su propiedad coincide con lo que buscas, te contactan
-                  directamente.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Step 3 */}
-            <Card className="relative p-6 border-2 border-orange-200">
-              <CardContent className="pt-6">
-                <div className="absolute -top-4 left-6 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">
-                  3
-                </div>
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 mt-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Contrato Digital Seguro</h3>
-                <p className="text-gray-600 text-sm text-center">
-                  Firma tu contrato de forma completamente digital con validez legal total, cumpliendo con el Código
-                  Civil argentino.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Step 4 */}
-            <Card className="relative p-6 border-2 border-orange-200">
-              <CardContent className="pt-6">
-                <div className="absolute -top-4 left-6 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">
-                  4
-                </div>
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 mt-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Depósito Protegido</h3>
-                <p className="text-gray-600 text-sm text-center">
-                  Tu depósito queda retenido de forma segura y se devuelve automáticamente al finalizar el contrato.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mr-2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-4 h-4">
+      {/* ===== Footer ===== */}
+      <footer className="bg-gradient-to-b from-orange-50/60 to-white py-10">
+        <div className="mx-auto max-w-7xl px-4 text-center">
+          <div className="mx-auto mb-3 flex items-center justify-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-white">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9,22 9,12 15,12 15,22" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-orange-500">RentMatch</span>
+            <span className="text-lg font-bold text-orange-600">RentMatch</span>
           </div>
-          <p className="text-gray-500 text-sm">© 2024 RentMatch. Todos los derechos reservados.</p>
+          <p className="text-sm text-gray-500">© {new Date().getFullYear()} RentMatch. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
-  )
+  );
 }
