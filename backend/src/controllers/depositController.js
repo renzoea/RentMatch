@@ -1,4 +1,10 @@
 const supabase = require('../config/supabase');
+const {
+  createPaymentPreference,
+  getPaymentInfo,
+  getMerchantOrder,
+  mapMPStatusToDepositStatus
+} = require('../config/mercadopago');
 
 /**
  * FUNCIÓN INTERNA: Crear depósito (llamada desde contractController)
@@ -466,5 +472,263 @@ exports.cancelDeposit = async (req, res) => {
   } catch (err) {
     console.error('Error en cancelDeposit:', err);
     res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};
+
+/**
+ * POST /api/deposits/:id/create-payment
+ * Crear preferencia de pago en Mercado Pago
+ * El inquilino inicia el proceso de pago
+ */
+exports.createPayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Obtener depósito con datos relacionados
+    const { data: deposit, error: depositError } = await supabase
+      .from('deposits')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (depositError || !deposit) {
+      return res.status(404).json({ error: 'Depósito no encontrado.' });
+    }
+
+    // Obtener contrato
+    const { data: contract, error: contractError } = await supabase
+      .from('contracts')
+      .select('id, property_id, tenant_id, landlord_id')
+      .eq('id', deposit.contract_id)
+      .single();
+
+    if (contractError || !contract) {
+      return res.status(404).json({ error: 'Contrato no encontrado.' });
+    }
+
+    // Verificar que el usuario sea el inquilino
+    if (contract.tenant_id !== userId) {
+      return res.status(403).json({ error: 'Solo el inquilino puede iniciar el pago.' });
+    }
+
+    // Verificar que el depósito esté en estado pending_payment
+    if (deposit.status !== 'pending_payment') {
+      return res.status(400).json({
+        error: `El depósito no puede ser pagado. Estado actual: ${deposit.status}`
+      });
+    }
+
+    // Obtener datos de la propiedad
+    const { data: property } = await supabase
+      .from('properties')
+      .select('address_line, city, neighborhood')
+      .eq('id', contract.property_id)
+      .single();
+
+    // Obtener datos del inquilino
+    const { data: tenant } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, phone')
+      .eq('id', contract.tenant_id)
+      .single();
+
+    // Crear preferencia de pago en Mercado Pago
+    const preference = await createPaymentPreference({
+      id: deposit.id,
+      amount: deposit.amount,
+      contractId: contract.id,
+      property: property || {},
+      tenant: tenant || {}
+    });
+
+    // Guardar preference_id en la base de datos
+    await supabase
+      .from('deposits')
+      .update({
+        preference_id: preference.id,
+        payment_status: 'pending'
+      })
+      .eq('id', id);
+
+    res.json({
+      preference_id: preference.id,
+      init_point: preference.init_point, // URL para Checkout Pro
+      sandbox_init_point: preference.sandbox_init_point // URL para testing
+    });
+  } catch (err) {
+    console.error('Error en createPayment:', err);
+    res.status(500).json({ error: 'Error al crear la preferencia de pago.' });
+  }
+};
+
+/**
+ * POST /api/deposits/webhook
+ * Webhook para recibir notificaciones de Mercado Pago
+ * Se ejecuta automáticamente cuando hay cambios en el pago
+ */
+exports.handleWebhook = async (req, res) => {
+  try {
+    console.log('📨 Webhook recibido:', req.body);
+    console.log('📨 Query params:', req.query);
+
+    const { type, data } = req.body;
+
+    // Responder rápido a Mercado Pago (importante)
+    res.status(200).send('OK');
+
+    // Procesar la notificación de forma asíncrona
+    if (type === 'payment') {
+      // Notificación de pago
+      const paymentId = data.id;
+      console.log('💳 Procesando pago:', paymentId);
+
+      // Obtener información del pago
+      const paymentInfo = await getPaymentInfo(paymentId);
+      console.log('💳 Info del pago:', JSON.stringify(paymentInfo, null, 2));
+
+      // Buscar el depósito usando external_reference (nuestro deposit_id)
+      const depositId = paymentInfo.external_reference;
+
+      if (!depositId) {
+        console.error('❌ No se encontró external_reference en el pago');
+        return;
+      }
+
+      // Obtener depósito
+      const { data: deposit, error: depositError } = await supabase
+        .from('deposits')
+        .select('*, contract:contracts(*)')
+        .eq('id', depositId)
+        .single();
+
+      if (depositError || !deposit) {
+        console.error('❌ Depósito no encontrado:', depositId);
+        return;
+      }
+
+      // Mapear estado de MP a estado de depósito
+      const newStatus = mapMPStatusToDepositStatus(paymentInfo.status);
+      console.log(`🔄 Actualizando depósito de ${deposit.status} a ${newStatus}`);
+
+      // Actualizar depósito
+      const updateData = {
+        payment_id: paymentInfo.id.toString(),
+        payment_status: paymentInfo.status,
+        payment_method: paymentInfo.payment_method_id,
+        payment_type: paymentInfo.payment_type_id,
+        status: newStatus
+      };
+
+      // Si el pago fue aprobado, marcar fecha de verificación
+      if (paymentInfo.status === 'approved') {
+        updateData.verified_at = new Date().toISOString();
+      }
+
+      await supabase
+        .from('deposits')
+        .update(updateData)
+        .eq('id', depositId);
+
+      // Si el pago fue aprobado, activar el contrato
+      if (paymentInfo.status === 'approved' && deposit.contract) {
+        console.log('✅ Pago aprobado - Activando contrato:', deposit.contract_id);
+
+        await supabase
+          .from('contracts')
+          .update({ status: 'active' })
+          .eq('id', deposit.contract_id);
+
+        console.log('✅ Contrato activado exitosamente');
+      }
+
+      console.log('✅ Webhook procesado correctamente');
+    } else if (type === 'merchant_order') {
+      // Notificación de orden
+      console.log('📦 Merchant order recibida:', data.id);
+    }
+  } catch (err) {
+    console.error('❌ Error en webhook:', err);
+    // No lanzar error para no afectar la respuesta a Mercado Pago
+  }
+};
+
+/**
+ * GET /api/deposits/:id/payment-status
+ * Obtener el estado actual del pago en Mercado Pago
+ */
+exports.getPaymentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Obtener depósito
+    const { data: deposit, error: depositError } = await supabase
+      .from('deposits')
+      .select('*, contract:contracts(*)')
+      .eq('id', id)
+      .single();
+
+    if (depositError || !deposit) {
+      return res.status(404).json({ error: 'Depósito no encontrado.' });
+    }
+
+    // Verificar permisos
+    if (deposit.contract.tenant_id !== userId && deposit.contract.landlord_id !== userId) {
+      return res.status(403).json({ error: 'No tienes permiso para ver este depósito.' });
+    }
+
+    // Si no hay payment_id, retornar estado básico
+    if (!deposit.payment_id) {
+      return res.json({
+        deposit_status: deposit.status,
+        payment_status: deposit.payment_status || 'pending',
+        has_payment: false
+      });
+    }
+
+    // Obtener información actualizada del pago
+    const paymentInfo = await getPaymentInfo(deposit.payment_id);
+
+    // Actualizar estado si cambió
+    if (paymentInfo.status !== deposit.payment_status) {
+      const newStatus = mapMPStatusToDepositStatus(paymentInfo.status);
+
+      const updateData = {
+        payment_status: paymentInfo.status,
+        status: newStatus
+      };
+
+      if (paymentInfo.status === 'approved' && !deposit.verified_at) {
+        updateData.verified_at = new Date().toISOString();
+      }
+
+      await supabase
+        .from('deposits')
+        .update(updateData)
+        .eq('id', id);
+
+      // Activar contrato si el pago fue aprobado
+      if (paymentInfo.status === 'approved') {
+        await supabase
+          .from('contracts')
+          .update({ status: 'active' })
+          .eq('id', deposit.contract_id);
+      }
+    }
+
+    res.json({
+      deposit_status: mapMPStatusToDepositStatus(paymentInfo.status),
+      payment_status: paymentInfo.status,
+      payment_status_detail: paymentInfo.status_detail,
+      payment_method: paymentInfo.payment_method_id,
+      payment_type: paymentInfo.payment_type_id,
+      has_payment: true,
+      amount: paymentInfo.transaction_amount,
+      date_approved: paymentInfo.date_approved
+    });
+  } catch (err) {
+    console.error('Error en getPaymentStatus:', err);
+    res.status(500).json({ error: 'Error al obtener estado del pago.' });
   }
 };

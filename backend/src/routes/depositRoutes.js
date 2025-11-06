@@ -40,4 +40,24 @@ router.post('/:id/release', authenticateToken, depositController.releaseDeposit)
  */
 router.delete('/:id/cancel', authenticateToken, depositController.cancelDeposit);
 
+/**
+ * POST /api/deposits/:id/create-payment
+ * Crear preferencia de pago en Mercado Pago (solo inquilino)
+ * Retorna: { preference_id, init_point, sandbox_init_point }
+ */
+router.post('/:id/create-payment', authenticateToken, depositController.createPayment);
+
+/**
+ * POST /api/deposits/webhook
+ * Webhook para recibir notificaciones de Mercado Pago
+ * NO requiere autenticación (es llamado por Mercado Pago)
+ */
+router.post('/webhook', depositController.handleWebhook);
+
+/**
+ * GET /api/deposits/:id/payment-status
+ * Obtener el estado actual del pago en Mercado Pago
+ */
+router.get('/:id/payment-status', authenticateToken, depositController.getPaymentStatus);
+
 module.exports = router;
