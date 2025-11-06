@@ -8,55 +8,20 @@ import { LogOut, User } from "lucide-react";
 
 export default function PropietarioLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<{ full_name: string; role: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
     const userData = localStorage.getItem("user");
-
-    // Si no hay token o usuario, redirigir a login
-    if (!token || !userData) {
-      router.push("/auth/login");
-      return;
+    if (userData) {
+      setUser(JSON.parse(userData));
     }
-
-    try {
-      const parsedUser = JSON.parse(userData);
-      
-      // Validar que sea propietario
-      if (parsedUser.role !== "propietario") {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("user");
-        router.push("/auth/login");
-        return;
-      }
-
-      setUser(parsedUser);
-      setIsLoading(false);
-    } catch {
-      // Si no se puede parsear, redirigir
-      router.push("/auth/login");
-    }
-  }, [router]);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
     router.push("/auth/login");
   };
-
-  // Mostrar loading mientras se valida
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Validando acceso...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
