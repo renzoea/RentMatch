@@ -704,31 +704,43 @@ exports.handleWebhook = async (req, res) => {
 
       // 8. Si el pago fue aprobado, activar el contrato
       if (paymentInfo.status === 'approved' && deposit.contract_id) {
+        logger.info('🔍 Verificando contrato para activación:', deposit.contract_id);
+
         // Verificar estado del contrato antes de activar
-        const { data: contract } = await supabase
+        const { data: contract, error: contractFetchError } = await supabase
           .from('contracts')
           .select('status')
           .eq('id', deposit.contract_id)
           .single();
 
+        if (contractFetchError) {
+          logger.error('❌ Error al obtener contrato:', contractFetchError.message);
+        } else {
+          logger.info('📋 Estado actual del contrato:', contract?.status);
+        }
+
         // Solo activar si el contrato está en estado correcto
         const validStatuses = ['pending_signatures', 'signed', 'draft'];
         if (contract && validStatuses.includes(contract.status)) {
+          logger.info('✅ Contrato en estado válido, procediendo a activar...');
+
           const { error: contractError } = await supabase
             .from('contracts')
             .update({ status: 'active' })
             .eq('id', deposit.contract_id);
 
           if (contractError) {
-            logger.error('Error activando contrato');
+            logger.error('❌ Error activando contrato:', contractError.message);
             // No retornar error porque el depósito ya se actualizó correctamente
             // Esto se puede manejar manualmente si es necesario
           } else {
-            logger.success('Contrato activado:', deposit.contract_id);
+            logger.success('✅ Contrato activado exitosamente:', deposit.contract_id);
           }
         } else {
-          logger.warn('Contrato en estado no válido para activación:', contract?.status);
+          logger.warn('⚠️ Contrato en estado no válido para activación:', contract?.status, '(Estados válidos:', validStatuses.join(', ') + ')');
         }
+      } else {
+        logger.info('ℹ️ No se activará contrato. Status pago:', paymentInfo.status, '| contract_id:', deposit.contract_id);
       }
 
       // 9. TODO salió bien, responder OK a Mercado Pago
@@ -823,24 +835,38 @@ exports.verifyByPreference = async (req, res) => {
 
           // Activar contrato si el pago fue aprobado Y el contrato está en estado válido
           if (latestPayment.status === 'approved' && deposit.contract_id) {
+            logger.info('🔍 [verifyByPreference] Verificando contrato para activación:', deposit.contract_id);
+
             // Verificar estado del contrato antes de activar
-            const { data: contract } = await supabase
+            const { data: contract, error: contractFetchError } = await supabase
               .from('contracts')
               .select('status')
               .eq('id', deposit.contract_id)
               .single();
 
+            if (contractFetchError) {
+              logger.error('❌ [verifyByPreference] Error al obtener contrato:', contractFetchError.message);
+            } else {
+              logger.info('📋 [verifyByPreference] Estado actual del contrato:', contract?.status);
+            }
+
             // Solo activar si el contrato está en estado correcto
             const validStatuses = ['pending_signatures', 'signed', 'draft'];
             if (contract && validStatuses.includes(contract.status)) {
-              await supabase
+              logger.info('✅ [verifyByPreference] Contrato en estado válido, procediendo a activar...');
+
+              const { error: contractError } = await supabase
                 .from('contracts')
                 .update({ status: 'active' })
                 .eq('id', deposit.contract_id);
 
-              console.log('✅ Contrato activado:', deposit.contract_id);
+              if (contractError) {
+                logger.error('❌ [verifyByPreference] Error activando contrato:', contractError.message);
+              } else {
+                logger.success('✅ [verifyByPreference] Contrato activado exitosamente:', deposit.contract_id);
+              }
             } else {
-              console.warn('⚠️ Contrato en estado no válido para activación:', contract?.status);
+              logger.warn('⚠️ [verifyByPreference] Contrato en estado no válido para activación:', contract?.status, '(Estados válidos:', validStatuses.join(', ') + ')');
             }
           }
 
@@ -940,24 +966,38 @@ exports.getPaymentStatus = async (req, res) => {
 
       // Activar contrato si el pago fue aprobado Y el contrato está en estado válido
       if (paymentInfo.status === 'approved' && deposit.contract_id) {
+        logger.info('🔍 [getPaymentStatus] Verificando contrato para activación:', deposit.contract_id);
+
         // Verificar estado del contrato antes de activar
-        const { data: contract } = await supabase
+        const { data: contract, error: contractFetchError } = await supabase
           .from('contracts')
           .select('status')
           .eq('id', deposit.contract_id)
           .single();
 
+        if (contractFetchError) {
+          logger.error('❌ [getPaymentStatus] Error al obtener contrato:', contractFetchError.message);
+        } else {
+          logger.info('📋 [getPaymentStatus] Estado actual del contrato:', contract?.status);
+        }
+
         // Solo activar si el contrato está en estado correcto
         const validStatuses = ['pending_signatures', 'signed', 'draft'];
         if (contract && validStatuses.includes(contract.status)) {
-          await supabase
+          logger.info('✅ [getPaymentStatus] Contrato en estado válido, procediendo a activar...');
+
+          const { error: contractError } = await supabase
             .from('contracts')
             .update({ status: 'active' })
             .eq('id', deposit.contract_id);
 
-          console.log('✅ Contrato activado:', deposit.contract_id);
+          if (contractError) {
+            logger.error('❌ [getPaymentStatus] Error activando contrato:', contractError.message);
+          } else {
+            logger.success('✅ [getPaymentStatus] Contrato activado exitosamente:', deposit.contract_id);
+          }
         } else {
-          console.warn('⚠️ Contrato en estado no válido para activación:', contract?.status);
+          logger.warn('⚠️ [getPaymentStatus] Contrato en estado no válido para activación:', contract?.status, '(Estados válidos:', validStatuses.join(', ') + ')');
         }
       }
     }
