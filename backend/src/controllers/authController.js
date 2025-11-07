@@ -94,15 +94,52 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Perfil no encontrado.' });
     }
 
-    // 3. Retornar el token y el usuario
+    // 3. Retornar el token, refresh token y el usuario
     return res.status(200).json({
       message: 'Login exitoso',
       access_token: authData.session.access_token,
+      refresh_token: authData.session.refresh_token,
+      expires_at: authData.session.expires_at,
       user
     });
   } catch (err) {
     console.error('Error interno:', err);
     return res.status(500).json({ error: 'Error interno del servidor.', details: err.message });
+  }
+};
+
+// Refresh token - renovar access token usando refresh token
+exports.refreshToken = async (req, res) => {
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
+    return res.status(400).json({ error: 'Refresh token es obligatorio.' });
+  }
+
+  try {
+    // Usar el refresh token para obtener una nueva sesión
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token
+    });
+
+    if (error) {
+      console.error('Error refreshing session:', error);
+      return res.status(401).json({ error: 'Refresh token inválido o expirado.' });
+    }
+
+    if (!data.session) {
+      return res.status(401).json({ error: 'No se pudo renovar la sesión.' });
+    }
+
+    // Retornar los nuevos tokens
+    return res.status(200).json({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at: data.session.expires_at
+    });
+  } catch (err) {
+    console.error('Error interno en refresh:', err);
+    return res.status(500).json({ error: 'Error interno del servidor.' });
   }
 };
 

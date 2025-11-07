@@ -9,6 +9,9 @@ router.post('/register', authController.register);
 // Login de usuario
 router.post('/login', authController.login);
 
+// Refresh token
+router.post('/refresh', authController.refreshToken);
+
 // Recuperación de contraseña
 router.post('/forgot-password', authController.forgotPassword);
 

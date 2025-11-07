@@ -16,14 +16,16 @@
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "date-fns": "^4.1.0",
     "docusign-esign": "^8.4.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
+    "express-rate-limit": "^8.2.1",
     "helmet": "^8.1.0",
     "mercadopago": "^2.10.0",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "validator": "^13.15.20"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

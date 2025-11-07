@@ -56,12 +56,7 @@ export default function SearchProfileDashboard() {
   const router = useRouter()
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
-    api.get("/api/search-profiles", { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/search-profiles")
       .then(res => setSearchProfiles(res.data))
       .catch(() => setSearchProfiles([]))
       .finally(() => setLoading(false))

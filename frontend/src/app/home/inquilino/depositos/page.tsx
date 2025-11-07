@@ -119,16 +119,7 @@ export default function DepositosPage() {
   const loadDeposits = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const res = await api.get('/api/deposits/my', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      const res = await api.get('/api/deposits/my');
       setDeposits(res.data);
     } catch (error) {
       console.error('Error cargando depósitos:', error);
@@ -141,19 +132,18 @@ export default function DepositosPage() {
   const handlePayWithMercadoPago = async (depositId: string) => {
     setProcessingId(depositId);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await api.post(
-        `/api/deposits/${depositId}/create-payment`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.post(`/api/deposits/${depositId}/create-payment`);
 
       const { init_point } = response.data;
 
-      // Guardar el depositId para cuando vuelva
+      if (!init_point) {
+        throw new Error('No se recibió la URL de pago de Mercado Pago');
+      }
+
+      // Guardar el depositId para cuando vuelva del checkout
       localStorage.setItem('pending_deposit_id', depositId);
 
-      // Redirigir a Mercado Pago
+      // Redirigir al Checkout Pro de Mercado Pago
       window.location.href = init_point;
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };

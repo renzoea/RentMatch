@@ -1,14 +1,15 @@
 const { MercadoPagoConfig, Preference, Payment, MerchantOrder } = require('mercadopago');
+const logger = require('../utils/logger');
 
 // Verificar que el access token esté configurado
 if (!process.env.MP_ACCESS_TOKEN) {
-  console.error('❌ ERROR: MP_ACCESS_TOKEN no está configurado en .env');
+  logger.error('ERROR: MP_ACCESS_TOKEN no está configurado en .env');
   throw new Error('MP_ACCESS_TOKEN no está configurado');
 }
 
-console.log('🔑 Access Token cargado:', process.env.MP_ACCESS_TOKEN.substring(0, 20) + '...');
+logger.info('Mercado Pago configurado correctamente');
 
-// Configurar cliente de Mercado Pago en modo SANDBOX
+// Configurar cliente de Mercado Pago
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
   options: {
@@ -52,8 +53,9 @@ async function createPaymentPreference(depositData) {
       failure: `${frontendUrl}/home/inquilino/depositos/failure?deposit_id=${id}`,
       pending: `${frontendUrl}/home/inquilino/depositos/pending?deposit_id=${id}`
     },
-    // auto_return funciona solo con URLs públicas (no localhost)
-    auto_return: process.env.NODE_ENV === 'production' ? 'all' : undefined,
+    // auto_return: 'approved' redirige automáticamente después de un pago exitoso
+    // Solo funciona con URLs públicas (no localhost)
+    auto_return: process.env.NODE_ENV === 'production' ? 'approved' : undefined,
     external_reference: id,
     notification_url: process.env.MP_NOTIFICATION_URL || 'http://localhost:5000/api/deposits/webhook',
     statement_descriptor: 'RENTMATCH'
@@ -78,13 +80,11 @@ async function createPaymentPreference(depositData) {
 
   try {
     const response = await preferenceApi.create({ body: preference });
+    logger.success('Preferencia de pago creada:', response.id);
     return response;
   } catch (error) {
-    console.error('❌ Error creating Mercado Pago preference:');
-    console.error('Error completo:', JSON.stringify(error, null, 2));
-    console.error('Message:', error.message);
-    console.error('Status:', error.status);
-    console.error('Cause:', error.cause);
+    logger.error('Error creating Mercado Pago preference:', error.message);
+    logger.debug('Error completo:', JSON.stringify(error, null, 2));
     throw new Error('Error al crear la preferencia de pago en Mercado Pago');
   }
 }
@@ -97,9 +97,10 @@ async function createPaymentPreference(depositData) {
 async function getPaymentInfo(paymentId) {
   try {
     const payment = await paymentApi.get({ id: paymentId });
+    logger.debug('Información de pago obtenida:', paymentId);
     return payment;
   } catch (error) {
-    console.error('Error getting payment info:', error);
+    logger.error('Error getting payment info:', error.message);
     throw new Error('Error al obtener información del pago');
   }
 }
@@ -112,9 +113,10 @@ async function getPaymentInfo(paymentId) {
 async function getMerchantOrder(merchantOrderId) {
   try {
     const order = await merchantOrderApi.get({ merchantOrderId });
+    logger.debug('Merchant order obtenida:', merchantOrderId);
     return order;
   } catch (error) {
-    console.error('Error getting merchant order:', error);
+    logger.error('Error getting merchant order:', error.message);
     throw new Error('Error al obtener la orden');
   }
 }
@@ -139,16 +141,75 @@ function mapMPStatusToDepositStatus(mpStatus) {
 }
 
 /**
- * Verificar que el webhook sea auténtico
+ * Verificar que el webhook sea auténtico usando la firma x-signature
+ * Documentación: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
  * @param {Object} body - Cuerpo de la notificación
  * @param {Object} headers - Headers de la petición
  * @returns {boolean} True si es auténtico
  */
 function verifyWebhookSignature(body, headers) {
-  // Mercado Pago envía un header x-signature con la firma
-  // Por simplicidad en modo test, retornamos true
-  // En producción, deberías validar la firma
-  return true;
+  try {
+    // Si no hay SECRET configurado, rechazar (modo seguro)
+    if (!process.env.MP_WEBHOOK_SECRET) {
+      logger.error('MP_WEBHOOK_SECRET no está configurado - rechazando webhook');
+      return false;
+    }
+
+    // Obtener headers necesarios
+    const xSignature = headers['x-signature'];
+    const xRequestId = headers['x-request-id'];
+
+    if (!xSignature || !xRequestId) {
+      logger.warn('Falta x-signature o x-request-id en el webhook');
+      return false;
+    }
+
+    // Parsear x-signature (formato: ts=timestamp,v1=hash)
+    const signatureParts = {};
+    xSignature.split(',').forEach(part => {
+      const [key, value] = part.split('=');
+      signatureParts[key.trim()] = value.trim();
+    });
+
+    const timestamp = signatureParts['ts'];
+    const receivedHash = signatureParts['v1'];
+
+    if (!timestamp || !receivedHash) {
+      logger.warn('Formato de x-signature inválido');
+      return false;
+    }
+
+    // Validar que el timestamp no sea muy antiguo (máximo 5 minutos)
+    const currentTime = Math.floor(Date.now() / 1000);
+    const timeDiff = currentTime - parseInt(timestamp);
+    if (timeDiff > 300) { // 5 minutos
+      logger.warn('Webhook muy antiguo (timestamp expirado)');
+      return false;
+    }
+
+    // Construir el string de manifest según documentación de MP
+    // Formato: id:<data.id>;request-id:<x-request-id>;ts:<timestamp>;
+    const dataId = body.data?.id || '';
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${timestamp};`;
+
+    // Calcular HMAC SHA256
+    const crypto = require('crypto');
+    const hmac = crypto.createHmac('sha256', process.env.MP_WEBHOOK_SECRET);
+    hmac.update(manifest);
+    const calculatedHash = hmac.digest('hex');
+
+    // Comparar hashes
+    if (calculatedHash !== receivedHash) {
+      logger.error('Firma de webhook inválida - posible webhook falso');
+      return false;
+    }
+
+    logger.success('Firma de webhook validada correctamente');
+    return true;
+  } catch (error) {
+    logger.error('Error verificando firma de webhook:', error.message);
+    return false;
+  }
 }
 
 module.exports = {

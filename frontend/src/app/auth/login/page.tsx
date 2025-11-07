@@ -241,6 +241,8 @@ export default function LoginPage() {
         setIsLoggedIn(true)
         setTimeout(() => {
           localStorage.setItem("access_token", data.access_token)
+          localStorage.setItem("refresh_token", data.refresh_token)
+          localStorage.setItem("expires_at", data.expires_at)
           localStorage.setItem("user", JSON.stringify(data.user))
           if (data.user.role === "inquilino") router.push("/home/inquilino")
           else if (data.user.role === "propietario") router.push("/home/propietario")

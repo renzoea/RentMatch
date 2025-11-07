@@ -26,10 +26,7 @@ export default function SearchProfileDeleteModal({ open, id, apiClient, onClose,
     setLoading(true)
     setError(null)
     try {
-      const token = localStorage.getItem('access_token')
-      await apiClient.delete(`/api/search-profiles/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await apiClient.delete(`/api/search-profiles/${id}`)
       onDeleted(id)
       onClose()
     } catch (err) {

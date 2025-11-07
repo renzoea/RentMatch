@@ -98,13 +98,7 @@ export default function ContractDashboard() {
   const router = useRouter()
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
-
-    api.get("/api/contracts/my", { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/contracts/my")
       .then(res => setContracts(res.data))
       .catch(() => setContracts([]))
       .finally(() => setLoading(false))
@@ -112,11 +106,8 @@ export default function ContractDashboard() {
 
   const handleSignContract = async (contractId: string) => {
     setSigningContractId(contractId)
-    const token = localStorage.getItem('access_token')
     try {
-      const res = await api.post(`/api/contracts/my/${contractId}/sign`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const res = await api.post(`/api/contracts/my/${contractId}/sign`)
       localStorage.setItem('contractId', contractId)
       localStorage.setItem('envelopeId', res.data.envelopeId)
       window.location.href = res.data.url

@@ -102,13 +102,7 @@ export default function LandlordContractsDashboard() {
   const [signingContractId, setSigningContractId] = useState<string | null>(null)
 
   const fetchContracts = () => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
-
-    api.get("/api/contracts/landlord/my", { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/contracts/landlord/my")
       .then(res => setContracts(res.data))
       .catch(() => setContracts([]))
       .finally(() => setLoading(false))
@@ -121,11 +115,8 @@ export default function LandlordContractsDashboard() {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este contrato?')) return
 
-    const token = localStorage.getItem('access_token')
     try {
-      await api.delete(`/api/contracts/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await api.delete(`/api/contracts/${id}`)
       fetchContracts()
     } catch {
       alert('Error al eliminar el contrato')
@@ -134,11 +125,8 @@ export default function LandlordContractsDashboard() {
 
   const handleSignContract = async (contractId: string) => {
     setSigningContractId(contractId)
-    const token = localStorage.getItem('access_token')
     try {
-      const res = await api.post(`/api/contracts/landlord/my/${contractId}/sign`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const res = await api.post(`/api/contracts/landlord/my/${contractId}/sign`, {})
       localStorage.setItem('contractId', contractId)
       localStorage.setItem('envelopeId', res.data.envelopeId)
       window.location.href = res.data.url

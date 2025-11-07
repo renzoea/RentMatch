@@ -125,10 +125,7 @@ export default function PropietarioHomePage() {
         cleanFilters[key] = value;
       });
 
-      const token = localStorage.getItem('access_token');
-      const response = await api.post("/api/filter-search/advanced/", cleanFilters, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const response = await api.post("/api/filter-search/advanced/", cleanFilters);
       const rows = Array.isArray(response.data?.data) ? response.data.data : [];
       setList(rows);
     } catch (e) {

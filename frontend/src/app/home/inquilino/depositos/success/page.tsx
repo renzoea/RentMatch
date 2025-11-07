@@ -38,8 +38,6 @@ function PaymentSuccessContent() {
       }
 
       try {
-        const token = localStorage.getItem('access_token');
-
         // Si tenemos preference_id pero no deposit_id, usar el endpoint alternativo
         if (preferenceId && !depositId) {
           const response = await api.post(`/api/deposits/verify-by-preference/${preferenceId}`);
@@ -62,9 +60,8 @@ function PaymentSuccessContent() {
         }
 
         // Obtener el estado actualizado del pago
-        const response = await api.get(`/api/deposits/${depositId}/payment-status`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // El token se agrega automáticamente via interceptor de Axios
+        const response = await api.get(`/api/deposits/${depositId}/payment-status`);
 
         setPaymentInfo(response.data);
 

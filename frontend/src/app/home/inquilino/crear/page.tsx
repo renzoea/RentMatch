@@ -179,10 +179,7 @@ export default function CrearPerfilBusqueda() {
     setSaving(true)
 
     try {
-      const token = localStorage.getItem('access_token')
-      await api.post('/api/search-profiles', form, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await api.post('/api/search-profiles', form)
       router.push('/home/inquilino')
     } catch (err) {
       const e = err as AxiosError<ApiErrorPayload>

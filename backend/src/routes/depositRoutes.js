@@ -2,6 +2,18 @@ const express = require('express');
 const router = express.Router();
 const depositController = require('../controllers/depositController');
 const { authenticateToken } = require('../middleware/authMiddleware');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiter específico para webhook (protección contra DoS)
+const webhookLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 20, // Máximo 20 requests por minuto desde la misma IP
+  message: 'Demasiadas solicitudes al webhook, por favor intenta de nuevo más tarde.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Usar IP real detrás de proxies (Render, Heroku, etc)
+  trustProxy: true
+});
 
 /**
  * GET /api/deposits/my
@@ -51,15 +63,16 @@ router.post('/:id/create-payment', authenticateToken, depositController.createPa
  * POST /api/deposits/webhook
  * Webhook para recibir notificaciones de Mercado Pago
  * NO requiere autenticación (es llamado por Mercado Pago)
+ * Protegido con rate limiting para prevenir DoS
  */
-router.post('/webhook', depositController.handleWebhook);
+router.post('/webhook', webhookLimiter, depositController.handleWebhook);
 
 /**
  * POST /api/deposits/verify-by-preference/:preferenceId
  * Verificar y actualizar depósito usando el preference_id de Mercado Pago
- * NO requiere autenticación (se puede llamar desde la página de éxito)
+ * Requiere autenticación para verificar que el usuario sea el dueño del depósito
  */
-router.post('/verify-by-preference/:preferenceId', depositController.verifyByPreference);
+router.post('/verify-by-preference/:preferenceId', authenticateToken, depositController.verifyByPreference);
 
 /**
  * GET /api/deposits/:id/payment-status

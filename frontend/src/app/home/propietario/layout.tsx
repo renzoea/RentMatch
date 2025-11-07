@@ -1,32 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import SidebarMenuPropietario from "@/components/sidebar-menu-propietario";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function PropietarioLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<{ full_name: string; role: string } | null>(null);
-  const router = useRouter();
+  const { user, loading, logout } = useAuth({ requiredRole: 'propietario' });
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+  // Mostrar pantalla de carga mientras valida
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando acceso...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
-    router.push("/auth/login");
-  };
+  // Si no hay usuario, el hook redirigirá automáticamente
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar del propietario */}
-      <SidebarMenuPropietario onLogout={handleLogout} />
+      <SidebarMenuPropietario onLogout={logout} />
 
       <div className="flex-1 flex flex-col">
         {/* Header superior igual al del inquilino */}
@@ -56,7 +58,7 @@ export default function PropietarioLayout({ children }: { children: React.ReactN
             </div>
 
             <button
-              onClick={handleLogout}
+              onClick={logout}
               className="text-gray-500 hover:text-red-600 hover:bg-red-50 p-2.5 rounded-lg transition-all"
               title="Cerrar sesión"
             >

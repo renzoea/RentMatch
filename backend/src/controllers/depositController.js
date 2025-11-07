@@ -1,9 +1,12 @@
 const supabase = require('../config/supabase');
+const validator = require('validator');
+const logger = require('../utils/logger');
 const {
   createPaymentPreference,
   getPaymentInfo,
   getMerchantOrder,
-  mapMPStatusToDepositStatus
+  mapMPStatusToDepositStatus,
+  verifyWebhookSignature
 } = require('../config/mercadopago');
 
 /**
@@ -256,6 +259,11 @@ exports.markAsPaid = async (req, res) => {
     const userId = req.user.id;
     const { proof_url } = req.body; // Opcional: URL del comprobante
 
+    // Validar proof_url si se proporciona
+    if (proof_url && !validator.isURL(proof_url, { require_protocol: true })) {
+      return res.status(400).json({ error: 'proof_url debe ser una URL válida.' });
+    }
+
     // Obtener depósito
     const { data: deposit, error: depositError } = await supabase
       .from('deposits')
@@ -347,12 +355,38 @@ exports.releaseDeposit = async (req, res) => {
         });
       }
 
-      const totalShare = parseFloat(tenant_share) + parseFloat(landlord_share);
+      // Validar que sean números válidos
+      const tenantShareNum = parseFloat(tenant_share);
+      const landlordShareNum = parseFloat(landlord_share);
+
+      if (isNaN(tenantShareNum) || isNaN(landlordShareNum) ||
+          tenantShareNum < 0 || landlordShareNum < 0 ||
+          tenantShareNum > 100 || landlordShareNum > 100) {
+        return res.status(400).json({
+          error: 'tenant_share y landlord_share deben ser números entre 0 y 100'
+        });
+      }
+
+      const totalShare = tenantShareNum + landlordShareNum;
       if (Math.abs(totalShare - 100) > 0.01) {
         return res.status(400).json({
           error: 'La suma de tenant_share y landlord_share debe ser 100%'
         });
       }
+    }
+
+    // Validar notes si se proporciona (sanitizar para evitar XSS)
+    if (notes && typeof notes !== 'string') {
+      return res.status(400).json({
+        error: 'notes debe ser texto'
+      });
+    }
+
+    // Limitar tamaño de notes
+    if (notes && notes.length > 1000) {
+      return res.status(400).json({
+        error: 'notes no puede exceder 1000 caracteres'
+      });
     }
 
     // Obtener depósito
@@ -496,6 +530,20 @@ exports.createPayment = async (req, res) => {
       return res.status(404).json({ error: 'Depósito no encontrado.' });
     }
 
+    // Validar que el monto sea un número positivo válido
+    if (!deposit.amount || isNaN(deposit.amount) || deposit.amount <= 0) {
+      return res.status(400).json({
+        error: 'El monto del depósito debe ser un número positivo válido.'
+      });
+    }
+
+    // Validar que el monto no sea excesivamente alto (protección contra errores)
+    if (deposit.amount > 10000000) { // 10 millones ARS como límite razonable
+      return res.status(400).json({
+        error: 'El monto del depósito excede el límite permitido.'
+      });
+    }
+
     // Obtener contrato
     const { data: contract, error: contractError } = await supabase
       .from('contracts')
@@ -553,8 +601,7 @@ exports.createPayment = async (req, res) => {
 
     res.json({
       preference_id: preference.id,
-      init_point: preference.init_point, // URL para Checkout Pro
-      sandbox_init_point: preference.sandbox_init_point // URL para testing
+      init_point: preference.init_point // URL para Checkout Pro de Mercado Pago
     });
   } catch (err) {
     console.error('Error en createPayment:', err);
@@ -571,26 +618,42 @@ exports.handleWebhook = async (req, res) => {
   try {
     const { type, data } = req.body;
 
-    // Responder rápido a Mercado Pago (importante)
-    res.status(200).send('OK');
+    // Log para debugging
+    logger.webhook('Webhook recibido de Mercado Pago', { type, data });
 
-    // Procesar la notificación de forma asíncrona
+    // VALIDAR FIRMA DEL WEBHOOK (Seguridad crítica)
+    const isValid = verifyWebhookSignature(req.body, req.headers);
+    if (!isValid) {
+      logger.error('Webhook rechazado - firma inválida');
+      return res.status(401).json({ error: 'Invalid webhook signature' });
+    }
+
+    // Procesar solo notificaciones de pago
     if (type === 'payment') {
-      // Notificación de pago
       const paymentId = data.id;
 
-      // Obtener información del pago
+      if (!paymentId) {
+        logger.error('No se recibió payment_id en el webhook');
+        return res.status(400).json({ error: 'Payment ID is required' });
+      }
+
+      // 1. Obtener información del pago desde Mercado Pago
       const paymentInfo = await getPaymentInfo(paymentId);
 
-      // Buscar el depósito usando external_reference (nuestro deposit_id)
+      if (!paymentInfo) {
+        logger.error('No se pudo obtener información del pago:', paymentId);
+        return res.status(400).json({ error: 'Payment not found in Mercado Pago' });
+      }
+
+      // 2. Buscar el depósito usando external_reference (nuestro deposit_id)
       const depositId = paymentInfo.external_reference;
 
       if (!depositId) {
-        console.error('❌ No se encontró external_reference en el pago');
-        return;
+        logger.error('No se encontró external_reference en el pago');
+        return res.status(400).json({ error: 'External reference not found' });
       }
 
-      // Obtener depósito
+      // 3. Obtener depósito con el contrato asociado
       const { data: deposit, error: depositError } = await supabase
         .from('deposits')
         .select('*, contract:contracts(*)')
@@ -598,14 +661,20 @@ exports.handleWebhook = async (req, res) => {
         .single();
 
       if (depositError || !deposit) {
-        console.error('❌ Depósito no encontrado:', depositId);
-        return;
+        logger.error('Depósito no encontrado:', depositId);
+        return res.status(404).json({ error: 'Deposit not found' });
       }
 
-      // Mapear estado de MP a estado de depósito
+      // 4. Verificar que el contrato existe si el pago fue aprobado
+      if (paymentInfo.status === 'approved' && !deposit.contract_id) {
+        logger.error('Depósito sin contrato asociado:', depositId);
+        return res.status(400).json({ error: 'Deposit has no associated contract' });
+      }
+
+      // 5. Mapear estado de MP a estado de depósito
       const newStatus = mapMPStatusToDepositStatus(paymentInfo.status);
 
-      // Actualizar depósito
+      // 6. Preparar datos de actualización
       const updateData = {
         payment_id: paymentInfo.id.toString(),
         payment_status: paymentInfo.status,
@@ -619,34 +688,78 @@ exports.handleWebhook = async (req, res) => {
         updateData.verified_at = new Date().toISOString();
       }
 
-      await supabase
+      // 7. Actualizar depósito en la base de datos
+      const { error: updateError } = await supabase
         .from('deposits')
         .update(updateData)
         .eq('id', depositId);
 
-      // Si el pago fue aprobado, activar el contrato
-      if (paymentInfo.status === 'approved' && deposit.contract) {
-        await supabase
-          .from('contracts')
-          .update({ status: 'active' })
-          .eq('id', deposit.contract_id);
+      if (updateError) {
+        logger.error('Error actualizando depósito');
+        // Mercado Pago reintentará si recibe error
+        return res.status(500).json({ error: 'Failed to update deposit' });
       }
+
+      logger.success('Depósito actualizado:', depositId, 'Estado:', newStatus);
+
+      // 8. Si el pago fue aprobado, activar el contrato
+      if (paymentInfo.status === 'approved' && deposit.contract_id) {
+        // Verificar estado del contrato antes de activar
+        const { data: contract } = await supabase
+          .from('contracts')
+          .select('status')
+          .eq('id', deposit.contract_id)
+          .single();
+
+        // Solo activar si el contrato está en estado correcto
+        const validStatuses = ['pending_signatures', 'signed', 'draft'];
+        if (contract && validStatuses.includes(contract.status)) {
+          const { error: contractError } = await supabase
+            .from('contracts')
+            .update({ status: 'active' })
+            .eq('id', deposit.contract_id);
+
+          if (contractError) {
+            logger.error('Error activando contrato');
+            // No retornar error porque el depósito ya se actualizó correctamente
+            // Esto se puede manejar manualmente si es necesario
+          } else {
+            logger.success('Contrato activado:', deposit.contract_id);
+          }
+        } else {
+          logger.warn('Contrato en estado no válido para activación:', contract?.status);
+        }
+      }
+
+      // 9. TODO salió bien, responder OK a Mercado Pago
+      return res.status(200).json({ success: true, message: 'Webhook processed successfully' });
+
     } else if (type === 'merchant_order') {
-      // Notificación de orden - no requiere procesamiento adicional
+      // Notificación de orden - confirmar recepción pero no procesar
+      logger.info('Merchant order recibido, no requiere procesamiento');
+      return res.status(200).json({ success: true, message: 'Merchant order received' });
+    } else {
+      // Tipo de notificación desconocido
+      logger.info('Tipo de webhook desconocido:', type);
+      return res.status(200).json({ success: true, message: 'Unknown webhook type' });
     }
+
   } catch (err) {
-    console.error('❌ Error en webhook:', err);
-    // No lanzar error para no afectar la respuesta a Mercado Pago
+    logger.error('Error crítico en webhook:', err.message);
+    // Retornar error para que Mercado Pago reintente
+    return res.status(500).json({ error: 'Internal server error processing webhook' });
   }
 };
 
 /**
  * POST /api/deposits/verify-by-preference/:preferenceId
  * Verificar y actualizar depósito usando el preference_id
+ * Requiere autenticación y verifica que el usuario sea el inquilino o propietario
  */
 exports.verifyByPreference = async (req, res) => {
   try {
     const { preferenceId } = req.params;
+    const userId = req.user.id;
 
     // Buscar depósito por preference_id
     const { data: deposit, error: depositError } = await supabase
@@ -657,6 +770,17 @@ exports.verifyByPreference = async (req, res) => {
 
     if (depositError || !deposit) {
       return res.status(404).json({ error: 'Depósito no encontrado con ese preference_id.' });
+    }
+
+    // Verificar que el usuario tenga permiso para ver este depósito
+    // Debe ser el inquilino (submitted_by) o el propietario del contrato
+    const isOwner = deposit.submitted_by === userId;
+    const isLandlord = deposit.contract && deposit.contract.landlord_id === userId;
+
+    if (!isOwner && !isLandlord) {
+      return res.status(403).json({
+        error: 'No tienes permiso para verificar este depósito.'
+      });
     }
 
     // Si no hay payment_id, intentar obtenerlo de Mercado Pago
@@ -697,12 +821,27 @@ exports.verifyByPreference = async (req, res) => {
             .update(updateData)
             .eq('id', deposit.id);
 
-          // Activar contrato si el pago fue aprobado
-          if (latestPayment.status === 'approved') {
-            await supabase
+          // Activar contrato si el pago fue aprobado Y el contrato está en estado válido
+          if (latestPayment.status === 'approved' && deposit.contract_id) {
+            // Verificar estado del contrato antes de activar
+            const { data: contract } = await supabase
               .from('contracts')
-              .update({ status: 'active' })
-              .eq('id', deposit.contract_id);
+              .select('status')
+              .eq('id', deposit.contract_id)
+              .single();
+
+            // Solo activar si el contrato está en estado correcto
+            const validStatuses = ['pending_signatures', 'signed', 'draft'];
+            if (contract && validStatuses.includes(contract.status)) {
+              await supabase
+                .from('contracts')
+                .update({ status: 'active' })
+                .eq('id', deposit.contract_id);
+
+              console.log('✅ Contrato activado:', deposit.contract_id);
+            } else {
+              console.warn('⚠️ Contrato en estado no válido para activación:', contract?.status);
+            }
           }
 
           return res.json({
@@ -799,12 +938,27 @@ exports.getPaymentStatus = async (req, res) => {
         .update(updateData)
         .eq('id', id);
 
-      // Activar contrato si el pago fue aprobado
-      if (paymentInfo.status === 'approved') {
-        await supabase
+      // Activar contrato si el pago fue aprobado Y el contrato está en estado válido
+      if (paymentInfo.status === 'approved' && deposit.contract_id) {
+        // Verificar estado del contrato antes de activar
+        const { data: contract } = await supabase
           .from('contracts')
-          .update({ status: 'active' })
-          .eq('id', deposit.contract_id);
+          .select('status')
+          .eq('id', deposit.contract_id)
+          .single();
+
+        // Solo activar si el contrato está en estado correcto
+        const validStatuses = ['pending_signatures', 'signed', 'draft'];
+        if (contract && validStatuses.includes(contract.status)) {
+          await supabase
+            .from('contracts')
+            .update({ status: 'active' })
+            .eq('id', deposit.contract_id);
+
+          console.log('✅ Contrato activado:', deposit.contract_id);
+        } else {
+          console.warn('⚠️ Contrato en estado no válido para activación:', contract?.status);
+        }
       }
     }
 

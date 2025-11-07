@@ -74,10 +74,7 @@ function CrearContratoContent() {
   const loadContract = async (id: string) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await api.get(`/api/contracts/landlord/my/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/api/contracts/landlord/my/${id}`);
 
       const contract = res.data;
 
@@ -140,10 +137,7 @@ function CrearContratoContent() {
     setTenant(null);
 
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await api.get(`/api/contracts/find-tenant?email=${encodeURIComponent(tenantEmail)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/api/contracts/find-tenant?email=${encodeURIComponent(tenantEmail)}`);
       setTenant(res.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
@@ -181,13 +175,11 @@ function CrearContratoContent() {
   const uploadPDF = async (file: File) => {
     setUploading(true);
     try {
-      const token = localStorage.getItem('access_token');
       const formData = new FormData();
       formData.append('file', file);
 
       const res = await api.post('/api/upload/pdf', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
@@ -217,8 +209,6 @@ function CrearContratoContent() {
 
     setSending(true);
     try {
-      const token = localStorage.getItem('access_token');
-
       // Calcular fecha de fin basada en la fecha de inicio y duración
       const startDate = new Date(formData.start_date);
       const endDate = new Date(startDate);
@@ -247,9 +237,7 @@ function CrearContratoContent() {
         document_url: pdfUrl,
       };
 
-      const res = await api.post('/api/contracts', contractData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.post('/api/contracts', contractData);
 
       setContractId(res.data.contract.id);
       alert('Contrato creado correctamente.');
@@ -270,10 +258,7 @@ function CrearContratoContent() {
 
     setSigning(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await api.post(`/api/contracts/landlord/my/${contractId}/sign`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.post(`/api/contracts/landlord/my/${contractId}/sign`, {});
 
       // Guardar el ID del contrato y envelopeId en localStorage para confirmar después
       localStorage.setItem('contractId', contractId);

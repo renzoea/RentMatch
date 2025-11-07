@@ -179,8 +179,7 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
     setLoading(true)
     setError(null)
     setData(null)
-    const token = localStorage.getItem('access_token')
-    api.get(`/api/contracts/my/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get(`/api/contracts/my/${id}`)
       .then(res => setData(res.data))
       .catch(() => setError('Error obteniendo el contrato'))
       .finally(() => setLoading(false))
@@ -189,9 +188,8 @@ export default function ContractDetailModal({ open, id, onClose, onDeposit }: Pr
   const handleSign = async () => {
     if (!id) return
     setSigning(true)
-    const token = localStorage.getItem('access_token')
     try {
-        const res = await api.post(`/api/contracts/my/${id}/sign`, {}, { headers: { Authorization: `Bearer ${token}` } })
+        const res = await api.post(`/api/contracts/my/${id}/sign`, {})
         localStorage.setItem('contractId', id)
         localStorage.setItem('envelopeId', res.data.envelopeId)
         window.location.href = res.data.url

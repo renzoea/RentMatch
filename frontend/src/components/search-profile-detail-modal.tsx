@@ -90,10 +90,7 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
       setError(null)
       setData(null)
       try {
-        const token = localStorage.getItem('access_token')
-        const res = await apiClient.get<SearchProfileDetail>(`/api/search-profiles/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const res = await apiClient.get<SearchProfileDetail>(`/api/search-profiles/${id}`)
         setData(res.data)
         cache.set(id, res.data)
       } catch (err: unknown) {
