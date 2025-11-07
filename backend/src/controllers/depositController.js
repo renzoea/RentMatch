@@ -720,7 +720,7 @@ exports.handleWebhook = async (req, res) => {
         }
 
         // Solo activar si el contrato está en estado correcto
-        const validStatuses = ['pending_signatures', 'signed', 'draft'];
+        const validStatuses = ['pending_signatures', 'signed', 'draft', 'pending_deposit'];
         if (contract && validStatuses.includes(contract.status)) {
           logger.info('✅ Contrato en estado válido, procediendo a activar...');
 
@@ -982,7 +982,7 @@ exports.getPaymentStatus = async (req, res) => {
         }
 
         // Solo activar si el contrato está en estado correcto
-        const validStatuses = ['pending_signatures', 'signed', 'draft'];
+        const validStatuses = ['pending_signatures', 'signed', 'draft', 'pending_deposit'];
         if (contract && validStatuses.includes(contract.status)) {
           logger.info('✅ [getPaymentStatus] Contrato en estado válido, procediendo a activar...');
 
