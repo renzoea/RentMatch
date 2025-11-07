@@ -569,9 +569,6 @@ exports.createPayment = async (req, res) => {
  */
 exports.handleWebhook = async (req, res) => {
   try {
-    console.log('📨 Webhook recibido:', req.body);
-    console.log('📨 Query params:', req.query);
-
     const { type, data } = req.body;
 
     // Responder rápido a Mercado Pago (importante)
@@ -581,11 +578,9 @@ exports.handleWebhook = async (req, res) => {
     if (type === 'payment') {
       // Notificación de pago
       const paymentId = data.id;
-      console.log('💳 Procesando pago:', paymentId);
 
       // Obtener información del pago
       const paymentInfo = await getPaymentInfo(paymentId);
-      console.log('💳 Info del pago:', JSON.stringify(paymentInfo, null, 2));
 
       // Buscar el depósito usando external_reference (nuestro deposit_id)
       const depositId = paymentInfo.external_reference;
@@ -609,7 +604,6 @@ exports.handleWebhook = async (req, res) => {
 
       // Mapear estado de MP a estado de depósito
       const newStatus = mapMPStatusToDepositStatus(paymentInfo.status);
-      console.log(`🔄 Actualizando depósito de ${deposit.status} a ${newStatus}`);
 
       // Actualizar depósito
       const updateData = {
@@ -632,20 +626,13 @@ exports.handleWebhook = async (req, res) => {
 
       // Si el pago fue aprobado, activar el contrato
       if (paymentInfo.status === 'approved' && deposit.contract) {
-        console.log('✅ Pago aprobado - Activando contrato:', deposit.contract_id);
-
         await supabase
           .from('contracts')
           .update({ status: 'active' })
           .eq('id', deposit.contract_id);
-
-        console.log('✅ Contrato activado exitosamente');
       }
-
-      console.log('✅ Webhook procesado correctamente');
     } else if (type === 'merchant_order') {
-      // Notificación de orden
-      console.log('📦 Merchant order recibida:', data.id);
+      // Notificación de orden - no requiere procesamiento adicional
     }
   } catch (err) {
     console.error('❌ Error en webhook:', err);

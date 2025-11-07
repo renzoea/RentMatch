@@ -13,8 +13,7 @@ import {
   Clock,
   AlertCircle,
   DollarSign,
-  ArrowRight,
-  RefreshCw
+  ArrowRight
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -151,41 +150,14 @@ export default function DepositosPage() {
 
       const { init_point } = response.data;
 
-      // Usar sandbox para pruebas
-      const paymentUrl =  init_point;
-
       // Guardar el depositId para cuando vuelva
       localStorage.setItem('pending_deposit_id', depositId);
 
       // Redirigir a Mercado Pago
-      window.location.href = paymentUrl;
+      window.location.href = init_point;
     } catch (error) {
-      console.error('Error creando pago:', error);
       const err = error as { response?: { data?: { error?: string } } };
       alert(err.response?.data?.error || 'Error al iniciar el pago con Mercado Pago.');
-      setProcessingId(null);
-    }
-  };
-
-  const handleVerifyPayment = async (deposit: Deposit) => {
-    if (!deposit.preference_id) {
-      alert('No se encontró información de pago para verificar.');
-      return;
-    }
-
-    setProcessingId(deposit.id);
-    try {
-      const response = await api.post(`/api/deposits/verify-by-preference/${deposit.preference_id}`);
-
-      if (response.data.success) {
-        alert(`¡Pago verificado exitosamente!\nEstado: ${response.data.payment_status}`);
-        // Recargar depósitos
-        loadDeposits();
-      }
-    } catch (error) {
-      console.error('Error verificando pago:', error);
-      alert('No se pudo verificar el pago. Es posible que aún no se haya procesado.');
-    } finally {
       setProcessingId(null);
     }
   };
@@ -274,17 +246,6 @@ export default function DepositosPage() {
                               </>
                             )}
                           </Button>
-                          {deposit.preference_id && (
-                            <Button
-                              onClick={() => handleVerifyPayment(deposit)}
-                              disabled={processingId === deposit.id}
-                              variant="outline"
-                              className="flex items-center gap-2"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                              Verificar Pago
-                            </Button>
-                          )}
                         </div>
                       )}
 

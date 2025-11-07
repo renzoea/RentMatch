@@ -42,7 +42,6 @@ function PaymentSuccessContent() {
 
         // Si tenemos preference_id pero no deposit_id, usar el endpoint alternativo
         if (preferenceId && !depositId) {
-          console.log('🔍 Verificando pago usando preference_id:', preferenceId);
           const response = await api.post(`/api/deposits/verify-by-preference/${preferenceId}`);
 
           setPaymentInfo({
@@ -52,7 +51,6 @@ function PaymentSuccessContent() {
             has_payment: true
           });
 
-          console.log('✅ Pago verificado con preference_id:', response.data);
           localStorage.removeItem('pending_deposit_id');
           return;
         }
@@ -69,7 +67,6 @@ function PaymentSuccessContent() {
         });
 
         setPaymentInfo(response.data);
-        console.log('✅ Pago verificado:', response.data);
 
         // Limpiar localStorage
         localStorage.removeItem('pending_deposit_id');

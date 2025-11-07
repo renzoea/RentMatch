@@ -77,14 +77,7 @@ async function createPaymentPreference(depositData) {
   };
 
   try {
-    console.log('📝 Intentando crear preferencia con los siguientes datos:');
-    console.log('- Monto:', preference.items[0].unit_price);
-    console.log('- Token length:', process.env.MP_ACCESS_TOKEN?.length);
-    console.log('- Preferencia completa:', JSON.stringify(preference, null, 2));
-
     const response = await preferenceApi.create({ body: preference });
-
-    console.log('✅ Preferencia creada exitosamente:', response.id);
     return response;
   } catch (error) {
     console.error('❌ Error creating Mercado Pago preference:');
