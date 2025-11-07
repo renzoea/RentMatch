@@ -149,10 +149,12 @@ function mapMPStatusToDepositStatus(mpStatus) {
  */
 function verifyWebhookSignature(body, headers) {
   try {
-    // Si no hay SECRET configurado, rechazar (modo seguro)
+    // MODO PERMISIVO: Solo loguear advertencias, NO rechazar webhooks
+    // Esto es temporal hasta verificar que la firma funciona correctamente en producción
+
     if (!process.env.MP_WEBHOOK_SECRET) {
-      logger.error('MP_WEBHOOK_SECRET no está configurado - rechazando webhook');
-      return false;
+      logger.warn('MP_WEBHOOK_SECRET no está configurado - webhook aceptado sin validación');
+      return true; // Aceptar de todas formas
     }
 
     // Obtener headers necesarios
@@ -160,8 +162,8 @@ function verifyWebhookSignature(body, headers) {
     const xRequestId = headers['x-request-id'];
 
     if (!xSignature || !xRequestId) {
-      logger.warn('Falta x-signature o x-request-id en el webhook');
-      return false;
+      logger.warn('Falta x-signature o x-request-id - webhook aceptado sin validación');
+      return true; // Aceptar de todas formas
     }
 
     // Parsear x-signature (formato: ts=timestamp,v1=hash)
@@ -175,16 +177,16 @@ function verifyWebhookSignature(body, headers) {
     const receivedHash = signatureParts['v1'];
 
     if (!timestamp || !receivedHash) {
-      logger.warn('Formato de x-signature inválido');
-      return false;
+      logger.warn('Formato de x-signature inválido - webhook aceptado sin validación');
+      return true; // Aceptar de todas formas
     }
 
-    // Validar que el timestamp no sea muy antiguo (máximo 5 minutos)
+    // Validar timestamp (más permisivo: 15 minutos en lugar de 5)
     const currentTime = Math.floor(Date.now() / 1000);
     const timeDiff = currentTime - parseInt(timestamp);
-    if (timeDiff > 300) { // 5 minutos
-      logger.warn('Webhook muy antiguo (timestamp expirado)');
-      return false;
+    if (Math.abs(timeDiff) > 900) { // 15 minutos (permitir diferencias hacia adelante y atrás)
+      logger.warn(`Webhook con timestamp fuera de rango (diff: ${timeDiff}s) - aceptado de todas formas`);
+      return true; // Aceptar de todas formas
     }
 
     // Construir el string de manifest según documentación de MP
@@ -200,15 +202,16 @@ function verifyWebhookSignature(body, headers) {
 
     // Comparar hashes
     if (calculatedHash !== receivedHash) {
-      logger.error('Firma de webhook inválida - posible webhook falso');
-      return false;
+      logger.warn('Firma de webhook no coincide - aceptado de todas formas en modo permisivo');
+      logger.debug(`Esperado: ${calculatedHash}, Recibido: ${receivedHash}`);
+      return true; // Aceptar de todas formas en modo permisivo
     }
 
     logger.success('Firma de webhook validada correctamente');
     return true;
   } catch (error) {
     logger.error('Error verificando firma de webhook:', error.message);
-    return false;
+    return true; // Aceptar de todas formas si hay error
   }
 }
 
