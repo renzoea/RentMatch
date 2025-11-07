@@ -13,7 +13,8 @@ import {
   Clock,
   AlertCircle,
   DollarSign,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -27,6 +28,8 @@ type Deposit = {
   released_at?: string;
   outcome?: string;
   notes?: string;
+  preference_id?: string;
+  payment_id?: string;
   created_at: string;
   updated_at: string;
   contract?: {
@@ -136,26 +139,52 @@ export default function DepositosPage() {
     }
   };
 
-  const handleMarkAsPaid = async (depositId: string) => {
-    if (!confirm('¿Confirmas que ya realizaste el pago del depósito? El contrato se activará automáticamente.')) {
-      return;
-    }
-
+  const handlePayWithMercadoPago = async (depositId: string) => {
     setProcessingId(depositId);
     try {
       const token = localStorage.getItem('access_token');
-      await api.post(
-        `/api/deposits/${depositId}/mark-as-paid`,
+      const response = await api.post(
+        `/api/deposits/${depositId}/create-payment`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert('¡Depósito marcado como pagado! Tu contrato ahora está activo.');
-      loadDeposits();
+      const { init_point } = response.data;
+
+      // Usar sandbox para pruebas
+      const paymentUrl =  init_point;
+
+      // Guardar el depositId para cuando vuelva
+      localStorage.setItem('pending_deposit_id', depositId);
+
+      // Redirigir a Mercado Pago
+      window.location.href = paymentUrl;
     } catch (error) {
-      console.error('Error marcando depósito como pagado:', error);
+      console.error('Error creando pago:', error);
       const err = error as { response?: { data?: { error?: string } } };
-      alert(err.response?.data?.error || 'Error al marcar el depósito como pagado.');
+      alert(err.response?.data?.error || 'Error al iniciar el pago con Mercado Pago.');
+      setProcessingId(null);
+    }
+  };
+
+  const handleVerifyPayment = async (deposit: Deposit) => {
+    if (!deposit.preference_id) {
+      alert('No se encontró información de pago para verificar.');
+      return;
+    }
+
+    setProcessingId(deposit.id);
+    try {
+      const response = await api.post(`/api/deposits/verify-by-preference/${deposit.preference_id}`);
+
+      if (response.data.success) {
+        alert(`¡Pago verificado exitosamente!\nEstado: ${response.data.payment_status}`);
+        // Recargar depósitos
+        fetchDeposits();
+      }
+    } catch (error) {
+      console.error('Error verificando pago:', error);
+      alert('No se pudo verificar el pago. Es posible que aún no se haya procesado.');
     } finally {
       setProcessingId(null);
     }
@@ -227,23 +256,36 @@ export default function DepositosPage() {
 
                       {/* Botón de acción según estado */}
                       {deposit.status === 'pending_payment' && (
-                        <Button
-                          onClick={() => handleMarkAsPaid(deposit.id)}
-                          disabled={processingId === deposit.id}
-                          className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2 shadow-sm"
-                        >
-                          {processingId === deposit.id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Procesando...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-4 h-4" />
-                              Marcar como Pagado
-                            </>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            onClick={() => handlePayWithMercadoPago(deposit.id)}
+                            disabled={processingId === deposit.id}
+                            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-sm"
+                          >
+                            {processingId === deposit.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                Procesando...
+                              </>
+                            ) : (
+                              <>
+                                <DollarSign className="w-4 h-4" />
+                                Pagar con Mercado Pago
+                              </>
+                            )}
+                          </Button>
+                          {deposit.preference_id && (
+                            <Button
+                              onClick={() => handleVerifyPayment(deposit)}
+                              disabled={processingId === deposit.id}
+                              variant="outline"
+                              className="flex items-center gap-2"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                              Verificar Pago
+                            </Button>
                           )}
-                        </Button>
+                        </div>
                       )}
 
                       {deposit.status === 'held' && deposit.proof_url && (
@@ -361,8 +403,8 @@ export default function DepositosPage() {
                               Acción requerida: Realizar pago del depósito
                             </p>
                             <p className="text-yellow-800">
-                              Una vez que realices el pago del depósito de garantía, haz clic en &quot;Marcar como Pagado&quot;
-                              para activar tu contrato automáticamente.
+                              Haz clic en &quot;Pagar con Mercado Pago&quot; para realizar el pago del depósito de garantía de forma segura.
+                              Tu contrato se activará automáticamente una vez que se confirme el pago.
                             </p>
                           </div>
                         </div>
