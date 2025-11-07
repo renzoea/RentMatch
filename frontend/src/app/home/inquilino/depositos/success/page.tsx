@@ -7,20 +7,30 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle2, Home, FileText, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 
+interface PaymentInfo {
+  deposit_status: string;
+  payment_status: string;
+  payment_id: string | number;
+  has_payment: boolean;
+  amount?: number;
+  payment_method?: string;
+  payment_type?: string;
+  date_approved?: string;
+  payment_status_detail?: string;
+}
+
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [verifying, setVerifying] = useState(true);
-  const [paymentInfo, setPaymentInfo] = useState<any>(null);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
       // Intentar obtener el deposit_id de varias fuentes
       let depositId = localStorage.getItem('pending_deposit_id');
       const depositIdFromUrl = searchParams.get('deposit_id');
-      const paymentId = searchParams.get('payment_id');
       const preferenceId = searchParams.get('preference_id') || searchParams.get('preference-id');
-      const status = searchParams.get('status');
 
       // Priorizar el ID de la URL sobre el de localStorage
       if (depositIdFromUrl) {
