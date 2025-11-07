@@ -47,6 +47,7 @@ const filterSearchRoutes = require('./src/routes/FilterSearchRoutes');
 const MobileReporterRoutes = require('./src/routes/MobileReportRoutes');
 const MobileInicialRoutes = require('./src/routes/MobileInicialRoutes');
 const MobileEndRoutes = require('./src/routes/MobileEndRoutes');
+const MobileExpertise = require('./src/routes/MobileExpertiseRoutes');
 
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
@@ -60,6 +61,7 @@ app.use('/api/filter-search', filterSearchRoutes);
 app.use('/api/Mobile-Reporter', MobileReporterRoutes);
 app.use('/api/mobile-Inicial', MobileInicialRoutes);
 app.use('/api/mobile-End', MobileEndRoutes);
+app.use('/api/mobile-Expertise', MobileExpertise);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
