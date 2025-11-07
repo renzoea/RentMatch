@@ -5,14 +5,13 @@ const { authenticateToken } = require('../middleware/authMiddleware');
 const rateLimit = require('express-rate-limit');
 
 // Rate limiter específico para webhook (protección contra DoS)
+// El trust proxy ya está configurado globalmente en server.js
 const webhookLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minuto
   max: 20, // Máximo 20 requests por minuto desde la misma IP
   message: 'Demasiadas solicitudes al webhook, por favor intenta de nuevo más tarde.',
   standardHeaders: true,
-  legacyHeaders: false,
-  // Usar IP real detrás de proxies (Render, Heroku, etc)
-  trustProxy: true
+  legacyHeaders: false
 });
 
 /**
