@@ -180,7 +180,7 @@ export default function DepositosPage() {
       if (response.data.success) {
         alert(`¡Pago verificado exitosamente!\nEstado: ${response.data.payment_status}`);
         // Recargar depósitos
-        fetchDeposits();
+        loadDeposits();
       }
     } catch (error) {
       console.error('Error verificando pago:', error);
