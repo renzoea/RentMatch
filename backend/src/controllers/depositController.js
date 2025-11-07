@@ -654,6 +654,110 @@ exports.handleWebhook = async (req, res) => {
 };
 
 /**
+ * POST /api/deposits/verify-by-preference/:preferenceId
+ * Verificar y actualizar depósito usando el preference_id
+ */
+exports.verifyByPreference = async (req, res) => {
+  try {
+    const { preferenceId } = req.params;
+
+    // Buscar depósito por preference_id
+    const { data: deposit, error: depositError } = await supabase
+      .from('deposits')
+      .select('*, contract:contracts(*)')
+      .eq('preference_id', preferenceId)
+      .single();
+
+    if (depositError || !deposit) {
+      return res.status(404).json({ error: 'Depósito no encontrado con ese preference_id.' });
+    }
+
+    // Si no hay payment_id, intentar obtenerlo de Mercado Pago
+    if (!deposit.payment_id) {
+      // Buscar el pago usando el external_reference (deposit_id)
+      const { paymentApi } = require('../config/mercadopago');
+
+      try {
+        // Buscar pagos con este external_reference
+        const payments = await paymentApi.search({
+          options: {
+            criteria: 'desc',
+            external_reference: deposit.id
+          }
+        });
+
+        if (payments.results && payments.results.length > 0) {
+          // Tomar el pago más reciente
+          const latestPayment = payments.results[0];
+
+          const { mapMPStatusToDepositStatus } = require('../config/mercadopago');
+          const newStatus = mapMPStatusToDepositStatus(latestPayment.status);
+
+          const updateData = {
+            payment_id: latestPayment.id.toString(),
+            payment_status: latestPayment.status,
+            payment_method: latestPayment.payment_method_id,
+            payment_type: latestPayment.payment_type_id,
+            status: newStatus
+          };
+
+          if (latestPayment.status === 'approved') {
+            updateData.verified_at = new Date().toISOString();
+          }
+
+          await supabase
+            .from('deposits')
+            .update(updateData)
+            .eq('id', deposit.id);
+
+          // Activar contrato si el pago fue aprobado
+          if (latestPayment.status === 'approved') {
+            await supabase
+              .from('contracts')
+              .update({ status: 'active' })
+              .eq('id', deposit.contract_id);
+          }
+
+          return res.json({
+            success: true,
+            deposit_id: deposit.id,
+            deposit_status: newStatus,
+            payment_status: latestPayment.status,
+            payment_id: latestPayment.id,
+            message: 'Depósito actualizado exitosamente'
+          });
+        } else {
+          return res.status(404).json({
+            error: 'No se encontró ningún pago para este depósito en Mercado Pago.'
+          });
+        }
+      } catch (error) {
+        console.error('Error buscando pago en Mercado Pago:', error);
+        return res.status(500).json({
+          error: 'Error al buscar el pago en Mercado Pago.'
+        });
+      }
+    }
+
+    // Si ya tiene payment_id, usar el flujo normal
+    const { getPaymentInfo, mapMPStatusToDepositStatus } = require('../config/mercadopago');
+    const paymentInfo = await getPaymentInfo(deposit.payment_id);
+
+    res.json({
+      success: true,
+      deposit_id: deposit.id,
+      deposit_status: mapMPStatusToDepositStatus(paymentInfo.status),
+      payment_status: paymentInfo.status,
+      payment_id: deposit.payment_id,
+      message: 'Pago ya procesado'
+    });
+  } catch (err) {
+    console.error('Error en verifyByPreference:', err);
+    res.status(500).json({ error: 'Error al verificar el depósito.' });
+  }
+};
+
+/**
  * GET /api/deposits/:id/payment-status
  * Obtener el estado actual del pago en Mercado Pago
  */

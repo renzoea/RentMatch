@@ -55,6 +55,13 @@ router.post('/:id/create-payment', authenticateToken, depositController.createPa
 router.post('/webhook', depositController.handleWebhook);
 
 /**
+ * POST /api/deposits/verify-by-preference/:preferenceId
+ * Verificar y actualizar depósito usando el preference_id de Mercado Pago
+ * NO requiere autenticación (se puede llamar desde la página de éxito)
+ */
+router.post('/verify-by-preference/:preferenceId', depositController.verifyByPreference);
+
+/**
  * GET /api/deposits/:id/payment-status
  * Obtener el estado actual del pago en Mercado Pago
  */

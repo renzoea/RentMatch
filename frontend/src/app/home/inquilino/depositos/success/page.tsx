@@ -15,18 +15,43 @@ export default function PaymentSuccessPage() {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      const depositId = localStorage.getItem('pending_deposit_id');
+      // Intentar obtener el deposit_id de varias fuentes
+      let depositId = localStorage.getItem('pending_deposit_id');
+      const depositIdFromUrl = searchParams.get('deposit_id');
       const paymentId = searchParams.get('payment_id');
+      const preferenceId = searchParams.get('preference_id') || searchParams.get('preference-id');
       const status = searchParams.get('status');
 
-      if (!depositId) {
-        console.error('No deposit ID found');
-        setVerifying(false);
-        return;
+      // Priorizar el ID de la URL sobre el de localStorage
+      if (depositIdFromUrl) {
+        depositId = depositIdFromUrl;
       }
 
       try {
         const token = localStorage.getItem('access_token');
+
+        // Si tenemos preference_id pero no deposit_id, usar el endpoint alternativo
+        if (preferenceId && !depositId) {
+          console.log('🔍 Verificando pago usando preference_id:', preferenceId);
+          const response = await api.post(`/api/deposits/verify-by-preference/${preferenceId}`);
+
+          setPaymentInfo({
+            deposit_status: response.data.deposit_status,
+            payment_status: response.data.payment_status,
+            payment_id: response.data.payment_id,
+            has_payment: true
+          });
+
+          console.log('✅ Pago verificado con preference_id:', response.data);
+          localStorage.removeItem('pending_deposit_id');
+          return;
+        }
+
+        if (!depositId) {
+          console.error('No deposit ID found in localStorage, URL, or preference_id available');
+          setVerifying(false);
+          return;
+        }
 
         // Obtener el estado actualizado del pago
         const response = await api.get(`/api/deposits/${depositId}/payment-status`, {

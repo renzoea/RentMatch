@@ -13,7 +13,8 @@ import {
   Clock,
   AlertCircle,
   DollarSign,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -27,6 +28,8 @@ type Deposit = {
   released_at?: string;
   outcome?: string;
   notes?: string;
+  preference_id?: string;
+  payment_id?: string;
   created_at: string;
   updated_at: string;
   contract?: {
@@ -164,6 +167,29 @@ export default function DepositosPage() {
     }
   };
 
+  const handleVerifyPayment = async (deposit: Deposit) => {
+    if (!deposit.preference_id) {
+      alert('No se encontró información de pago para verificar.');
+      return;
+    }
+
+    setProcessingId(deposit.id);
+    try {
+      const response = await api.post(`/api/deposits/verify-by-preference/${deposit.preference_id}`);
+
+      if (response.data.success) {
+        alert(`¡Pago verificado exitosamente!\nEstado: ${response.data.payment_status}`);
+        // Recargar depósitos
+        fetchDeposits();
+      }
+    } catch (error) {
+      console.error('Error verificando pago:', error);
+      alert('No se pudo verificar el pago. Es posible que aún no se haya procesado.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
@@ -230,23 +256,36 @@ export default function DepositosPage() {
 
                       {/* Botón de acción según estado */}
                       {deposit.status === 'pending_payment' && (
-                        <Button
-                          onClick={() => handlePayWithMercadoPago(deposit.id)}
-                          disabled={processingId === deposit.id}
-                          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-sm"
-                        >
-                          {processingId === deposit.id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Procesando...
-                            </>
-                          ) : (
-                            <>
-                              <DollarSign className="w-4 h-4" />
-                              Pagar con Mercado Pago
-                            </>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            onClick={() => handlePayWithMercadoPago(deposit.id)}
+                            disabled={processingId === deposit.id}
+                            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-sm"
+                          >
+                            {processingId === deposit.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                Procesando...
+                              </>
+                            ) : (
+                              <>
+                                <DollarSign className="w-4 h-4" />
+                                Pagar con Mercado Pago
+                              </>
+                            )}
+                          </Button>
+                          {deposit.preference_id && (
+                            <Button
+                              onClick={() => handleVerifyPayment(deposit)}
+                              disabled={processingId === deposit.id}
+                              variant="outline"
+                              className="flex items-center gap-2"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                              Verificar Pago
+                            </Button>
                           )}
-                        </Button>
+                        </div>
                       )}
 
                       {deposit.status === 'held' && deposit.proof_url && (

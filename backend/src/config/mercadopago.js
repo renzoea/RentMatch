@@ -36,6 +36,7 @@ async function createPaymentPreference(depositData) {
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
+  // Usamos el deposit_id en la URL para que la página de success pueda identificar el depósito
   const preference = {
     items: [
       {
@@ -47,10 +48,13 @@ async function createPaymentPreference(depositData) {
       }
     ],
     back_urls: {
-      success: `${frontendUrl}/home/inquilino/depositos/success`,
-      failure: `${frontendUrl}/home/inquilino/depositos/failure`,
-      pending: `${frontendUrl}/home/inquilino/depositos/pending`
+      success: `${frontendUrl}/home/inquilino/depositos/success?deposit_id=${id}`,
+      failure: `${frontendUrl}/home/inquilino/depositos/failure?deposit_id=${id}`,
+      pending: `${frontendUrl}/home/inquilino/depositos/pending?deposit_id=${id}`
     },
+    // auto_return solo funciona con URLs públicas, no con localhost
+    // En producción, descomentar la siguiente línea:
+    // auto_return: 'all',
     external_reference: id,
     notification_url: process.env.MP_NOTIFICATION_URL || 'http://localhost:5000/api/deposits/webhook',
     statement_descriptor: 'RENTMATCH'
@@ -77,6 +81,7 @@ async function createPaymentPreference(depositData) {
     console.log('📝 Intentando crear preferencia con los siguientes datos:');
     console.log('- Monto:', preference.items[0].unit_price);
     console.log('- Token length:', process.env.MP_ACCESS_TOKEN?.length);
+    console.log('- Preferencia completa:', JSON.stringify(preference, null, 2));
 
     const response = await preferenceApi.create({ body: preference });
 
