@@ -107,7 +107,27 @@ const ReporterUpdate = async (req, res) => {
   }
 };
 
-module.exports = { 
+const getAllReport = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('incidents')
+      .select(`*, 
+        incident_attachments(id,
+          file_url,
+          media_type,
+          created_at)`);
+    if (error) {
+      return res.status(400).json({ success: false, message: 'Error al obtener los reportes', error: error.message });
+    }
+
+    return res.status(200).json({ success: true, data });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: 'Error interno', error: e.message });
+  }
+};
+
+module.exports = {
+  getAllReport,
   ReporterUpdate,
   upload
  };
