@@ -52,9 +52,8 @@ async function createPaymentPreference(depositData) {
       failure: `${frontendUrl}/home/inquilino/depositos/failure?deposit_id=${id}`,
       pending: `${frontendUrl}/home/inquilino/depositos/pending?deposit_id=${id}`
     },
-    // auto_return solo funciona con URLs públicas, no con localhost
-    // En producción, descomentar la siguiente línea:
-    // auto_return: 'all',
+    // auto_return funciona solo con URLs públicas (no localhost)
+    auto_return: process.env.NODE_ENV === 'production' ? 'all' : undefined,
     external_reference: id,
     notification_url: process.env.MP_NOTIFICATION_URL || 'http://localhost:5000/api/deposits/webhook',
     statement_descriptor: 'RENTMATCH'
