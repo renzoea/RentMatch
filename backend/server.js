@@ -41,6 +41,7 @@ app.use(cors({
 // Importar rutas de perfiles
 const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
+const profileRoutes = require('./src/routes/profileRoutes');
 const contractRoutes = require('./src/routes/contractRoutes');
 const depositRoutes = require('./src/routes/depositRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
@@ -55,6 +56,7 @@ const MobileExpertise = require('./src/routes/MobileExpertiseRoutes');
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', profileRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/deposits', depositRoutes);
 app.use('/api/upload', uploadRoutes);

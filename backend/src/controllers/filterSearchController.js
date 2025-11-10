@@ -6,16 +6,17 @@ const GetAllSearch = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
-      return res.status(400).json({ 
-        success: false, 
-        error: error.message 
+      return res.status(400).json({
+        success: false,
+        error: error.message
       });
     }
 
@@ -25,18 +26,18 @@ const GetAllSearch = async (req, res) => {
       profile_status: item.profile?.status,
       is_banned: item.profile?.is_banned
     }));
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       data: flattenedData,
-      count: flattenedData.length 
+      count: flattenedData.length
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error interno del servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
     });
-  } 
+  }
 };
 
 const FilterByType = async (req, res) => {
@@ -45,12 +46,13 @@ const FilterByType = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .contains('property_types', [req.params.type])
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -85,13 +87,14 @@ const FilterByRoomsRange = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .lte('rooms_min', req.params.max)
     .gte('rooms_max', req.params.min)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -128,13 +131,14 @@ const FilterByBedroomsRange = async (req, res) => {
       .from('tenant_search_profiles')
       .select(`
         *,
-        profile:profiles(id, status, full_name, is_banned)
+        profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
       `)
       .lte('bedroom_min', max)
       .gte('bedroom_max', min)
       .eq('status', 'activo')
       .eq('visibility', 'publico')
-      .eq('is_banned', false);
+      .eq('profile.is_banned', false)
+      .eq('profile.public_search_profiles', true);
 
     if (error) return res.status(400).json({ success:false, error: error.message });
 
@@ -157,13 +161,14 @@ const FilterByBathrooms = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .lte('bathrooms_min', req.params.max)
     .gte('bathrooms_max', req.params.min)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({
@@ -200,13 +205,14 @@ const FilterByPriceRange = async (req, res) => {
       .from('tenant_search_profiles')
       .select(`
         *,
-        profile:profiles(id, status, full_name, is_banned)
+        profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
       `)
       .lte('budget_min', max)
       .gte('budget_max', min)
       .eq('status', 'activo')
       .eq('visibility', 'publico')
-      .eq('is_banned', false);
+      .eq('profile.is_banned', false)
+      .eq('profile.public_search_profiles', true);
 
     if (error) return res.status(400).json({ success:false, error: error.message });
 
@@ -229,12 +235,13 @@ const FilterByLeaseDuration = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('lease_term_months', req.params.duration)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({
@@ -270,12 +277,13 @@ const FilterBychildren = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('children', has_children)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -311,12 +319,13 @@ const FilterByFurnished = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('furnished', is_furnished)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -352,12 +361,13 @@ const FilterByPets = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('pets_allowed', allows_pets)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {  
       return res.status(400).json({
@@ -386,19 +396,20 @@ const FilterByPets = async (req, res) => {
   }
 };
 
-const FilterByAmenities = async (req, res) => { 
+const FilterByAmenities = async (req, res) => {
   try {
     const amenities = req.params.amenities.split(',');
     const { data,error } = await supabase
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .contains('amenities', amenities)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -434,12 +445,13 @@ const FilterBySmoking = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('smokers_allowed', allows_smoking)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -474,12 +486,13 @@ const FilterByCities = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('city', req.params.city)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -514,12 +527,13 @@ const FilterByNeighborhood = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('neighborhood', req.params.neighborhood)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -555,12 +569,13 @@ const FilterByBalcony = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('balcony', has_balcony)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -591,17 +606,18 @@ const FilterByBalcony = async (req, res) => {
 
 const FilterByTerrace = async (req, res) => {
   try {
-    const has_terrace = req.params.terrace === 'true';  
+    const has_terrace = req.params.terrace === 'true';
     const { data,error } = await supabase
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('terrace', has_terrace)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -636,12 +652,13 @@ const FliterByOccupants = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('occupants', req.params.occupants)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -676,12 +693,13 @@ const FilterByVerificatedUser = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('require_verified_landlord', true)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -711,17 +729,18 @@ const FilterByVerificatedUser = async (req, res) => {
 };
 
 const FilterByElevator = async (req, res) => {
-  try {  
+  try {
     const { data,error } = await supabase
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('elevator', true)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({
@@ -751,17 +770,18 @@ const FilterByElevator = async (req, res) => {
 };
 
 const FilterBySecurity = async (req, res) => {
-  try {  
+  try {
     const { data,error } = await supabase
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('security', true)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({
@@ -791,18 +811,19 @@ const FilterBySecurity = async (req, res) => {
 };
 
 const FilterByArea = async (req, res) => {
-  try {  
+  try {
     const { data,error } = await supabase
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .lte('area_max', req.params.max)
     .gte('area_min', req.params.min)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({
@@ -838,12 +859,13 @@ const FilterByStudents = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('students', are_students)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -879,12 +901,13 @@ const FilterByParkingNeeded = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('parking_needed', needs_parking)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -920,12 +943,13 @@ const FilterByLaundry = async (req, res) => {
     .from('tenant_search_profiles')
     .select(`
       *,
-      profile:profiles(id, status, full_name, is_banned)
+      profile:profiles!inner(id, status, full_name, is_banned, public_search_profiles)
     `)
     .eq('laundry', has_laundry)
     .eq('status', 'activo')
     .eq('visibility', 'publico')
-    .eq('is_banned', false);
+    .eq('profile.is_banned', false)
+    .eq('profile.public_search_profiles', true);
 
     if (error) {
       return res.status(400).json({ 
@@ -963,7 +987,7 @@ const AdvancedSearch = async (req, res) => {
       .from('tenant_search_profiles')
       .select(`
         *,
-        profile:profiles(id, status, full_name, email, phone, is_banned)
+        profile:profiles!inner(id, status, full_name, email, phone, is_banned, public_search_profiles)
       `);
 
     if (filters.city && filters.city !== '') {
@@ -1065,7 +1089,8 @@ const AdvancedSearch = async (req, res) => {
 
     query = query.eq('status', 'activo');
     query = query.eq('visibility', 'publico');
-    query = query.eq('is_banned', false);
+    query = query.eq('profile.is_banned', false);
+    query = query.eq('profile.public_search_profiles', true);
 
     const { data, error } = await query;
 
