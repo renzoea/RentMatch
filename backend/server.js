@@ -2,9 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
 
 // Habilitar trust proxy para que express-rate-limit funcione correctamente detrás de proxies (Render, Heroku, etc)
@@ -16,8 +19,9 @@ const CORS_ORIGINS = [
   'https://rent-match-umber.vercel.app'
 ];
 
-// parse JSON bodies
-app.use(express.json());
+// parse JSON bodies (aumentado para soportar imágenes base64)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // seguridad básica
 app.use(helmet());
@@ -38,6 +42,32 @@ app.use(cors({
   credentials: true
 }));
 
+// Configurar Socket.IO
+const io = new Server(httpServer, {
+  cors: {
+    origin: CORS_ORIGINS,
+    credentials: true
+  }
+});
+
+// Hacer io accesible globalmente para los controllers
+app.set('io', io);
+
+// Manejo de conexiones WebSocket
+io.on('connection', (socket) => {
+  console.log('[WebSocket] Cliente conectado:', socket.id);
+
+  // Unirse a una sala específica de sesión
+  socket.on('join-session', (sessionToken) => {
+    socket.join(sessionToken);
+    console.log(`[WebSocket] Socket ${socket.id} unido a sesión ${sessionToken}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[WebSocket] Cliente desconectado:', socket.id);
+  });
+});
+
 // Importar rutas de perfiles
 const searchProfileRoutes = require('./src/routes/searchProfileRoutes');
 const authRoutes = require('./src/routes/authRoutes');
@@ -52,6 +82,7 @@ const MobileReporterRoutes = require('./src/routes/MobileReportRoutes');
 const MobileInicialRoutes = require('./src/routes/MobileInicialRoutes');
 const MobileEndRoutes = require('./src/routes/MobileEndRoutes');
 const MobileExpertise = require('./src/routes/MobileExpertiseRoutes');
+const verificationRoutes = require('./src/routes/verificationRoutes');
 
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
@@ -67,6 +98,7 @@ app.use('/api/Mobile-Reporter', MobileReporterRoutes);
 app.use('/api/mobile-Inicial', MobileInicialRoutes);
 app.use('/api/mobile-End', MobileEndRoutes);
 app.use('/api/mobile-Expertise', MobileExpertise);
+app.use('/api/verification', verificationRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
@@ -95,6 +127,7 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`WebSocket habilitado en puerto ${PORT}`);
 });
