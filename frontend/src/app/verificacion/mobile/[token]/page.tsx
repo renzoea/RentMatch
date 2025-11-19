@@ -447,11 +447,62 @@ export default function MobileVerificationPage() {
             />
             <canvas ref={canvasRef} className="hidden" />
 
+            {/* Overlay guía para DNI */}
+            {(step === 'dni_front' || step === 'dni_back') && (
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Fondo oscuro semitransparente */}
+                <div className="absolute inset-0 bg-black/40" />
+
+                {/* Rectángulo guía centrado (aspecto ratio DNI argentino: 85.6mm x 53.98mm ≈ 1.59:1) */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] aspect-[1.59/1] border-4 border-white rounded-lg shadow-lg">
+                  {/* Esquinas decorativas */}
+                  <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-lg" />
+                  <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-lg" />
+                  <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-orange-500 rounded-bl-lg" />
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-orange-500 rounded-br-lg" />
+                </div>
+
+                {/* Texto de ayuda */}
+                <div className="absolute bottom-4 left-0 right-0 text-center">
+                  <p className="text-white text-sm font-semibold bg-black/60 px-4 py-2 rounded-full mx-auto inline-block">
+                    Alinea tu DNI dentro del marco
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Overlay guía para Selfie */}
+            {step === 'selfie' && (
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Fondo oscuro semitransparente */}
+                <div className="absolute inset-0 bg-black/40" />
+
+                {/* Óvalo guía centrado para el rostro */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[3/4]">
+                  {/* Círculo/óvalo con borde */}
+                  <div className="w-full h-full border-4 border-white rounded-full shadow-lg relative">
+                    {/* Puntos decorativos en los extremos */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+                    <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+                    <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+                  </div>
+                </div>
+
+                {/* Texto de ayuda */}
+                <div className="absolute bottom-4 left-0 right-0 text-center">
+                  <p className="text-white text-sm font-semibold bg-black/60 px-4 py-2 rounded-full mx-auto inline-block">
+                    Centra tu rostro en el óvalo
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Botón para cambiar cámara */}
             {(step === 'dni_front' || step === 'dni_back') && (
               <Button
                 onClick={toggleCamera}
-                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70"
+                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 z-10"
                 size="sm"
               >
                 <RotateCcw className="w-4 h-4" />
