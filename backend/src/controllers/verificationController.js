@@ -636,7 +636,7 @@ exports.submitQRVerification = async (req, res) => {
     // Determinar estado automático
     let autoStatus = 'pending';
     let statusReason = null;
-    const FACE_MATCH_THRESHOLD = 0.6;
+    const FACE_MATCH_THRESHOLD = 0.8; // Threshold permisivo para auto-aprobación
 
     if (face_match_score > FACE_MATCH_THRESHOLD) {
       autoStatus = 'rejected';

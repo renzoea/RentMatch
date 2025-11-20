@@ -21,6 +21,7 @@ export default function MobileVerificationPage() {
   const [step, setStep] = useState<Step>('loading');
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState('');
+  const [verificationResult, setVerificationResult] = useState<{status: string; notes: string} | null>(null);
 
   // Imágenes capturadas
   const [dniFrontImg, setDniFrontImg] = useState('');
@@ -226,13 +227,21 @@ export default function MobileVerificationPage() {
 
       // Enviar al backend (el OCR se hará en el backend)
       setCurrentStep('Enviando verificación...');
-      await axios.post(`${API_URL}/api/verification/qr/submit/${token}`, {
+      const response = await axios.post(`${API_URL}/api/verification/qr/submit/${token}`, {
         dni_number: dni,
         dni_front_base64: dniFrontImg,
         dni_back_base64: dniBackImg,
         selfie_base64: selfieImg,
         face_match_score: distance
       });
+
+      // Guardar el resultado de la verificación
+      if (response.data.verification) {
+        setVerificationResult({
+          status: response.data.verification.status,
+          notes: response.data.verification.notes || ''
+        });
+      }
 
       setStep('success');
     } catch (error) {
@@ -339,15 +348,68 @@ export default function MobileVerificationPage() {
   }
 
   if (step === 'success') {
+    const isVerified = verificationResult?.status === 'verified';
+    const isRejected = verificationResult?.status === 'rejected';
+    const isPending = verificationResult?.status === 'pending';
+
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-green-700 mb-2">¡Verificación Enviada!</h2>
-            <p className="text-gray-600 mb-6">
-              Tu verificación ha sido enviada exitosamente. Puedes cerrar esta ventana.
-            </p>
+            {isVerified && (
+              <>
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-green-700 mb-2">¡Verificación Aprobada!</h2>
+                <p className="text-gray-600 mb-2">
+                  Tu identidad ha sido verificada exitosamente.
+                </p>
+                {verificationResult.notes && (
+                  <p className="text-sm text-gray-500 mb-4">{verificationResult.notes}</p>
+                )}
+                <p className="text-gray-600">
+                  Puedes cerrar esta ventana.
+                </p>
+              </>
+            )}
+            {isRejected && (
+              <>
+                <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-red-700 mb-2">Verificación Rechazada</h2>
+                <p className="text-gray-600 mb-2">
+                  No pudimos verificar tu identidad automáticamente.
+                </p>
+                {verificationResult.notes && (
+                  <p className="text-sm text-gray-500 mb-4">{verificationResult.notes}</p>
+                )}
+                <p className="text-gray-600">
+                  Por favor, intenta nuevamente con mejor iluminación o contacta a soporte.
+                </p>
+              </>
+            )}
+            {isPending && (
+              <>
+                <Loader2 className="w-16 h-16 text-yellow-500 mx-auto mb-4 animate-spin" />
+                <h2 className="text-2xl font-bold text-yellow-700 mb-2">Verificación en Proceso</h2>
+                <p className="text-gray-600 mb-2">
+                  Tu verificación está siendo revisada por nuestro equipo.
+                </p>
+                {verificationResult.notes && (
+                  <p className="text-sm text-gray-500 mb-4">{verificationResult.notes}</p>
+                )}
+                <p className="text-gray-600">
+                  Te notificaremos cuando esté lista. Puedes cerrar esta ventana.
+                </p>
+              </>
+            )}
+            {!verificationResult && (
+              <>
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-green-700 mb-2">¡Verificación Enviada!</h2>
+                <p className="text-gray-600 mb-6">
+                  Tu verificación ha sido enviada exitosamente. Puedes cerrar esta ventana.
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

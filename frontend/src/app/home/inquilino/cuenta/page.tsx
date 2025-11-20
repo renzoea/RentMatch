@@ -593,15 +593,45 @@ export default function MiCuentaInquilinoPage() {
 
                 {/* Verification Complete */}
                 {verificationComplete && verificationResult && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className={`mb-6 p-4 rounded-lg border ${
+                    verificationResult.status === 'verified'
+                      ? 'bg-green-50 border-green-200'
+                      : verificationResult.status === 'rejected'
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-yellow-50 border-yellow-200'
+                  }`}>
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <span className="font-semibold text-green-800">
-                        ¡Verificación completada exitosamente!
-                      </span>
+                      {verificationResult.status === 'verified' && (
+                        <>
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <span className="font-semibold text-green-800">
+                            ¡Verificación aprobada!
+                          </span>
+                        </>
+                      )}
+                      {verificationResult.status === 'rejected' && (
+                        <>
+                          <XCircle className="w-5 h-5 text-red-600" />
+                          <span className="font-semibold text-red-800">
+                            Verificación rechazada
+                          </span>
+                        </>
+                      )}
+                      {verificationResult.status === 'pending' && (
+                        <>
+                          <Loader2 className="w-5 h-5 text-yellow-600 animate-spin" />
+                          <span className="font-semibold text-yellow-800">
+                            Verificación en proceso
+                          </span>
+                        </>
+                      )}
                     </div>
                     <p className="mt-2 text-sm text-gray-700">
-                      Tu verificación ha sido enviada y está siendo procesada.
+                      {verificationResult.notes ||
+                        (verificationResult.status === 'verified' ? 'Tu identidad ha sido verificada exitosamente.' :
+                         verificationResult.status === 'rejected' ? 'No pudimos verificar tu identidad automáticamente. Por favor, intenta nuevamente.' :
+                         'Tu verificación está siendo revisada por nuestro equipo.')
+                      }
                     </p>
                     <Button
                       className="mt-4 bg-orange-500 hover:bg-orange-600 text-white"
