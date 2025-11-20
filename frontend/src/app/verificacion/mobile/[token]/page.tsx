@@ -33,6 +33,7 @@ export default function MobileVerificationPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+  const imageCaptureRef = useRef<ImageCapture | null>(null);
 
   // Tap to focus
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
@@ -112,12 +113,13 @@ export default function MobileVerificationPage() {
       const constraints = {
         video: {
           facingMode: facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          // Agregar constraints de enfoque para cámara trasera
-          ...(facingMode === 'environment' && {
-            focusMode: 'continuous',
-            focusDistance: 0.2 // Enfoque a corta distancia
+          // Pedir la máxima resolución disponible para vista previa
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          // Constraints avanzados para mejor enfoque
+          ...((facingMode === 'environment') && {
+            focusMode: { ideal: 'continuous' },
+            focusDistance: { ideal: 0 }
           })
         },
         audio: false
@@ -125,6 +127,19 @@ export default function MobileVerificationPage() {
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
+
+      // Crear ImageCapture para fotos de alta resolución
+      const track = mediaStream.getVideoTracks()[0];
+      if ('ImageCapture' in window) {
+        imageCaptureRef.current = new ImageCapture(track);
+        console.log('[ImageCapture] Inicializado correctamente');
+
+        // Log capabilities
+        const capabilities = track.getCapabilities();
+        console.log('[Camera Capabilities]', capabilities);
+      } else {
+        console.warn('[ImageCapture] No soportado en este navegador');
+      }
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -204,32 +219,52 @@ export default function MobileVerificationPage() {
     }
   };
 
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return null;
+  const capturePhoto = async (): Promise<string | null> => {
+    try {
+      // Usar ImageCapture API si está disponible para máxima calidad
+      if (imageCaptureRef.current) {
+        console.log('[Capture] Usando ImageCapture API para alta resolución');
+        const blob = await imageCaptureRef.current.takePhoto();
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
+        // Convertir Blob a base64
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+      // Fallback al método canvas (menor calidad pero compatible)
+      console.log('[Capture] Usando canvas fallback');
+      if (!videoRef.current || !canvasRef.current) return null;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.9);
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.95);
+    } catch (error) {
+      console.error('[Capture] Error capturando foto:', error);
+      return null;
+    }
   };
 
-  const handleCaptureDNIFront = () => {
-    const photo = capturePhoto();
+  const handleCaptureDNIFront = async () => {
+    const photo = await capturePhoto();
     if (photo) {
       setDniFrontImg(photo);
       setStep('dni_back');
     }
   };
 
-  const handleCaptureDNIBack = () => {
-    const photo = capturePhoto();
+  const handleCaptureDNIBack = async () => {
+    const photo = await capturePhoto();
     if (photo) {
       setDniBackImg(photo);
       // Cambiar a cámara frontal para la selfie
@@ -238,8 +273,8 @@ export default function MobileVerificationPage() {
     }
   };
 
-  const handleCaptureSelfie = () => {
-    const photo = capturePhoto();
+  const handleCaptureSelfie = async () => {
+    const photo = await capturePhoto();
     if (photo) {
       setSelfieImg(photo);
       stopCamera();
@@ -292,7 +327,7 @@ export default function MobileVerificationPage() {
       // Enviar al backend
       setCurrentStep('Enviando verificación...');
       await axios.post(`${API_URL}/api/verification/qr/submit/${token}`, {
-        dni_number: dniNumber || '00000000', // Requiere número de DNI
+        dni_number: ocrResult.extractedDNI || dniNumber || 'NO_DETECTADO',
         dni_front_base64: dniFront,
         dni_back_base64: dniBack,
         selfie_base64: selfie,
@@ -363,9 +398,20 @@ export default function MobileVerificationPage() {
         console.log('Extracted name:', extractedName);
       }
 
+      // Intentar extraer el número de DNI (8 dígitos)
+      const dniPattern = /\b\d{7,8}\b/;
+      const dniMatch = text.match(dniPattern);
+      let extractedDNI = null;
+      if (dniMatch) {
+        extractedDNI = dniMatch[0];
+        console.log('Extracted DNI:', extractedDNI);
+        setDniNumber(extractedDNI); // Actualizar el estado con el DNI extraído
+      }
+
       return {
         fullText: text,
         extractedName,
+        extractedDNI,
         confidence: Math.round(confidence)
       };
     } catch (error) {
@@ -373,6 +419,7 @@ export default function MobileVerificationPage() {
       return {
         fullText: '',
         extractedName: null,
+        extractedDNI: null,
         confidence: 0
       };
     }
@@ -452,10 +499,11 @@ export default function MobileVerificationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-safe">
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-xl font-bold text-center">Verificación de Identidad</h1>
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* Header fijo */}
+      <div className="bg-white shadow-sm">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-center">Verificación de Identidad</h1>
           <div className="flex justify-center gap-2 mt-2">
             <div className={`h-2 w-16 rounded-full ${step !== 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
             <div className={`h-2 w-16 rounded-full ${step === 'dni_back' ? 'bg-orange-500' : 'bg-gray-300'}`} />
@@ -464,191 +512,127 @@ export default function MobileVerificationPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Instrucciones */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            {step === 'dni_front' && (
-              <>
-                <h2 className="font-bold text-lg mb-2">Foto del DNI (Frente)</h2>
-                <p className="text-gray-600 text-sm mb-3">
-                  Coloca tu DNI sobre una superficie plana y toma una foto clara del frente
-                </p>
-                <input
-                  type="number"
-                  placeholder="Número de DNI (ej: 12345678)"
-                  value={dniNumber}
-                  onChange={(e) => setDniNumber(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg mb-2"
-                />
-              </>
-            )}
-            {step === 'dni_back' && (
-              <>
-                <h2 className="font-bold text-lg mb-2">Foto del DNI (Dorso)</h2>
-                <p className="text-gray-600 text-sm">
-                  Ahora toma una foto del dorso de tu DNI
-                </p>
-              </>
-            )}
-            {step === 'selfie' && (
-              <>
-                <h2 className="font-bold text-lg mb-2">Selfie</h2>
-                <p className="text-gray-600 text-sm">
-                  Toma una selfie mirando a la cámara. Asegúrate de tener buena iluminación
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+      {/* Instrucciones compactas */}
+      <div className="px-4 py-2 bg-white border-b">
+        {step === 'dni_front' && (
+          <p className="text-sm text-gray-700 text-center">
+            📄 Coloca tu DNI en el marco y toca para enfocar
+          </p>
+        )}
+        {step === 'dni_back' && (
+          <p className="text-sm text-gray-700 text-center">
+            📄 Ahora el dorso del DNI
+          </p>
+        )}
+        {step === 'selfie' && (
+          <p className="text-sm text-gray-700 text-center">
+            🤳 Centra tu rostro en el óvalo
+          </p>
+        )}
+      </div>
 
-        {/* Vista previa de la cámara */}
-        <Card className="mb-4">
-          <CardContent className="p-0 relative">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              onTouchStart={handleTapToFocus}
-              className="w-full h-auto rounded-lg"
-            />
-            <canvas ref={canvasRef} className="hidden" />
+      {/* Vista previa de cámara - ocupa todo el espacio disponible */}
+      <div className="flex-1 relative overflow-hidden">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          onTouchStart={handleTapToFocus}
+          className="w-full h-full object-cover"
+        />
+        <canvas ref={canvasRef} className="hidden" />
 
-            {/* Indicador visual de tap-to-focus */}
-            {focusPoint && (
-              <div
-                className="absolute pointer-events-none"
-                style={{
-                  left: focusPoint.x,
-                  top: focusPoint.y,
-                  transform: 'translate(-50%, -50%)'
-                }}
-              >
-                <div className="w-16 h-16 border-2 border-orange-500 rounded-full animate-ping" />
-                <div className="absolute inset-0 w-16 h-16 border-2 border-orange-500 rounded-full" />
-              </div>
-            )}
-
-            {/* Overlay guía para DNI */}
-            {(step === 'dni_front' || step === 'dni_back') && (
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Fondo oscuro semitransparente */}
-                <div className="absolute inset-0 bg-black/40" />
-
-                {/* Rectángulo guía centrado (aspecto ratio DNI argentino: 85.6mm x 53.98mm ≈ 1.59:1) */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[1.59/1] border-4 border-white rounded-lg shadow-lg">
-                  {/* Esquinas decorativas */}
-                  <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-lg" />
-                  <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-lg" />
-                  <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-orange-500 rounded-bl-lg" />
-                  <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-orange-500 rounded-br-lg" />
-                </div>
-
-                {/* Texto de ayuda */}
-                <div className="absolute bottom-4 left-0 right-0 text-center px-4">
-                  <p className="text-white text-xs bg-black/70 px-3 py-1 rounded-full mx-auto inline-block">
-                    👆 Toca el DNI para enfocar
-                  </p>
-                  <p className="text-white text-xs bg-black/60 px-3 py-1 rounded-full mx-auto inline-block mt-1">
-                    Alinea dentro del marco blanco
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Overlay guía para Selfie */}
-            {step === 'selfie' && (
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Fondo oscuro semitransparente */}
-                <div className="absolute inset-0 bg-black/40" />
-
-                {/* Óvalo guía centrado para el rostro */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[3/4]">
-                  {/* Círculo/óvalo con borde */}
-                  <div className="w-full h-full border-4 border-white rounded-full shadow-lg relative">
-                    {/* Puntos decorativos en los extremos */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-                    <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-                    <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-                  </div>
-                </div>
-
-                {/* Texto de ayuda */}
-                <div className="absolute bottom-4 left-0 right-0 text-center">
-                  <p className="text-white text-sm font-semibold bg-black/60 px-4 py-2 rounded-full mx-auto inline-block">
-                    Centra tu rostro en el óvalo
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Botón para cambiar cámara */}
-            {(step === 'dni_front' || step === 'dni_back') && (
-              <Button
-                onClick={toggleCamera}
-                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 z-10"
-                size="sm"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Botones de acción */}
-        <div className="space-y-3">
-          {step === 'dni_front' && (
-            <Button
-              onClick={handleCaptureDNIFront}
-              disabled={!dniNumber}
-              className="w-full bg-orange-500 hover:bg-orange-600 py-6 text-lg"
-            >
-              <Camera className="w-6 h-6 mr-2" />
-              Capturar DNI Frente
-            </Button>
-          )}
-
-          {step === 'dni_back' && (
-            <Button
-              onClick={handleCaptureDNIBack}
-              className="w-full bg-orange-500 hover:bg-orange-600 py-6 text-lg"
-            >
-              <Camera className="w-6 h-6 mr-2" />
-              Capturar DNI Dorso
-            </Button>
-          )}
-
-          {step === 'selfie' && (
-            <Button
-              onClick={handleCaptureSelfie}
-              className="w-full bg-orange-500 hover:bg-orange-600 py-6 text-lg"
-            >
-              <Camera className="w-6 h-6 mr-2" />
-              Capturar Selfie
-            </Button>
-          )}
-        </div>
-
-        {/* Miniaturas de fotos capturadas */}
-        {(dniFrontImg || dniBackImg) && (
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            {dniFrontImg && (
-              <div>
-                <p className="text-xs text-gray-600 mb-1">DNI Frente</p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={dniFrontImg} alt="DNI Frente" className="w-full h-auto rounded border-2 border-green-500" />
-              </div>
-            )}
-            {dniBackImg && (
-              <div>
-                <p className="text-xs text-gray-600 mb-1">DNI Dorso</p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={dniBackImg} alt="DNI Dorso" className="w-full h-auto rounded border-2 border-green-500" />
-              </div>
-            )}
+        {/* Indicador visual de tap-to-focus */}
+        {focusPoint && (
+          <div
+            className="absolute pointer-events-none z-20"
+            style={{
+              left: focusPoint.x,
+              top: focusPoint.y,
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <div className="w-16 h-16 border-2 border-orange-500 rounded-full animate-ping" />
+            <div className="absolute inset-0 w-16 h-16 border-2 border-orange-500 rounded-full" />
           </div>
+        )}
+
+        {/* Overlay guía para DNI */}
+        {(step === 'dni_front' || step === 'dni_back') && (
+          <div className="absolute inset-0 pointer-events-none z-10">
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[1.59/1] border-4 border-white rounded-lg shadow-lg">
+              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-lg" />
+              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-lg" />
+              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-orange-500 rounded-bl-lg" />
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-orange-500 rounded-br-lg" />
+            </div>
+            <div className="absolute bottom-20 left-0 right-0 text-center px-4">
+              <p className="text-white text-xs bg-black/70 px-3 py-1 rounded-full mx-auto inline-block">
+                👆 Toca el DNI para enfocar
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Overlay guía para Selfie */}
+        {step === 'selfie' && (
+          <div className="absolute inset-0 pointer-events-none z-10">
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[3/4]">
+              <div className="w-full h-full border-4 border-white rounded-full shadow-lg relative">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+                <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+                <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botón para cambiar cámara */}
+        {(step === 'dni_front' || step === 'dni_back') && (
+          <Button
+            onClick={toggleCamera}
+            className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 z-20"
+            size="sm"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Botón de captura fijo en la parte inferior */}
+      <div className="p-4 bg-white border-t">
+        {step === 'dni_front' && (
+          <Button
+            onClick={handleCaptureDNIFront}
+            className="w-full bg-orange-500 hover:bg-orange-600 py-5 text-lg"
+          >
+            <Camera className="w-6 h-6 mr-2" />
+            Capturar DNI Frente
+          </Button>
+        )}
+
+        {step === 'dni_back' && (
+          <Button
+            onClick={handleCaptureDNIBack}
+            className="w-full bg-orange-500 hover:bg-orange-600 py-5 text-lg"
+          >
+            <Camera className="w-6 h-6 mr-2" />
+            Capturar DNI Dorso
+          </Button>
+        )}
+
+        {step === 'selfie' && (
+          <Button
+            onClick={handleCaptureSelfie}
+            className="w-full bg-orange-500 hover:bg-orange-600 py-5 text-lg"
+          >
+            <Camera className="w-6 h-6 mr-2" />
+            Capturar Selfie
+          </Button>
         )}
       </div>
     </div>
