@@ -34,6 +34,7 @@ export default function MobileVerificationPage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const imageCaptureRef = useRef<ImageCapture | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
 
   // Face API
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -106,18 +107,67 @@ export default function MobileVerificationPage() {
   const startCamera = async () => {
     try {
       stopCamera(); // Detener cámara anterior si existe
+      setCameraReady(false);
+
+      let selectedDeviceId = null;
+
+      // Para cámara trasera, intentar encontrar una con autofocus
+      if (facingMode === 'environment') {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+          console.log('[Camera] Dispositivos disponibles:', videoDevices.map(d => ({
+            label: d.label,
+            id: d.deviceId.substring(0, 20)
+          })));
+
+          // Intentar obtener capabilities de cada cámara para encontrar una con autofocus
+          for (const device of videoDevices) {
+            try {
+              const testStream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: device.deviceId } }
+              });
+              const track = testStream.getVideoTracks()[0];
+              const capabilities = track.getCapabilities() as MediaTrackCapabilities & {
+                focusMode?: string[];
+                facingMode?: string[];
+              };
+
+              console.log(`[Camera] ${device.label}:`, {
+                focusMode: capabilities.focusMode,
+                facingMode: capabilities.facingMode
+              });
+
+              // Buscar cámara trasera con autofocus
+              if (capabilities.facingMode &&
+                  capabilities.facingMode.includes('environment') &&
+                  capabilities.focusMode &&
+                  capabilities.focusMode.includes('continuous')) {
+                selectedDeviceId = device.deviceId;
+                console.log('[Camera] ✓ Seleccionada cámara con autofocus:', device.label);
+                testStream.getTracks().forEach(t => t.stop());
+                break;
+              }
+
+              testStream.getTracks().forEach(t => t.stop());
+            } catch {
+              console.log('[Camera] No se pudo verificar dispositivo:', device.label);
+            }
+          }
+        } catch {
+          console.log('[Camera] No se pudieron enumerar dispositivos');
+        }
+      }
 
       const constraints = {
         video: {
-          facingMode: facingMode,
-          // Pedir la máxima resolución disponible para vista previa
+          ...(selectedDeviceId
+            ? { deviceId: { exact: selectedDeviceId } }
+            : { facingMode: facingMode }
+          ),
           width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          // Constraints avanzados para mejor enfoque
-          ...((facingMode === 'environment') && {
-            focusMode: { ideal: 'continuous' },
-            focusDistance: { ideal: 0 }
-          })
+          height: { ideal: 1080 }
         },
         audio: false
       };
@@ -127,11 +177,32 @@ export default function MobileVerificationPage() {
 
       // Crear ImageCapture para fotos de alta resolución
       const track = mediaStream.getVideoTracks()[0];
+
+      // Aplicar constraints de enfoque después de obtener el stream
+      if (facingMode === 'environment') {
+        try {
+          const capabilities = track.getCapabilities() as MediaTrackCapabilities & {
+            focusMode?: string[];
+          };
+
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            await track.applyConstraints({
+              advanced: [{
+                focusMode: 'continuous',
+                focusDistance: 0
+              } as any] // eslint-disable-line @typescript-eslint/no-explicit-any
+            });
+            console.log('[Camera] ✓ Constraints de enfoque continuo aplicados');
+          }
+        } catch {
+          console.log('[Camera] No se pudieron aplicar constraints de enfoque');
+        }
+      }
+
       if ('ImageCapture' in window) {
         imageCaptureRef.current = new ImageCapture(track);
-        console.log('[ImageCapture] Inicializado correctamente');
+        console.log('[ImageCapture] ✓ Inicializado correctamente');
 
-        // Log capabilities
         const capabilities = track.getCapabilities();
         console.log('[Camera Capabilities]', capabilities);
       } else {
@@ -141,18 +212,23 @@ export default function MobileVerificationPage() {
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
 
-        // Esperar a que el video esté listo antes de reproducir
         videoRef.current.onloadedmetadata = async () => {
           try {
             await videoRef.current?.play();
-            console.log('[Camera] Video playing successfully');
+            console.log('[Camera] ✓ Video reproduciendo');
+
+            // Dar tiempo al autofocus para estabilizarse
+            setTimeout(() => {
+              setCameraReady(true);
+              console.log('[Camera] ✓ Cámara lista para capturar');
+            }, 2000);
           } catch (playError) {
-            console.error('[Camera] Error playing video:', playError);
+            console.error('[Camera] Error reproduciendo video:', playError);
           }
         };
       }
     } catch (error) {
-      console.error('Error accessing camera:', error);
+      console.error('[Camera] Error accediendo a la cámara:', error);
       setError('No se pudo acceder a la cámara. Asegúrate de dar permisos.');
     }
   };
@@ -496,30 +572,60 @@ export default function MobileVerificationPage() {
         {step === 'dni_front' && (
           <Button
             onClick={handleCaptureDNIFront}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl"
+            disabled={!cameraReady}
+            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Camera className="w-5 h-5 mr-2" />
-            Capturar DNI Frente
+            {cameraReady ? (
+              <>
+                <Camera className="w-5 h-5 mr-2" />
+                Capturar DNI Frente
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Enfocando...
+              </>
+            )}
           </Button>
         )}
 
         {step === 'dni_back' && (
           <Button
             onClick={handleCaptureDNIBack}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl"
+            disabled={!cameraReady}
+            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Camera className="w-5 h-5 mr-2" />
-            Capturar DNI Dorso
+            {cameraReady ? (
+              <>
+                <Camera className="w-5 h-5 mr-2" />
+                Capturar DNI Dorso
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Enfocando...
+              </>
+            )}
           </Button>
         )}
 
         {step === 'selfie' && (
           <Button
             onClick={handleCaptureSelfie}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl"
+            disabled={!cameraReady}
+            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Camera className="w-5 h-5 mr-2" />
-            Capturar Selfie
+            {cameraReady ? (
+              <>
+                <Camera className="w-5 h-5 mr-2" />
+                Capturar Selfie
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Preparando...
+              </>
+            )}
           </Button>
         )}
       </div>
