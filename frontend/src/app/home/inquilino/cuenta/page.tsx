@@ -602,7 +602,7 @@ export default function MiCuentaInquilinoPage() {
                 )}
 
                 {/* Instructions */}
-                {!qrDataURL && !verificationComplete && (
+                {!qrDataURL && !verificationComplete && verificationStatus?.verification?.status !== 'verified' && (
                   <div className="space-y-6">
                     <Card className="bg-orange-50 border-orange-200">
                       <CardContent className="p-4">
