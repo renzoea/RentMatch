@@ -4,15 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Camera, CheckCircle, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import * as faceapi from 'face-api.js';
-import Tesseract from 'tesseract.js';
 
 const MODEL_URL = '/models';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-type Step = 'loading' | 'dni_front' | 'dni_back' | 'selfie' | 'processing' | 'success' | 'error';
+type Step = 'loading' | 'dni_front' | 'dni_back' | 'selfie' | 'dni_input' | 'processing' | 'success' | 'error';
 
 export default function MobileVerificationPage() {
   const params = useParams();
@@ -26,7 +26,7 @@ export default function MobileVerificationPage() {
   const [dniFrontImg, setDniFrontImg] = useState('');
   const [dniBackImg, setDniBackImg] = useState('');
   const [selfieImg, setSelfieImg] = useState('');
-  const [dniNumber, setDniNumber] = useState('');
+  const [manualDniInput, setManualDniInput] = useState('');
 
   // Referencias para input file
   const dniFrontInputRef = useRef<HTMLInputElement>(null);
@@ -161,8 +161,8 @@ export default function MobileVerificationPage() {
         setStep('selfie');
       } else if (type === 'selfie') {
         setSelfieImg(base64);
-        setStep('processing');
-        processVerification(dniFrontImg, dniBackImg, base64);
+        // Ir a paso de ingreso de DNI en lugar de procesar directamente
+        setStep('dni_input');
       }
     };
 
@@ -186,17 +186,18 @@ export default function MobileVerificationPage() {
     selfieInputRef.current?.click();
   };
 
-  const processVerification = async (dniFront: string, dniBack: string, selfie: string) => {
+  const processVerification = async (dni: string) => {
     try {
+      setStep('processing');
       setCurrentStep('Validando DNI...');
 
       // Crear elementos de imagen para procesamiento
       const dniFrontElement = document.createElement('img');
-      dniFrontElement.src = dniFront;
+      dniFrontElement.src = dniFrontImg;
       await new Promise(resolve => dniFrontElement.onload = resolve);
 
       const selfieElement = document.createElement('img');
-      selfieElement.src = selfie;
+      selfieElement.src = selfieImg;
       await new Promise(resolve => selfieElement.onload = resolve);
 
       // Detectar rostros
@@ -223,32 +224,14 @@ export default function MobileVerificationPage() {
       const distance = faceapi.euclideanDistance(dniDetection.descriptor, selfieDetection.descriptor);
       console.log('Face match distance:', distance);
 
-      // Ejecutar OCR
-      setCurrentStep('Extrayendo información del DNI...');
-      const ocrResult = await extractTextFromDNI(dniFrontElement);
-
-      // Validar que se extrajo un DNI
-      const finalDNI = ocrResult.extractedDNI || dniNumber;
-      console.log('[Verification] Final DNI to send:', finalDNI);
-      console.log('[Verification] OCR extracted DNI:', ocrResult.extractedDNI);
-      console.log('[Verification] State DNI:', dniNumber);
-
-      if (!finalDNI || finalDNI === 'NO_DETECTADO') {
-        setError('No se pudo extraer el número de DNI de la imagen. Por favor intenta de nuevo con mejor iluminación.');
-        setStep('error');
-        return;
-      }
-
-      // Enviar al backend
+      // Enviar al backend (el OCR se hará en el backend)
       setCurrentStep('Enviando verificación...');
       await axios.post(`${API_URL}/api/verification/qr/submit/${token}`, {
-        dni_number: finalDNI,
-        dni_front_base64: dniFront,
-        dni_back_base64: dniBack,
-        selfie_base64: selfie,
-        face_match_score: distance,
-        extracted_name: ocrResult.extractedName,
-        ocr_confidence: ocrResult.confidence
+        dni_number: dni,
+        dni_front_base64: dniFrontImg,
+        dni_back_base64: dniBackImg,
+        selfie_base64: selfieImg,
+        face_match_score: distance
       });
 
       setStep('success');
@@ -283,83 +266,25 @@ export default function MobileVerificationPage() {
     return null;
   };
 
-  const extractTextFromDNI = async (imageElement: HTMLImageElement) => {
-    try {
-      setCurrentStep('Ejecutando OCR...');
+  const handleDniSubmit = () => {
+    // Validar que el DNI ingresado sea válido
+    const cleanDNI = manualDniInput.replace(/[.\s-]/g, '');
 
-      const { data: { text, confidence } } = await Tesseract.recognize(
-        imageElement,
-        'spa',
-        {
-          logger: (m) => {
-            if (m.status === 'recognizing text') {
-              setCurrentStep(`OCR: ${Math.round(m.progress * 100)}%`);
-            }
-          }
-        }
-      );
-
-      console.log('OCR Text:', text);
-      console.log('OCR Confidence:', confidence);
-
-      // Intentar extraer el nombre del texto
-      const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-      const namePattern = /^[A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ\s]{2,}$/;
-      const possibleNames = lines.filter(line => namePattern.test(line));
-
-      let extractedName = null;
-      if (possibleNames.length > 0) {
-        extractedName = possibleNames.slice(0, 2).join(' ');
-        console.log('Extracted name:', extractedName);
-      }
-
-      // Intentar extraer el número de DNI (7 u 8 dígitos)
-      // Primero limpiar el texto de caracteres especiales que OCR puede confundir
-      const cleanText = text.replace(/[^0-9\s.-]/g, ' ');
-
-      // Buscar diferentes patrones de DNI
-      const dniPatterns = [
-        /\b(\d{2}\.?\d{3}\.?\d{3})\b/,  // Formato: 12.345.678
-        /\b(\d{1}\.?\d{3}\.?\d{3})\b/,  // Formato: 1.234.567
-        /\b(\d{7,8})\b/                  // Formato: 12345678 o 1234567
-      ];
-
-      let extractedDNI = null;
-      for (const pattern of dniPatterns) {
-        const match = cleanText.match(pattern);
-        if (match) {
-          // Limpiar el DNI de puntos y espacios
-          extractedDNI = match[1].replace(/[.\s-]/g, '');
-
-          // Validar que tenga 7 u 8 dígitos
-          if (/^\d{7,8}$/.test(extractedDNI)) {
-            const dniNumber = parseInt(extractedDNI, 10);
-            // Validar que esté en un rango razonable
-            if (dniNumber >= 1000000 && dniNumber <= 99999999) {
-              console.log('Extracted DNI:', extractedDNI);
-              setDniNumber(extractedDNI);
-              break;
-            }
-          }
-          extractedDNI = null; // Reset si no pasó validación
-        }
-      }
-
-      return {
-        fullText: text,
-        extractedName,
-        extractedDNI,
-        confidence: Math.round(confidence)
-      };
-    } catch (error) {
-      console.error('OCR error:', error);
-      return {
-        fullText: '',
-        extractedName: null,
-        extractedDNI: null,
-        confidence: 0
-      };
+    if (!/^\d{7,8}$/.test(cleanDNI)) {
+      setError('Por favor ingresa un DNI válido de 7 u 8 dígitos');
+      setStep('error');
+      return;
     }
+
+    const dniNum = parseInt(cleanDNI, 10);
+    if (dniNum < 1000000 || dniNum > 99999999) {
+      setError('El número de DNI ingresado no es válido');
+      setStep('error');
+      return;
+    }
+
+    // Procesar verificación con el DNI ingresado
+    processVerification(cleanDNI);
   };
 
   const handleRetake = () => {
@@ -367,6 +292,7 @@ export default function MobileVerificationPage() {
       setDniFrontImg('');
       setDniBackImg('');
       setSelfieImg('');
+      setManualDniInput('');
       setError('');
       setStep('dni_front');
     }
@@ -464,9 +390,10 @@ export default function MobileVerificationPage() {
         <div className="px-4 py-3">
           <h1 className="text-lg font-bold text-center text-gray-800">Verificación de Identidad</h1>
           <div className="flex justify-center gap-2 mt-2">
-            <div className={`h-2 w-16 rounded-full transition-colors ${step !== 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
-            <div className={`h-2 w-16 rounded-full transition-colors ${step === 'dni_back' ? 'bg-orange-500' : 'bg-gray-300'}`} />
-            <div className={`h-2 w-16 rounded-full transition-colors ${step === 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+            <div className={`h-2 w-12 rounded-full transition-colors ${step === 'dni_front' ? 'bg-orange-500' : step === 'dni_back' || step === 'selfie' || step === 'dni_input' ? 'bg-green-500' : 'bg-gray-300'}`} />
+            <div className={`h-2 w-12 rounded-full transition-colors ${step === 'dni_back' ? 'bg-orange-500' : step === 'selfie' || step === 'dni_input' ? 'bg-green-500' : 'bg-gray-300'}`} />
+            <div className={`h-2 w-12 rounded-full transition-colors ${step === 'selfie' ? 'bg-orange-500' : step === 'dni_input' ? 'bg-green-500' : 'bg-gray-300'}`} />
+            <div className={`h-2 w-12 rounded-full transition-colors ${step === 'dni_input' ? 'bg-orange-500' : 'bg-gray-300'}`} />
           </div>
         </div>
       </div>
@@ -489,6 +416,11 @@ export default function MobileVerificationPage() {
             {step === 'selfie' && (
               <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center">
                 <span className="text-6xl">🤳</span>
+              </div>
+            )}
+            {step === 'dni_input' && (
+              <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-6xl">🔢</span>
               </div>
             )}
           </div>
@@ -516,6 +448,14 @@ export default function MobileVerificationPage() {
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">Selfie</h2>
                 <p className="text-gray-600 text-sm">
                   Toma una selfie mirando a la cámara. Asegúrate de que tu rostro esté bien iluminado.
+                </p>
+              </>
+            )}
+            {step === 'dni_input' && (
+              <>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Número de DNI</h2>
+                <p className="text-gray-600 text-sm mb-4">
+                  Ingresa tu número de DNI (7 u 8 dígitos) como aparece en tu documento.
                 </p>
               </>
             )}
@@ -551,6 +491,32 @@ export default function MobileVerificationPage() {
                 <Camera className="w-6 h-6 mr-2" />
                 Tomar Selfie
               </Button>
+            )}
+
+            {step === 'dni_input' && (
+              <>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ej: 12345678"
+                  value={manualDniInput}
+                  onChange={(e) => {
+                    // Solo permitir números, puntos y guiones
+                    const value = e.target.value.replace(/[^0-9.-]/g, '');
+                    setManualDniInput(value);
+                  }}
+                  className="text-center text-2xl py-6 font-semibold tracking-wider"
+                  maxLength={10}
+                />
+                <Button
+                  onClick={handleDniSubmit}
+                  disabled={manualDniInput.length < 7}
+                  className="w-full bg-orange-500 hover:bg-orange-600 py-6 text-lg font-semibold shadow-lg disabled:opacity-50"
+                >
+                  <CheckCircle className="w-6 h-6 mr-2" />
+                  Continuar
+                </Button>
+              </>
             )}
           </div>
         </div>
