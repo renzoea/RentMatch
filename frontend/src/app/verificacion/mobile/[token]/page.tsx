@@ -25,18 +25,13 @@ export default function MobileVerificationPage() {
   // Imágenes capturadas
   const [dniFrontImg, setDniFrontImg] = useState('');
   const [dniBackImg, setDniBackImg] = useState('');
-  const [selfieImg, setSelfieImg] = useState(''); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [selfieImg, setSelfieImg] = useState('');
   const [dniNumber, setDniNumber] = useState('');
 
-  // Cámara
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
-  const imageCaptureRef = useRef<ImageCapture | null>(null);
-  const [cameraReady, setCameraReady] = useState(false);
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
-  const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
+  // Referencias para input file
+  const dniFrontInputRef = useRef<HTMLInputElement>(null);
+  const dniBackInputRef = useRef<HTMLInputElement>(null);
+  const selfieInputRef = useRef<HTMLInputElement>(null);
 
   // Face API
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -46,18 +41,6 @@ export default function MobileVerificationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (step === 'dni_front' || step === 'dni_back' || step === 'selfie') {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-
-    return () => {
-      stopCamera();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, facingMode, selectedCameraIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const validateSession = async () => {
     try {
@@ -106,186 +89,101 @@ export default function MobileVerificationPage() {
     }
   };
 
-  const startCamera = async () => {
-    try {
-      stopCamera();
-      setCameraReady(false);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'front' | 'back' | 'selfie') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      // Enumerar cámaras disponibles
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(d => d.kind === 'videoinput');
+    // Validación 1: Tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError('Por favor selecciona una imagen válida (JPEG, PNG o WEBP)');
+      setStep('error');
+      return;
+    }
 
-      if (facingMode === 'environment' && cameras.length > 0) {
-        setAvailableCameras(cameras);
-        console.log('[Camera] Cámaras disponibles:', cameras.map(c => c.label));
+    // Validación 2: Tamaño del archivo (máximo 10MB)
+    const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSizeInBytes) {
+      setError('La imagen es demasiado grande. El tamaño máximo es 10MB.');
+      setStep('error');
+      return;
+    }
+
+    // Validación 3: Tamaño mínimo (evitar archivos corruptos)
+    const minSizeInBytes = 10 * 1024; // 10KB
+    if (file.size < minSizeInBytes) {
+      setError('La imagen es demasiado pequeña o está corrupta. Por favor toma otra foto.');
+      setStep('error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+
+      // Validación 4: Dimensiones de la imagen
+      const img = new Image();
+      img.src = base64;
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      }).catch(() => {
+        setError('No se pudo cargar la imagen. Por favor intenta de nuevo.');
+        setStep('error');
+        return;
+      });
+
+      // Validar dimensiones mínimas
+      const minWidth = type === 'selfie' ? 480 : 640; // Selfie puede ser más pequeña
+      const minHeight = type === 'selfie' ? 640 : 480;
+
+      if (img.width < minWidth || img.height < minHeight) {
+        setError(`La imagen es demasiado pequeña. Dimensiones mínimas: ${minWidth}x${minHeight}px`);
+        setStep('error');
+        return;
       }
 
-      let constraints;
-
-      // Para cámara trasera, usar deviceId específico si hay múltiples cámaras
-      if (facingMode === 'environment' && cameras.length > 1) {
-        const selectedCamera = cameras[selectedCameraIndex];
-        console.log(`[Camera] Usando cámara ${selectedCameraIndex + 1}/${cameras.length}:`, selectedCamera.label);
-
-        constraints = {
-          video: {
-            deviceId: { exact: selectedCamera.deviceId },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          },
-          audio: false
-        };
-      } else {
-        constraints = {
-          video: {
-            facingMode: facingMode,
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          },
-          audio: false
-        };
+      // Validación 5: Relación de aspecto razonable (evitar imágenes muy distorsionadas)
+      const aspectRatio = img.width / img.height;
+      if (aspectRatio < 0.3 || aspectRatio > 3.5) {
+        setError('La imagen tiene una relación de aspecto inválida. Por favor toma otra foto.');
+        setStep('error');
+        return;
       }
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(mediaStream);
-
-      const track = mediaStream.getVideoTracks()[0];
-      const capabilities = track.getCapabilities() as MediaTrackCapabilities & {
-        focusMode?: string[];
-      };
-
-      console.log('[Camera] Capabilities:', capabilities);
-
-      // Aplicar constraints de enfoque para cámara trasera
-      if (facingMode === 'environment') {
-        try {
-          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-            await track.applyConstraints({
-              advanced: [{
-                focusMode: 'continuous',
-                focusDistance: 0
-              } as any] // eslint-disable-line @typescript-eslint/no-explicit-any
-            });
-            console.log('[Camera] ✓ Autofocus continuo activado');
-          } else {
-            console.warn('[Camera] ⚠ Esta cámara NO tiene autofocus continuo!');
-          }
-        } catch (err) {
-          console.log('[Camera] No se pudo configurar autofocus:', err);
-        }
+      // Todas las validaciones pasaron, proceder normalmente
+      if (type === 'front') {
+        setDniFrontImg(base64);
+        setStep('dni_back');
+      } else if (type === 'back') {
+        setDniBackImg(base64);
+        setStep('selfie');
+      } else if (type === 'selfie') {
+        setSelfieImg(base64);
+        setStep('processing');
+        processVerification(dniFrontImg, dniBackImg, base64);
       }
+    };
 
-      if ('ImageCapture' in window) {
-        imageCaptureRef.current = new ImageCapture(track);
-        console.log('[ImageCapture] ✓ Inicializado');
-      }
+    reader.onerror = () => {
+      setError('Error al leer el archivo. Por favor intenta de nuevo.');
+      setStep('error');
+    };
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-
-        videoRef.current.onloadedmetadata = async () => {
-          try {
-            await videoRef.current?.play();
-            console.log('[Camera] ✓ Video iniciado');
-
-            setTimeout(() => {
-              setCameraReady(true);
-              console.log('[Camera] ✓ Lista para capturar');
-            }, 2000);
-          } catch (playError) {
-            console.error('[Camera] Error:', playError);
-            setCameraReady(true);
-          }
-        };
-      }
-    } catch (error) {
-      console.error('[Camera] Error:', error);
-      setError('No se pudo acceder a la cámara');
-      setCameraReady(true);
-    }
+    reader.readAsDataURL(file);
   };
 
-  const switchToNextCamera = () => {
-    if (availableCameras.length > 1) {
-      const nextIndex = (selectedCameraIndex + 1) % availableCameras.length;
-      setSelectedCameraIndex(nextIndex);
-      console.log('[Camera] Cambiando a cámara:', nextIndex + 1);
-    }
+  const handleCaptureDNIFront = () => {
+    dniFrontInputRef.current?.click();
   };
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+  const handleCaptureDNIBack = () => {
+    dniBackInputRef.current?.click();
   };
 
-
-  const capturePhoto = async (): Promise<string | null> => {
-    try {
-      // Usar ImageCapture API si está disponible para máxima calidad
-      if (imageCaptureRef.current) {
-        console.log('[Capture] Usando ImageCapture API para alta resolución');
-        const blob = await imageCaptureRef.current.takePhoto();
-
-        // Convertir Blob a base64
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      }
-
-      // Fallback al método canvas (menor calidad pero compatible)
-      console.log('[Capture] Usando canvas fallback');
-      if (!videoRef.current || !canvasRef.current) return null;
-
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL('image/jpeg', 0.95);
-    } catch (error) {
-      console.error('[Capture] Error capturando foto:', error);
-      return null;
-    }
-  };
-
-  const handleCaptureDNIFront = async () => {
-    const photo = await capturePhoto();
-    if (photo) {
-      setDniFrontImg(photo);
-      setStep('dni_back');
-    }
-  };
-
-  const handleCaptureDNIBack = async () => {
-    const photo = await capturePhoto();
-    if (photo) {
-      setDniBackImg(photo);
-      // Cambiar a cámara frontal para la selfie
-      setFacingMode('user');
-      setStep('selfie');
-    }
-  };
-
-  const handleCaptureSelfie = async () => {
-    const photo = await capturePhoto();
-    if (photo) {
-      setSelfieImg(photo);
-      stopCamera();
-      setStep('processing');
-      processVerification(dniFrontImg, dniBackImg, photo);
-    }
+  const handleCaptureSelfie = () => {
+    selfieInputRef.current?.click();
   };
 
   const processVerification = async (dniFront: string, dniBack: string, selfie: string) => {
@@ -436,14 +334,10 @@ export default function MobileVerificationPage() {
       setDniBackImg('');
       setSelfieImg('');
       setError('');
-      setFacingMode('environment');
       setStep('dni_front');
     }
   };
 
-  const toggleCamera = () => {
-    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
-  };
 
   if (step === 'loading') {
     return (
@@ -504,121 +398,128 @@ export default function MobileVerificationPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-black">
-      {/* Header compacto */}
-      <div className="bg-white/95 backdrop-blur-sm flex-shrink-0">
-        <div className="px-4 py-2">
-          <h1 className="text-base font-bold text-center">Verificación</h1>
-          <div className="flex justify-center gap-2 mt-1">
-            <div className={`h-1.5 w-12 rounded-full ${step !== 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
-            <div className={`h-1.5 w-12 rounded-full ${step === 'dni_back' ? 'bg-orange-500' : 'bg-gray-300'}`} />
-            <div className={`h-1.5 w-12 rounded-full ${step === 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
+      {/* Inputs ocultos para captura de fotos */}
+      <input
+        ref={dniFrontInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFileChange(e, 'front')}
+      />
+      <input
+        ref={dniBackInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFileChange(e, 'back')}
+      />
+      <input
+        ref={selfieInputRef}
+        type="file"
+        accept="image/*"
+        capture="user"
+        className="hidden"
+        onChange={(e) => handleFileChange(e, 'selfie')}
+      />
+
+      {/* Header */}
+      <div className="bg-white shadow-sm flex-shrink-0">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-center text-gray-800">Verificación de Identidad</h1>
+          <div className="flex justify-center gap-2 mt-2">
+            <div className={`h-2 w-16 rounded-full transition-colors ${step !== 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+            <div className={`h-2 w-16 rounded-full transition-colors ${step === 'dni_back' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+            <div className={`h-2 w-16 rounded-full transition-colors ${step === 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
           </div>
         </div>
       </div>
 
-      {/* Instrucciones mínimas */}
-      <div className="px-4 py-1.5 bg-white/90 backdrop-blur-sm text-center flex-shrink-0">
-        {step === 'dni_front' && <p className="text-xs text-gray-700">📄 Captura el frente de tu DNI</p>}
-        {step === 'dni_back' && <p className="text-xs text-gray-700">📄 Captura el dorso de tu DNI</p>}
-        {step === 'selfie' && <p className="text-xs text-gray-700">🤳 Centra tu rostro</p>}
-      </div>
+      {/* Contenido principal */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {/* Ícono */}
+          <div className="flex justify-center mb-6">
+            {step === 'dni_front' && (
+              <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-6xl">📄</span>
+              </div>
+            )}
+            {step === 'dni_back' && (
+              <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-6xl">📄</span>
+              </div>
+            )}
+            {step === 'selfie' && (
+              <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-6xl">🤳</span>
+              </div>
+            )}
+          </div>
 
-      {/* Vista previa de cámara - todo el espacio restante */}
-      <div className="flex-1 relative">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <canvas ref={canvasRef} className="hidden" />
+          {/* Instrucciones */}
+          <div className="text-center mb-8">
+            {step === 'dni_front' && (
+              <>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Foto del DNI - Frente</h2>
+                <p className="text-gray-600 text-sm">
+                  Toma una foto clara del frente de tu DNI. Asegúrate de que todos los datos sean legibles.
+                </p>
+              </>
+            )}
+            {step === 'dni_back' && (
+              <>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Foto del DNI - Dorso</h2>
+                <p className="text-gray-600 text-sm">
+                  Ahora toma una foto del dorso de tu DNI.
+                </p>
+              </>
+            )}
+            {step === 'selfie' && (
+              <>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Selfie</h2>
+                <p className="text-gray-600 text-sm">
+                  Toma una selfie mirando a la cámara. Asegúrate de que tu rostro esté bien iluminado.
+                </p>
+              </>
+            )}
+          </div>
 
-        {/* Botones de cámara */}
-        {(step === 'dni_front' || step === 'dni_back') && (
-          <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
-            <Button
-              onClick={toggleCamera}
-              className="bg-black/50 hover:bg-black/70"
-              size="sm"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-            {availableCameras.length > 1 && (
+          {/* Botones */}
+          <div className="space-y-3">
+            {step === 'dni_front' && (
               <Button
-                onClick={switchToNextCamera}
-                className="bg-orange-500/80 hover:bg-orange-600/80 text-xs px-2"
-                size="sm"
+                onClick={handleCaptureDNIFront}
+                className="w-full bg-orange-500 hover:bg-orange-600 py-6 text-lg font-semibold shadow-lg"
               >
-                📷 {selectedCameraIndex + 1}/{availableCameras.length}
+                <Camera className="w-6 h-6 mr-2" />
+                Tomar Foto del Frente
+              </Button>
+            )}
+
+            {step === 'dni_back' && (
+              <Button
+                onClick={handleCaptureDNIBack}
+                className="w-full bg-orange-500 hover:bg-orange-600 py-6 text-lg font-semibold shadow-lg"
+              >
+                <Camera className="w-6 h-6 mr-2" />
+                Tomar Foto del Dorso
+              </Button>
+            )}
+
+            {step === 'selfie' && (
+              <Button
+                onClick={handleCaptureSelfie}
+                className="w-full bg-orange-500 hover:bg-orange-600 py-6 text-lg font-semibold shadow-lg"
+              >
+                <Camera className="w-6 h-6 mr-2" />
+                Tomar Selfie
               </Button>
             )}
           </div>
-        )}
-      </div>
-
-      {/* Botón de captura fijo - sin padding extra */}
-      <div className="p-3 bg-gradient-to-t from-black/80 to-transparent flex-shrink-0">
-        {step === 'dni_front' && (
-          <Button
-            onClick={handleCaptureDNIFront}
-            disabled={!cameraReady}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {cameraReady ? (
-              <>
-                <Camera className="w-5 h-5 mr-2" />
-                Capturar DNI Frente
-              </>
-            ) : (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Enfocando...
-              </>
-            )}
-          </Button>
-        )}
-
-        {step === 'dni_back' && (
-          <Button
-            onClick={handleCaptureDNIBack}
-            disabled={!cameraReady}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {cameraReady ? (
-              <>
-                <Camera className="w-5 h-5 mr-2" />
-                Capturar DNI Dorso
-              </>
-            ) : (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Enfocando...
-              </>
-            )}
-          </Button>
-        )}
-
-        {step === 'selfie' && (
-          <Button
-            onClick={handleCaptureSelfie}
-            disabled={!cameraReady}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {cameraReady ? (
-              <>
-                <Camera className="w-5 h-5 mr-2" />
-                Capturar Selfie
-              </>
-            ) : (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Preparando...
-              </>
-            )}
-          </Button>
-        )}
+        </div>
       </div>
     </div>
   );
