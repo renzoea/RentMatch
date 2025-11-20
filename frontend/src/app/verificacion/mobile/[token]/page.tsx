@@ -237,8 +237,19 @@ export default function MobileVerificationPage() {
       setStep('success');
     } catch (error) {
       console.error('Error processing verification:', error);
-      const err = error as { response?: { data?: { error?: string } } };
-      setError(err.response?.data?.error || 'Error al procesar la verificación');
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      const err = error as { response?: { data?: { error?: string }; status?: number }; message?: string };
+
+      // Log más detalles
+      if (err.response) {
+        console.error('Response status:', err.response.status);
+        console.error('Response data:', err.response.data);
+      }
+
+      const errorMessage = err.response?.data?.error || err.message || 'Error al procesar la verificación';
+      console.error('Final error message:', errorMessage);
+
+      setError(errorMessage);
       setStep('error');
     }
   };

@@ -38,7 +38,15 @@ export default function MiCuentaInquilinoPage() {
   const [deleting, setDeleting] = useState(false);
 
   // Verification states
-  const [verificationStatus, setVerificationStatus] = useState<{kyc_status?: string; notes?: string} | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<{
+    has_verification?: boolean;
+    verification?: {
+      status?: string;
+      notes?: string;
+      submitted_at?: string;
+      reviewed_at?: string;
+    }
+  } | null>(null);
   const [loadingVerification, setLoadingVerification] = useState(false);
   const [qrDataURL, setQrDataURL] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -506,42 +514,42 @@ export default function MiCuentaInquilinoPage() {
                 {/* Status Display */}
                 {verificationStatus && (
                   <div className={`mb-6 p-4 rounded-lg border ${
-                    verificationStatus.kyc_status === 'approved'
+                    verificationStatus.verification?.status === 'verified'
                       ? 'bg-green-50 border-green-200'
-                      : verificationStatus.kyc_status === 'pending'
+                      : verificationStatus.verification?.status === 'pending'
                       ? 'bg-yellow-50 border-yellow-200'
-                      : verificationStatus.kyc_status === 'rejected'
+                      : verificationStatus.verification?.status === 'rejected'
                       ? 'bg-red-50 border-red-200'
                       : 'bg-gray-50 border-gray-200'
                   }`}>
                     <div className="flex items-center gap-2">
-                      {verificationStatus.kyc_status === 'approved' && (
+                      {verificationStatus.verification?.status === 'verified' && (
                         <>
                           <CheckCircle className="w-5 h-5 text-green-600" />
                           <span className="font-semibold text-green-800">Verificación aprobada</span>
                         </>
                       )}
-                      {verificationStatus.kyc_status === 'pending' && (
+                      {verificationStatus.verification?.status === 'pending' && (
                         <>
                           <Loader2 className="w-5 h-5 text-yellow-600 animate-spin" />
                           <span className="font-semibold text-yellow-800">Verificación en proceso</span>
                         </>
                       )}
-                      {verificationStatus.kyc_status === 'rejected' && (
+                      {verificationStatus.verification?.status === 'rejected' && (
                         <>
                           <XCircle className="w-5 h-5 text-red-600" />
                           <span className="font-semibold text-red-800">Verificación rechazada</span>
                         </>
                       )}
-                      {!verificationStatus.kyc_status && (
+                      {!verificationStatus.verification?.status && (
                         <>
                           <AlertTriangle className="w-5 h-5 text-gray-600" />
                           <span className="font-semibold text-gray-800">Sin verificar</span>
                         </>
                       )}
                     </div>
-                    {verificationStatus.notes && (
-                      <p className="mt-2 text-sm text-gray-700">{verificationStatus.notes}</p>
+                    {verificationStatus.verification?.notes && (
+                      <p className="mt-2 text-sm text-gray-700">{verificationStatus.verification.notes}</p>
                     )}
                   </div>
                 )}

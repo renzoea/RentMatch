@@ -700,11 +700,21 @@ exports.submitQRVerification = async (req, res) => {
     console.log('[submitQRVerification] Verification created successfully:', verification.id);
 
     // Emitir evento WebSocket para notificar al desktop
-    const io = req.app.get('io');
-    io.to(token).emit('verification-complete', {
-      status: verification.status,
-      notes: verification.notes
-    });
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(token).emit('verification-complete', {
+          status: verification.status,
+          notes: verification.notes
+        });
+        console.log('[submitQRVerification] WebSocket event emitted to token:', token);
+      } else {
+        console.warn('[submitQRVerification] Socket.io not available, skipping WebSocket emit');
+      }
+    } catch (wsError) {
+      console.error('[submitQRVerification] Error emitting WebSocket event:', wsError);
+      // No lanzar error, solo loguearlo
+    }
 
     res.status(201).json({
       message: 'Verificación enviada exitosamente',
