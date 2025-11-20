@@ -592,7 +592,7 @@ export default function MiCuentaInquilinoPage() {
                 )}
 
                 {/* Verification Complete */}
-                {verificationComplete && verificationResult && (
+                {verificationComplete && verificationResult && verificationStatus?.verification?.status !== 'verified' && (
                   <div className={`mb-6 p-4 rounded-lg border ${
                     verificationResult.status === 'verified'
                       ? 'bg-green-50 border-green-200'
