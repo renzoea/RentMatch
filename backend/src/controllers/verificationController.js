@@ -1,5 +1,4 @@
 const supabase = require('../config/supabase');
-const Tesseract = require('tesseract.js');
 const crypto = require('crypto');
 const {
   isValidDNIFormat,
@@ -601,37 +600,10 @@ exports.submitQRVerification = async (req, res) => {
 
     console.log('[submitQRVerification] Images uploaded successfully');
 
-    // Ejecutar OCR en el DNI (opcional - si falla, continuar sin nombre)
-    let extractedName = null;
-    let ocrConfidence = 0;
-
-    try {
-      console.log('[submitQRVerification] Starting OCR processing...');
-      const ocrResult = await Tesseract.recognize(dniFrontBuffer, 'spa', {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            console.log(`[OCR] Progress: ${Math.round(m.progress * 100)}%`);
-          }
-        }
-      });
-
-      const text = ocrResult.data.text;
-      ocrConfidence = Math.round(ocrResult.data.confidence);
-      console.log('[submitQRVerification] OCR confidence:', ocrConfidence);
-
-      // Intentar extraer el nombre del texto
-      const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-      const namePattern = /^[A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ\s]{2,}$/;
-      const possibleNames = lines.filter(line => namePattern.test(line));
-
-      if (possibleNames.length > 0) {
-        extractedName = possibleNames.slice(0, 2).join(' ');
-        console.log('[submitQRVerification] Extracted name:', extractedName);
-      }
-    } catch (ocrError) {
-      console.error('[submitQRVerification] OCR failed:', ocrError);
-      // Continuar sin nombre extraído
-    }
+    // OCR eliminado para acelerar el proceso
+    // El nombre no se usa para ninguna validación
+    const extractedName = null;
+    const ocrConfidence = 0;
 
     // Determinar estado automático
     let autoStatus = 'pending';
