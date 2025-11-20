@@ -35,6 +35,8 @@ export default function MobileVerificationPage() {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const imageCaptureRef = useRef<ImageCapture | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
 
   // Face API
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -55,7 +57,7 @@ export default function MobileVerificationPage() {
       stopCamera();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, facingMode]);
+  }, [step, facingMode, selectedCameraIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const validateSession = async () => {
     try {
@@ -109,29 +111,54 @@ export default function MobileVerificationPage() {
       stopCamera();
       setCameraReady(false);
 
-      const constraints = {
-        video: {
-          facingMode: facingMode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        },
-        audio: false
-      };
+      // Enumerar cámaras disponibles
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(d => d.kind === 'videoinput');
+
+      if (facingMode === 'environment' && cameras.length > 0) {
+        setAvailableCameras(cameras);
+        console.log('[Camera] Cámaras disponibles:', cameras.map(c => c.label));
+      }
+
+      let constraints;
+
+      // Para cámara trasera, usar deviceId específico si hay múltiples cámaras
+      if (facingMode === 'environment' && cameras.length > 1) {
+        const selectedCamera = cameras[selectedCameraIndex];
+        console.log(`[Camera] Usando cámara ${selectedCameraIndex + 1}/${cameras.length}:`, selectedCamera.label);
+
+        constraints = {
+          video: {
+            deviceId: { exact: selectedCamera.deviceId },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        };
+      } else {
+        constraints = {
+          video: {
+            facingMode: facingMode,
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        };
+      }
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
 
       const track = mediaStream.getVideoTracks()[0];
+      const capabilities = track.getCapabilities() as MediaTrackCapabilities & {
+        focusMode?: string[];
+      };
+
+      console.log('[Camera] Capabilities:', capabilities);
 
       // Aplicar constraints de enfoque para cámara trasera
       if (facingMode === 'environment') {
         try {
-          const capabilities = track.getCapabilities() as MediaTrackCapabilities & {
-            focusMode?: string[];
-          };
-
-          console.log('[Camera] Capabilities:', capabilities);
-
           if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
             await track.applyConstraints({
               advanced: [{
@@ -140,6 +167,8 @@ export default function MobileVerificationPage() {
               } as any] // eslint-disable-line @typescript-eslint/no-explicit-any
             });
             console.log('[Camera] ✓ Autofocus continuo activado');
+          } else {
+            console.warn('[Camera] ⚠ Esta cámara NO tiene autofocus continuo!');
           }
         } catch (err) {
           console.log('[Camera] No se pudo configurar autofocus:', err);
@@ -159,21 +188,28 @@ export default function MobileVerificationPage() {
             await videoRef.current?.play();
             console.log('[Camera] ✓ Video iniciado');
 
-            // Delay de 2 segundos para que el autofocus se estabilice
             setTimeout(() => {
               setCameraReady(true);
               console.log('[Camera] ✓ Lista para capturar');
             }, 2000);
           } catch (playError) {
             console.error('[Camera] Error:', playError);
-            setCameraReady(true); // Habilitar de todas formas
+            setCameraReady(true);
           }
         };
       }
     } catch (error) {
       console.error('[Camera] Error:', error);
       setError('No se pudo acceder a la cámara');
-      setCameraReady(true); // Habilitar de todas formas para que no quede bloqueado
+      setCameraReady(true);
+    }
+  };
+
+  const switchToNextCamera = () => {
+    if (availableCameras.length > 1) {
+      const nextIndex = (selectedCameraIndex + 1) % availableCameras.length;
+      setSelectedCameraIndex(nextIndex);
+      console.log('[Camera] Cambiando a cámara:', nextIndex + 1);
     }
   };
 
@@ -499,15 +535,26 @@ export default function MobileVerificationPage() {
         />
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* Botón para cambiar cámara */}
+        {/* Botones de cámara */}
         {(step === 'dni_front' || step === 'dni_back') && (
-          <Button
-            onClick={toggleCamera}
-            className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 z-20"
-            size="sm"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
+          <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+            <Button
+              onClick={toggleCamera}
+              className="bg-black/50 hover:bg-black/70"
+              size="sm"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            {availableCameras.length > 1 && (
+              <Button
+                onClick={switchToNextCamera}
+                className="bg-orange-500/80 hover:bg-orange-600/80 text-xs px-2"
+                size="sm"
+              >
+                📷 {selectedCameraIndex + 1}/{availableCameras.length}
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
