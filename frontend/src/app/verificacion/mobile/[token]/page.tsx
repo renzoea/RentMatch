@@ -35,6 +35,9 @@ export default function MobileVerificationPage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
+  // Tap to focus
+  const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
+
   // Face API
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
@@ -108,8 +111,13 @@ export default function MobileVerificationPage() {
       const constraints = {
         video: {
           facingMode: facingMode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          // Agregar constraints de enfoque para cámara trasera
+          ...(facingMode === 'environment' && {
+            focusMode: 'continuous',
+            focusDistance: 0.2 // Enfoque a corta distancia
+          })
         },
         audio: false
       };
@@ -134,6 +142,64 @@ export default function MobileVerificationPage() {
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+    }
+  };
+
+  const handleTapToFocus = async (event: React.TouchEvent<HTMLVideoElement>) => {
+    if (!stream) return;
+
+    const video = event.currentTarget;
+    const rect = video.getBoundingClientRect();
+    const touch = event.touches[0];
+
+    // Calcular coordenadas absolutas para el indicador visual
+    const absoluteX = touch.clientX - rect.left;
+    const absoluteY = touch.clientY - rect.top;
+
+    // Mostrar indicador visual
+    setFocusPoint({ x: absoluteX, y: absoluteY });
+
+    // Ocultar indicador después de 1 segundo
+    setTimeout(() => setFocusPoint(null), 1000);
+
+    // Calcular coordenadas relativas (0 a 1)
+    const x = absoluteX / rect.width;
+    const y = absoluteY / rect.height;
+
+    console.log('[Tap-to-Focus] Touch at:', { x, y });
+
+    try {
+      const track = stream.getVideoTracks()[0];
+      const capabilities = track.getCapabilities();
+
+      // Verificar si la cámara soporta enfoque manual
+      if ('focusMode' in capabilities) {
+        // Intentar aplicar constraints de enfoque
+        await track.applyConstraints({
+          advanced: [{
+            focusMode: 'manual',
+            focusDistance: Math.max(0.1, Math.min(0.9, y)) // Usar Y para distancia
+          } as any]
+        });
+
+        console.log('[Tap-to-Focus] Manual focus applied');
+
+        // Volver a modo continuo después de 2 segundos
+        setTimeout(async () => {
+          try {
+            await track.applyConstraints({
+              advanced: [{ focusMode: 'continuous' } as any]
+            });
+            console.log('[Tap-to-Focus] Returned to continuous focus');
+          } catch (err) {
+            console.log('[Tap-to-Focus] Could not return to continuous:', err);
+          }
+        }, 2000);
+      } else {
+        console.log('[Tap-to-Focus] Manual focus not supported');
+      }
+    } catch (error) {
+      console.error('[Tap-to-Focus] Error:', error);
     }
   };
 
@@ -443,9 +509,25 @@ export default function MobileVerificationPage() {
               autoPlay
               playsInline
               muted
+              onTouchStart={handleTapToFocus}
               className="w-full h-auto rounded-lg"
             />
             <canvas ref={canvasRef} className="hidden" />
+
+            {/* Indicador visual de tap-to-focus */}
+            {focusPoint && (
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  left: focusPoint.x,
+                  top: focusPoint.y,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                <div className="w-16 h-16 border-2 border-orange-500 rounded-full animate-ping" />
+                <div className="absolute inset-0 w-16 h-16 border-2 border-orange-500 rounded-full" />
+              </div>
+            )}
 
             {/* Overlay guía para DNI */}
             {(step === 'dni_front' || step === 'dni_back') && (
@@ -454,7 +536,7 @@ export default function MobileVerificationPage() {
                 <div className="absolute inset-0 bg-black/40" />
 
                 {/* Rectángulo guía centrado (aspecto ratio DNI argentino: 85.6mm x 53.98mm ≈ 1.59:1) */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] aspect-[1.59/1] border-4 border-white rounded-lg shadow-lg">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[1.59/1] border-4 border-white rounded-lg shadow-lg">
                   {/* Esquinas decorativas */}
                   <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-lg" />
                   <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-lg" />
@@ -463,9 +545,12 @@ export default function MobileVerificationPage() {
                 </div>
 
                 {/* Texto de ayuda */}
-                <div className="absolute bottom-4 left-0 right-0 text-center">
-                  <p className="text-white text-sm font-semibold bg-black/60 px-4 py-2 rounded-full mx-auto inline-block">
-                    Alinea tu DNI dentro del marco
+                <div className="absolute bottom-4 left-0 right-0 text-center px-4">
+                  <p className="text-white text-xs bg-black/70 px-3 py-1 rounded-full mx-auto inline-block">
+                    👆 Toca el DNI para enfocar
+                  </p>
+                  <p className="text-white text-xs bg-black/60 px-3 py-1 rounded-full mx-auto inline-block mt-1">
+                    Alinea dentro del marco blanco
                   </p>
                 </div>
               </div>
