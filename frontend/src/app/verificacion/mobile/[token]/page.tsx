@@ -35,9 +35,6 @@ export default function MobileVerificationPage() {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const imageCaptureRef = useRef<ImageCapture | null>(null);
 
-  // Tap to focus
-  const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
-
   // Face API
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
@@ -170,63 +167,6 @@ export default function MobileVerificationPage() {
     }
   };
 
-  const handleTapToFocus = async (event: React.TouchEvent<HTMLVideoElement>) => {
-    if (!stream) return;
-
-    const video = event.currentTarget;
-    const rect = video.getBoundingClientRect();
-    const touch = event.touches[0];
-
-    // Calcular coordenadas absolutas para el indicador visual
-    const absoluteX = touch.clientX - rect.left;
-    const absoluteY = touch.clientY - rect.top;
-
-    // Mostrar indicador visual
-    setFocusPoint({ x: absoluteX, y: absoluteY });
-
-    // Ocultar indicador después de 1 segundo
-    setTimeout(() => setFocusPoint(null), 1000);
-
-    // Calcular coordenadas relativas (0 a 1)
-    const x = absoluteX / rect.width;
-    const y = absoluteY / rect.height;
-
-    console.log('[Tap-to-Focus] Touch at:', { x, y });
-
-    try {
-      const track = stream.getVideoTracks()[0];
-      const capabilities = track.getCapabilities();
-
-      // Verificar si la cámara soporta enfoque manual
-      if ('focusMode' in capabilities) {
-        // Intentar aplicar constraints de enfoque
-        await track.applyConstraints({
-          advanced: [{
-            focusMode: 'manual',
-            focusDistance: Math.max(0.1, Math.min(0.9, y)) // Usar Y para distancia
-          } as any] // eslint-disable-line @typescript-eslint/no-explicit-any
-        });
-
-        console.log('[Tap-to-Focus] Manual focus applied');
-
-        // Volver a modo continuo después de 2 segundos
-        setTimeout(async () => {
-          try {
-            await track.applyConstraints({
-              advanced: [{ focusMode: 'continuous' } as any] // eslint-disable-line @typescript-eslint/no-explicit-any
-            });
-            console.log('[Tap-to-Focus] Returned to continuous focus');
-          } catch (err) {
-            console.log('[Tap-to-Focus] Could not return to continuous:', err);
-          }
-        }, 2000);
-      } else {
-        console.log('[Tap-to-Focus] Manual focus not supported');
-      }
-    } catch (error) {
-      console.error('[Tap-to-Focus] Error:', error);
-    }
-  };
 
   const capturePhoto = async (): Promise<string | null> => {
     try {
@@ -523,8 +463,8 @@ export default function MobileVerificationPage() {
 
       {/* Instrucciones mínimas */}
       <div className="px-4 py-1.5 bg-white/90 backdrop-blur-sm text-center flex-shrink-0">
-        {step === 'dni_front' && <p className="text-xs text-gray-700">📄 DNI frente - Toca para enfocar</p>}
-        {step === 'dni_back' && <p className="text-xs text-gray-700">📄 DNI dorso</p>}
+        {step === 'dni_front' && <p className="text-xs text-gray-700">📄 Captura el frente de tu DNI</p>}
+        {step === 'dni_back' && <p className="text-xs text-gray-700">📄 Captura el dorso de tu DNI</p>}
         {step === 'selfie' && <p className="text-xs text-gray-700">🤳 Centra tu rostro</p>}
       </div>
 
@@ -535,58 +475,9 @@ export default function MobileVerificationPage() {
           autoPlay
           playsInline
           muted
-          onTouchStart={handleTapToFocus}
           className="absolute inset-0 w-full h-full object-cover"
         />
         <canvas ref={canvasRef} className="hidden" />
-
-        {/* Indicador visual de tap-to-focus */}
-        {focusPoint && (
-          <div
-            className="absolute pointer-events-none z-20"
-            style={{
-              left: focusPoint.x,
-              top: focusPoint.y,
-              transform: 'translate(-50%, -50%)'
-            }}
-          >
-            <div className="w-16 h-16 border-2 border-orange-500 rounded-full animate-ping" />
-            <div className="absolute inset-0 w-16 h-16 border-2 border-orange-500 rounded-full" />
-          </div>
-        )}
-
-        {/* Overlay guía para DNI */}
-        {(step === 'dni_front' || step === 'dni_back') && (
-          <div className="absolute inset-0 pointer-events-none z-10">
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[1.59/1] border-4 border-white rounded-lg shadow-lg">
-              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-lg" />
-              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-lg" />
-              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-orange-500 rounded-bl-lg" />
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-orange-500 rounded-br-lg" />
-            </div>
-            <div className="absolute bottom-20 left-0 right-0 text-center px-4">
-              <p className="text-white text-xs bg-black/70 px-3 py-1 rounded-full mx-auto inline-block">
-                👆 Toca el DNI para enfocar
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Overlay guía para Selfie */}
-        {step === 'selfie' && (
-          <div className="absolute inset-0 pointer-events-none z-10">
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] aspect-[3/4]">
-              <div className="w-full h-full border-4 border-white rounded-full shadow-lg relative">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-                <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-                <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-orange-500 rounded-full" />
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Botón para cambiar cámara */}
         {(step === 'dni_front' || step === 'dni_back') && (
