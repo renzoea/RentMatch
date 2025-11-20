@@ -507,9 +507,23 @@ export default function MiCuentaInquilinoPage() {
                   <h2 className="text-2xl font-bold text-gray-900">Verificación de Identidad</h2>
                 </div>
 
-                <p className="text-gray-600 mb-6">
-                  Verifica tu identidad para ganar confianza en la plataforma
-                </p>
+                {verificationStatus?.verification?.status === 'verified' ? (
+                  <p className="text-gray-600 mb-6">
+                    Tu identidad ha sido verificada exitosamente
+                  </p>
+                ) : verificationStatus?.verification?.status === 'pending' ? (
+                  <p className="text-gray-600 mb-6">
+                    Tu verificación está siendo revisada por nuestro equipo
+                  </p>
+                ) : verificationStatus?.verification?.status === 'rejected' ? (
+                  <p className="text-gray-600 mb-6">
+                    Tu verificación fue rechazada. Por favor, intenta nuevamente
+                  </p>
+                ) : (
+                  <p className="text-gray-600 mb-6">
+                    Verifica tu identidad para ganar confianza en la plataforma
+                  </p>
+                )}
 
                 {/* Status Display */}
                 {verificationStatus && (
