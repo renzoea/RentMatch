@@ -499,47 +499,35 @@ export default function MobileVerificationPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
-      {/* Header fijo */}
-      <div className="bg-white shadow-sm">
-        <div className="px-4 py-3">
-          <h1 className="text-lg font-bold text-center">Verificación de Identidad</h1>
-          <div className="flex justify-center gap-2 mt-2">
-            <div className={`h-2 w-16 rounded-full ${step !== 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
-            <div className={`h-2 w-16 rounded-full ${step === 'dni_back' ? 'bg-orange-500' : 'bg-gray-300'}`} />
-            <div className={`h-2 w-16 rounded-full ${step === 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+    <div className="fixed inset-0 flex flex-col bg-black">
+      {/* Header compacto */}
+      <div className="bg-white/95 backdrop-blur-sm flex-shrink-0">
+        <div className="px-4 py-2">
+          <h1 className="text-base font-bold text-center">Verificación</h1>
+          <div className="flex justify-center gap-2 mt-1">
+            <div className={`h-1.5 w-12 rounded-full ${step !== 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+            <div className={`h-1.5 w-12 rounded-full ${step === 'dni_back' ? 'bg-orange-500' : 'bg-gray-300'}`} />
+            <div className={`h-1.5 w-12 rounded-full ${step === 'selfie' ? 'bg-orange-500' : 'bg-gray-300'}`} />
           </div>
         </div>
       </div>
 
-      {/* Instrucciones compactas */}
-      <div className="px-4 py-2 bg-white border-b">
-        {step === 'dni_front' && (
-          <p className="text-sm text-gray-700 text-center">
-            📄 Coloca tu DNI en el marco y toca para enfocar
-          </p>
-        )}
-        {step === 'dni_back' && (
-          <p className="text-sm text-gray-700 text-center">
-            📄 Ahora el dorso del DNI
-          </p>
-        )}
-        {step === 'selfie' && (
-          <p className="text-sm text-gray-700 text-center">
-            🤳 Centra tu rostro en el óvalo
-          </p>
-        )}
+      {/* Instrucciones mínimas */}
+      <div className="px-4 py-1.5 bg-white/90 backdrop-blur-sm text-center flex-shrink-0">
+        {step === 'dni_front' && <p className="text-xs text-gray-700">📄 DNI frente - Toca para enfocar</p>}
+        {step === 'dni_back' && <p className="text-xs text-gray-700">📄 DNI dorso</p>}
+        {step === 'selfie' && <p className="text-xs text-gray-700">🤳 Centra tu rostro</p>}
       </div>
 
-      {/* Vista previa de cámara - ocupa todo el espacio disponible */}
-      <div className="flex-1 relative overflow-hidden">
+      {/* Vista previa de cámara - todo el espacio restante */}
+      <div className="flex-1 relative">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
           onTouchStart={handleTapToFocus}
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
         />
         <canvas ref={canvasRef} className="hidden" />
 
@@ -603,14 +591,14 @@ export default function MobileVerificationPage() {
         )}
       </div>
 
-      {/* Botón de captura fijo en la parte inferior */}
-      <div className="p-4 bg-white border-t">
+      {/* Botón de captura fijo - sin padding extra */}
+      <div className="p-3 bg-gradient-to-t from-black/80 to-transparent flex-shrink-0">
         {step === 'dni_front' && (
           <Button
             onClick={handleCaptureDNIFront}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-5 text-lg"
+            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl"
           >
-            <Camera className="w-6 h-6 mr-2" />
+            <Camera className="w-5 h-5 mr-2" />
             Capturar DNI Frente
           </Button>
         )}
@@ -618,9 +606,9 @@ export default function MobileVerificationPage() {
         {step === 'dni_back' && (
           <Button
             onClick={handleCaptureDNIBack}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-5 text-lg"
+            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl"
           >
-            <Camera className="w-6 h-6 mr-2" />
+            <Camera className="w-5 h-5 mr-2" />
             Capturar DNI Dorso
           </Button>
         )}
@@ -628,9 +616,9 @@ export default function MobileVerificationPage() {
         {step === 'selfie' && (
           <Button
             onClick={handleCaptureSelfie}
-            className="w-full bg-orange-500 hover:bg-orange-600 py-5 text-lg"
+            className="w-full bg-orange-500 hover:bg-orange-600 py-4 text-base font-semibold shadow-xl"
           >
-            <Camera className="w-6 h-6 mr-2" />
+            <Camera className="w-5 h-5 mr-2" />
             Capturar Selfie
           </Button>
         )}
