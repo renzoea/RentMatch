@@ -227,10 +227,22 @@ export default function MobileVerificationPage() {
       setCurrentStep('Extrayendo información del DNI...');
       const ocrResult = await extractTextFromDNI(dniFrontElement);
 
+      // Validar que se extrajo un DNI
+      const finalDNI = ocrResult.extractedDNI || dniNumber;
+      console.log('[Verification] Final DNI to send:', finalDNI);
+      console.log('[Verification] OCR extracted DNI:', ocrResult.extractedDNI);
+      console.log('[Verification] State DNI:', dniNumber);
+
+      if (!finalDNI || finalDNI === 'NO_DETECTADO') {
+        setError('No se pudo extraer el número de DNI de la imagen. Por favor intenta de nuevo con mejor iluminación.');
+        setStep('error');
+        return;
+      }
+
       // Enviar al backend
       setCurrentStep('Enviando verificación...');
       await axios.post(`${API_URL}/api/verification/qr/submit/${token}`, {
-        dni_number: ocrResult.extractedDNI || dniNumber || 'NO_DETECTADO',
+        dni_number: finalDNI,
         dni_front_base64: dniFront,
         dni_back_base64: dniBack,
         selfie_base64: selfie,
@@ -301,14 +313,36 @@ export default function MobileVerificationPage() {
         console.log('Extracted name:', extractedName);
       }
 
-      // Intentar extraer el número de DNI (8 dígitos)
-      const dniPattern = /\b\d{7,8}\b/;
-      const dniMatch = text.match(dniPattern);
+      // Intentar extraer el número de DNI (7 u 8 dígitos)
+      // Primero limpiar el texto de caracteres especiales que OCR puede confundir
+      const cleanText = text.replace(/[^0-9\s.-]/g, ' ');
+
+      // Buscar diferentes patrones de DNI
+      const dniPatterns = [
+        /\b(\d{2}\.?\d{3}\.?\d{3})\b/,  // Formato: 12.345.678
+        /\b(\d{1}\.?\d{3}\.?\d{3})\b/,  // Formato: 1.234.567
+        /\b(\d{7,8})\b/                  // Formato: 12345678 o 1234567
+      ];
+
       let extractedDNI = null;
-      if (dniMatch) {
-        extractedDNI = dniMatch[0];
-        console.log('Extracted DNI:', extractedDNI);
-        setDniNumber(extractedDNI); // Actualizar el estado con el DNI extraído
+      for (const pattern of dniPatterns) {
+        const match = cleanText.match(pattern);
+        if (match) {
+          // Limpiar el DNI de puntos y espacios
+          extractedDNI = match[1].replace(/[.\s-]/g, '');
+
+          // Validar que tenga 7 u 8 dígitos
+          if (/^\d{7,8}$/.test(extractedDNI)) {
+            const dniNumber = parseInt(extractedDNI, 10);
+            // Validar que esté en un rango razonable
+            if (dniNumber >= 1000000 && dniNumber <= 99999999) {
+              console.log('Extracted DNI:', extractedDNI);
+              setDniNumber(extractedDNI);
+              break;
+            }
+          }
+          extractedDNI = null; // Reset si no pasó validación
+        }
       }
 
       return {
