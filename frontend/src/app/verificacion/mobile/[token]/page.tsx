@@ -143,7 +143,16 @@ export default function MobileVerificationPage() {
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        await videoRef.current.play();
+
+        // Esperar a que el video esté listo antes de reproducir
+        videoRef.current.onloadedmetadata = async () => {
+          try {
+            await videoRef.current?.play();
+            console.log('[Camera] Video playing successfully');
+          } catch (playError) {
+            console.error('[Camera] Error playing video:', playError);
+          }
+        };
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
