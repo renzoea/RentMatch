@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Filter, Home, MapPin, DollarSign, BadgeCheck, Loader2,
   Eye, Mail, MessageCircle, X, Check, Bed, Bath,
@@ -1280,9 +1281,8 @@ function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
           <div className="space-y-3">
             <button
               onClick={() => {
-                // Aquí irá la navegación a la página de verificación
-                console.log('Redirigir a verificación');
                 onClose();
+                window.location.href = '/home/propietario/cuenta';
               }}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-semibold"
             >
