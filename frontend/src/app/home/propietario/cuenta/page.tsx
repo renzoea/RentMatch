@@ -36,7 +36,15 @@ export default function MiCuentaPropietarioPage() {
   const [deleting, setDeleting] = useState(false);
 
   // Verification states
-  const [verificationStatus, setVerificationStatus] = useState<{kyc_status?: string; notes?: string} | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<{
+    has_verification?: boolean;
+    verification?: {
+      status?: string;
+      notes?: string;
+      submitted_at?: string;
+      reviewed_at?: string;
+    }
+  } | null>(null);
   const [loadingVerification, setLoadingVerification] = useState(false);
   const [qrDataURL, setQrDataURL] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -434,49 +442,63 @@ export default function MiCuentaPropietarioPage() {
                   <h2 className="text-2xl font-bold text-gray-900">Verificación de Identidad</h2>
                 </div>
 
-                <p className="text-gray-600 mb-6">
-                  Verifica tu identidad para ganar confianza en la plataforma
-                </p>
+                {verificationStatus?.verification?.status === 'verified' ? (
+                  <p className="text-gray-600 mb-6">
+                    Tu identidad ha sido verificada exitosamente
+                  </p>
+                ) : verificationStatus?.verification?.status === 'pending' ? (
+                  <p className="text-gray-600 mb-6">
+                    Tu verificación está siendo revisada por nuestro equipo
+                  </p>
+                ) : verificationStatus?.verification?.status === 'rejected' ? (
+                  <p className="text-gray-600 mb-6">
+                    Tu verificación fue rechazada. Por favor, intenta nuevamente
+                  </p>
+                ) : (
+                  <p className="text-gray-600 mb-6">
+                    Verifica tu identidad para ganar confianza en la plataforma
+                  </p>
+                )}
 
                 {/* Status Display */}
                 {verificationStatus && (
                   <div className={`mb-6 p-4 rounded-lg border ${
-                    verificationStatus.kyc_status === 'approved'
+                    verificationStatus.verification?.status === 'verified'
                       ? 'bg-green-50 border-green-200'
-                      : verificationStatus.kyc_status === 'pending'
+                      : verificationStatus.verification?.status === 'pending'
                       ? 'bg-yellow-50 border-yellow-200'
-                      : verificationStatus.kyc_status === 'rejected'
+                      : verificationStatus.verification?.status === 'rejected'
                       ? 'bg-red-50 border-red-200'
                       : 'bg-gray-50 border-gray-200'
                   }`}>
                     <div className="flex items-center gap-2">
-                      {verificationStatus.kyc_status === 'approved' && (
+                      {verificationStatus.verification?.status === 'verified' && (
                         <>
                           <CheckCircle className="w-5 h-5 text-green-600" />
                           <span className="font-semibold text-green-800">Verificación aprobada</span>
                         </>
                       )}
-                      {verificationStatus.kyc_status === 'pending' && (
+                      {verificationStatus.verification?.status === 'pending' && (
                         <>
                           <Loader2 className="w-5 h-5 text-yellow-600 animate-spin" />
                           <span className="font-semibold text-yellow-800">Verificación en proceso</span>
                         </>
                       )}
-                      {verificationStatus.kyc_status === 'rejected' && (
+                      {verificationStatus.verification?.status === 'rejected' && (
                         <>
                           <XCircle className="w-5 h-5 text-red-600" />
                           <span className="font-semibold text-red-800">Verificación rechazada</span>
                         </>
                       )}
-                      {!verificationStatus.kyc_status && (
+                      {!verificationStatus.verification?.status && (
                         <>
                           <AlertTriangle className="w-5 h-5 text-gray-600" />
                           <span className="font-semibold text-gray-800">Sin verificar</span>
                         </>
                       )}
                     </div>
-                    {verificationStatus.notes && (
-                      <p className="mt-2 text-sm text-gray-700">{verificationStatus.notes}</p>
+                    {verificationStatus.verification?.notes && (
+                      <p className="mt-2 text-sm text-gray-700">{verificationStatus.verification.notes}</p>
                     )}
                   </div>
                 )}
@@ -505,16 +527,46 @@ export default function MiCuentaPropietarioPage() {
                 )}
 
                 {/* Verification Complete */}
-                {verificationComplete && verificationResult && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                {verificationComplete && verificationResult && verificationStatus?.verification?.status !== 'verified' && (
+                  <div className={`mb-6 p-4 rounded-lg border ${
+                    verificationResult.status === 'verified'
+                      ? 'bg-green-50 border-green-200'
+                      : verificationResult.status === 'rejected'
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-yellow-50 border-yellow-200'
+                  }`}>
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <span className="font-semibold text-green-800">
-                        ¡Verificación completada exitosamente!
-                      </span>
+                      {verificationResult.status === 'verified' && (
+                        <>
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <span className="font-semibold text-green-800">
+                            ¡Verificación aprobada!
+                          </span>
+                        </>
+                      )}
+                      {verificationResult.status === 'rejected' && (
+                        <>
+                          <XCircle className="w-5 h-5 text-red-600" />
+                          <span className="font-semibold text-red-800">
+                            Verificación rechazada
+                          </span>
+                        </>
+                      )}
+                      {verificationResult.status === 'pending' && (
+                        <>
+                          <Loader2 className="w-5 h-5 text-yellow-600 animate-spin" />
+                          <span className="font-semibold text-yellow-800">
+                            Verificación en proceso
+                          </span>
+                        </>
+                      )}
                     </div>
                     <p className="mt-2 text-sm text-gray-700">
-                      Tu verificación ha sido enviada y está siendo procesada.
+                      {verificationResult.notes ||
+                        (verificationResult.status === 'verified' ? 'Tu identidad ha sido verificada exitosamente.' :
+                         verificationResult.status === 'rejected' ? 'No pudimos verificar tu identidad automáticamente. Por favor, intenta nuevamente.' :
+                         'Tu verificación está siendo revisada por nuestro equipo.')
+                      }
                     </p>
                     <Button
                       className="mt-4 bg-orange-500 hover:bg-orange-600 text-white"
@@ -529,7 +581,7 @@ export default function MiCuentaPropietarioPage() {
                 )}
 
                 {/* Instructions */}
-                {!qrDataURL && !verificationComplete && (
+                {!qrDataURL && !verificationComplete && verificationStatus?.verification?.status !== 'verified' && (
                   <div className="space-y-6">
                     <Card className="bg-orange-50 border-orange-200">
                       <CardContent className="p-4">
