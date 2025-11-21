@@ -578,6 +578,8 @@ exports.submitQRVerification = async (req, res) => {
 
       if (uploadBackError) {
         console.error('[submitQRVerification] Error uploading DNI back:', uploadBackError);
+        console.error('[submitQRVerification] DNI back error details:', JSON.stringify(uploadBackError, null, 2));
+        console.error('[submitQRVerification] DNI back buffer size:', dniBackBuffer.length, 'bytes');
         dniBackPath = null;
       }
     }
