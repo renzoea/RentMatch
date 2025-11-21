@@ -103,7 +103,7 @@ export default function PropietarioHomePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [detailProfile, setDetailProfile] = useState<TenantProfile | null>(null);
   const [contactModal, setContactModal] = useState<{ type: 'whatsapp' | 'email'; profile: TenantProfile } | null>(null);
-  const [landlordStatus, setLandlordStatus] = useState<string | null>(null);
+  const [landlordVerificationStatus, setLandlordVerificationStatus] = useState<{status?: string} | null>(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const cities = useMemo(() => Object.keys(ARGENTINA_LOCATIONS).sort(), []);
@@ -143,21 +143,26 @@ export default function PropietarioHomePage() {
   }, [search]);
 
   useEffect(() => {
-    // Obtener el status del propietario desde localStorage
-    const userDataString = localStorage.getItem('user');
-    if (userDataString) {
+    // Cargar el estado de verificación del propietario
+    const loadLandlordVerification = async () => {
       try {
-        const userData = JSON.parse(userDataString);
-        setLandlordStatus(userData?.status || null);
+        const response = await api.get('/api/verification/status');
+        if (response.data.has_verification && response.data.verification) {
+          setLandlordVerificationStatus({ status: response.data.verification.status });
+        } else {
+          setLandlordVerificationStatus({ status: null });
+        }
       } catch (error) {
-        console.error('Error al parsear datos del usuario:', error);
-        setLandlordStatus(null);
+        console.error('Error loading landlord verification:', error);
+        setLandlordVerificationStatus({ status: null });
       }
-    }
+    };
+
+    loadLandlordVerification();
   }, []);
 
   const handleContactClick = (type: 'whatsapp' | 'email', profile: TenantProfile) => {
-    if (landlordStatus !== 'verified') {
+    if (landlordVerificationStatus?.status !== 'verified') {
       setShowVerificationModal(true);
       return;
     }
