@@ -333,14 +333,12 @@ export default function MobileVerificationPage() {
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-red-700 mb-2">Error</h2>
+            <h2 className="text-2xl font-bold text-red-700 mb-2">Error en la Verificación</h2>
             <p className="text-gray-600 mb-6">{error}</p>
-            {dniFrontImg && (
-              <Button onClick={handleRetake} className="bg-orange-500 hover:bg-orange-600">
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Intentar de Nuevo
-              </Button>
-            )}
+            <Button onClick={handleRetake} className="w-full bg-orange-500 hover:bg-orange-600">
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Volver a Empezar
+            </Button>
           </CardContent>
         </Card>
       </div>
