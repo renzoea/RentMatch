@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Filter, Home, MapPin, DollarSign, BadgeCheck, Loader2,
   Eye, Mail, MessageCircle, X, Check, Bed, Bath,
@@ -103,7 +102,7 @@ export default function PropietarioHomePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [detailProfile, setDetailProfile] = useState<TenantProfile | null>(null);
   const [contactModal, setContactModal] = useState<{ type: 'whatsapp' | 'email'; profile: TenantProfile } | null>(null);
-  const [landlordVerificationStatus, setLandlordVerificationStatus] = useState<{status?: string} | null>(null);
+  const [landlordVerificationStatus, setLandlordVerificationStatus] = useState<{status?: string | null} | null>(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const cities = useMemo(() => Object.keys(ARGENTINA_LOCATIONS).sort(), []);
@@ -158,7 +157,9 @@ export default function PropietarioHomePage() {
       }
     };
 
-    loadLandlordVerification();
+    if (typeof window !== 'undefined') {
+      loadLandlordVerification();
+    }
   }, []);
 
   const handleContactClick = (type: 'whatsapp' | 'email', profile: TenantProfile) => {
