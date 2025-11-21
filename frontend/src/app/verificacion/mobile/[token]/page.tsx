@@ -206,6 +206,11 @@ export default function MobileVerificationPage() {
       const dniDetection = await detectFaceWithFallback(dniFrontElement);
 
       if (!dniDetection) {
+        // Limpiar todas las fotos para empezar de nuevo
+        setDniFrontImg('');
+        setDniBackImg('');
+        setSelfieImg('');
+        setManualDniInput('');
         setError('No se pudo detectar el rostro en la foto del DNI. Intenta con mejor iluminación.');
         setStep('error');
         return;
@@ -215,6 +220,11 @@ export default function MobileVerificationPage() {
       const selfieDetection = await detectFaceWithFallback(selfieElement);
 
       if (!selfieDetection) {
+        // Limpiar todas las fotos para empezar de nuevo
+        setDniFrontImg('');
+        setDniBackImg('');
+        setSelfieImg('');
+        setManualDniInput('');
         setError('No se pudo detectar tu rostro en la selfie. Intenta de nuevo.');
         setStep('error');
         return;
@@ -258,6 +268,11 @@ export default function MobileVerificationPage() {
       const errorMessage = err.response?.data?.error || err.message || 'Error al procesar la verificación';
       console.error('Final error message:', errorMessage);
 
+      // Limpiar todas las fotos para empezar de nuevo
+      setDniFrontImg('');
+      setDniBackImg('');
+      setSelfieImg('');
+      setManualDniInput('');
       setError(errorMessage);
       setStep('error');
     }
