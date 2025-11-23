@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
-export default function ConfirmPage() {
+function ConfirmContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
@@ -84,5 +84,18 @@ export default function ConfirmPage() {
       <h1 className="text-2xl font-bold text-green-600">✅ Cuenta activada correctamente</h1>
       <p className="mt-2 text-gray-600">En breve serás redirigido al inicio de sesión...</p>
     </div>
+  )
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <p className="mt-4 text-gray-600">Cargando...</p>
+      </div>
+    }>
+      <ConfirmContent />
+    </Suspense>
   )
 }
