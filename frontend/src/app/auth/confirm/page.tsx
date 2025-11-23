@@ -10,11 +10,6 @@ export default function ConfirmPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
   useEffect(() => {
     const confirmEmail = async () => {
       try {
@@ -26,6 +21,12 @@ export default function ConfirmPage() {
           setErrorMessage('Link de confirmación inválido')
           return
         }
+
+        // Crear cliente de Supabase dentro del efecto
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
 
         // Verificar el token con Supabase
         const { error } = await supabase.auth.verifyOtp({
@@ -52,7 +53,7 @@ export default function ConfirmPage() {
     }
 
     confirmEmail()
-  }, [router, searchParams, supabase])
+  }, [router, searchParams])
 
   if (status === 'loading') {
     return (
