@@ -9,6 +9,16 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 // Usa la SERVICE_ROLE_KEY para operaciones del backend
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// El parámetro auth.autoRefreshToken: false y persistSession: false
+// aseguran que no se intente usar sesiones de usuario
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  },
+  db: {
+    schema: 'public'
+  }
+});
 
 module.exports = supabase;
