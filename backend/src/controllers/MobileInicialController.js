@@ -64,6 +64,7 @@ const IncialState = async (req, res) => {
         tenant_id: userId,
         archivo_url: archivoUrl,
         created_at: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
+        description
       })
       .select()
       .single();

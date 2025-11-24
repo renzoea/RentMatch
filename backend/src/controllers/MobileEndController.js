@@ -70,12 +70,13 @@ const EndState = async (req, res) => {
 
     // Insertar en la tabla inicial_state_report
     const { data: report, error: reportError } = await supabase
-      .from('inicial_state_report')
+      .from('end_state_report')
       .insert({
         contract_id,
         tenant_id: userId,
         archivo_url: archivoUrl,
         created_at: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
+        description
       })
       .select()
       .single();
