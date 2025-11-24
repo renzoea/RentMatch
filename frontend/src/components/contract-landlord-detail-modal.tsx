@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import api from '@/lib/api'
 import PDFViewerModal from './pdf-viewer-modal'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type ContractDetail = {
   id: string
@@ -206,9 +207,44 @@ export default function ContractLandlordDetailModal({ open, id, onClose }: Props
 
         <div className="p-6 space-y-5 overflow-y-auto">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
-              <p className="mt-4 text-gray-500 text-sm">Cargando información...</p>
+            <div className="space-y-5">
+              {/* Estado skeleton */}
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-32 rounded-full" />
+              </div>
+
+              {/* Inquilino skeleton */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-3">
+                <Skeleton className="h-5 w-28" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+
+              {/* Propiedad skeleton */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-3">
+                <Skeleton className="h-5 w-32" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+
+              {/* Contrato skeleton */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-3">
+                <Skeleton className="h-5 w-28" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
             </div>
           )}
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card-standard';
 import { Input } from '@/components/ui/input';
 import { Camera, CheckCircle, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 import axios from 'axios';

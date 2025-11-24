@@ -5,7 +5,10 @@ import Link from "next/link"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card-standard"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/useToast"
 import {
   FileText,
   CalendarDays,
@@ -93,6 +96,7 @@ function formatDate(date: string) {
 }
 
 export default function LandlordContractsDashboard() {
+  const toast = useToast()
   const [contracts, setContracts] = useState<Contract[]>([])
   const [loading, setLoading] = useState(true)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -100,6 +104,7 @@ export default function LandlordContractsDashboard() {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null)
   const [signingContractId, setSigningContractId] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   const fetchContracts = () => {
     api.get("/api/contracts/landlord/my")
@@ -113,13 +118,13 @@ export default function LandlordContractsDashboard() {
   }, [])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este contrato?')) return
-
     try {
       await api.delete(`/api/contracts/${id}`)
+      toast.success('Contrato eliminado', 'El contrato se eliminó correctamente')
       fetchContracts()
+      setDeleteConfirmId(null)
     } catch {
-      alert('Error al eliminar el contrato')
+      toast.error('Error al eliminar', 'No se pudo eliminar el contrato')
     }
   }
 
@@ -131,7 +136,7 @@ export default function LandlordContractsDashboard() {
       localStorage.setItem('envelopeId', res.data.envelopeId)
       window.location.href = res.data.url
     } catch {
-      alert('Error al iniciar la firma del contrato')
+      toast.error('Error al firmar contrato', 'No se pudo iniciar el proceso de firma del contrato')
       setSigningContractId(null)
     }
   }
@@ -144,11 +149,8 @@ export default function LandlordContractsDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando contratos...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+        <LoadingState message="Cargando contratos..." />
       </div>
     )
   }
@@ -236,28 +238,19 @@ export default function LandlordContractsDashboard() {
 
         {/* Lista de Contratos */}
         {contracts.length === 0 ? (
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-12 text-center">
-              <ShieldCheck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">
-                No tienes contratos
-              </h2>
-              <p className="text-gray-500 mb-6">
-                Comienza creando tu primer contrato de alquiler.
-              </p>
-              <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white">
-                <Link href="/home/propietario/contratos/crear">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Contrato
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={ShieldCheck}
+            title="No tienes contratos"
+            description="Comienza creando tu primer contrato de alquiler."
+            action={{
+              label: "Crear Contrato",
+              onClick: () => window.location.href = "/home/propietario/contratos/crear"
+            }}
+          />
         ) : (
           <div className="space-y-6">
             {contracts.map(contract => (
-              <Card key={contract.id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
+              <Card key={contract.id} hover>
                   {/* Header: Dirección + Estado */}
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div>
@@ -414,7 +407,7 @@ export default function LandlordContractsDashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(contract.id)}
+                        onClick={() => setDeleteConfirmId(contract.id)}
                         className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -471,7 +464,6 @@ export default function LandlordContractsDashboard() {
                       </div>
                     </div>
                   )}
-                </CardContent>
               </Card>
             ))}
           </div>
@@ -559,6 +551,45 @@ export default function LandlordContractsDashboard() {
         onClose={() => setPdfViewerOpen(false)}
         title="Contrato PDF"
       />
+
+      {/* Modal de Confirmación de Eliminación */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Confirmar Eliminación</h2>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 mb-6">
+                ¿Estás seguro de que deseas eliminar este contrato? Esta acción no se puede deshacer.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => handleDelete(deleteConfirmId)}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

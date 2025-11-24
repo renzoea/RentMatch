@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card-standard';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { ShieldCheck, Info, AlertTriangle, CheckCircle, XCircle, Loader2, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
 import api from '@/lib/api';
 import { MESSAGES } from '@/constants/messages';
 import QRCode from 'qrcode';
@@ -17,6 +18,7 @@ import { io, Socket } from 'socket.io-client';
 export default function MiCuentaPropietarioPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth({ requiredRole: 'propietario' });
+  const toast = useToast();
 
   // Tab management
   const [activeTab, setActiveTab] = useState('datos');
@@ -131,6 +133,7 @@ export default function MiCuentaPropietarioPage() {
       });
 
       setSuccessMsg(MESSAGES.PROFILE.UPDATE_SUCCESS);
+      toast.success('Perfil actualizado', MESSAGES.PROFILE.UPDATE_SUCCESS);
 
       // Update user in localStorage
       const updatedUser = { ...user, full_name: response.data.profile.full_name };
@@ -140,7 +143,9 @@ export default function MiCuentaPropietarioPage() {
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (error) {
       console.error('Error updating profile:', error);
-      setErrorMsg((error as { response?: { data?: { error?: string } } })?.response?.data?.error || MESSAGES.PROFILE.UPDATE_ERROR);
+      const errorMessage = (error as { response?: { data?: { error?: string } } })?.response?.data?.error || MESSAGES.PROFILE.UPDATE_ERROR;
+      setErrorMsg(errorMessage);
+      toast.error('Error al actualizar perfil', errorMessage);
     } finally {
       setSaving(false);
     }
@@ -149,6 +154,7 @@ export default function MiCuentaPropietarioPage() {
   const onDeleteAccount = async () => {
     if (deleteConfirmation !== MESSAGES.PROFILE.DELETE_CONFIRM_TEXT) {
       setErrorMsg(MESSAGES.PROFILE.DELETE_INVALID_CONFIRMATION);
+      toast.error('Confirmación inválida', MESSAGES.PROFILE.DELETE_INVALID_CONFIRMATION);
       return;
     }
 
@@ -170,7 +176,9 @@ export default function MiCuentaPropietarioPage() {
       router.push('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      setErrorMsg((error as { response?: { data?: { error?: string } } })?.response?.data?.error || MESSAGES.PROFILE.DELETE_ERROR);
+      const errorMessage = (error as { response?: { data?: { error?: string } } })?.response?.data?.error || MESSAGES.PROFILE.DELETE_ERROR;
+      setErrorMsg(errorMessage);
+      toast.error('Error al eliminar cuenta', errorMessage);
       setDeleting(false);
     }
   };
@@ -196,11 +204,15 @@ export default function MiCuentaPropietarioPage() {
       const response = await api.post('/api/verification/qr/create');
       const { session_token, expires_at } = response.data;
 
-      console.log('[QR] Session created:', session_token);
-      console.log('[QR] Expires at:', expires_at);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[QR] Session created:', session_token);
+        console.log('[QR] Expires at:', expires_at);
+      }
 
       const mobileURL = `${window.location.origin}/verificacion/mobile/${session_token}`;
-      console.log('[QR] Mobile URL:', mobileURL);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[QR] Mobile URL:', mobileURL);
+      }
 
       const qrDataURL = await QRCode.toDataURL(mobileURL, {
         width: 300,
@@ -212,10 +224,11 @@ export default function MiCuentaPropietarioPage() {
       });
 
       setQrDataURL(qrDataURL);
-      console.log('[QR] Session token:', session_token);
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      console.log('[WebSocket] Connecting to:', API_URL);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[WebSocket] Connecting to:', API_URL);
+      }
 
       const socketInstance = io(API_URL, {
         withCredentials: true,
@@ -223,13 +236,16 @@ export default function MiCuentaPropietarioPage() {
       });
 
       socketInstance.on('connect', () => {
-        console.log('[WebSocket] Connected:', socketInstance.id);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[WebSocket] Connected:', socketInstance.id);
+        }
         socketInstance.emit('join-session', session_token);
-        console.log('[WebSocket] Joined session:', session_token);
       });
 
       socketInstance.on('verification-complete', (data) => {
-        console.log('[WebSocket] Verification complete:', data);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[WebSocket] Verification complete:', data);
+        }
         setVerificationComplete(true);
         setVerificationResult(data);
         loadVerificationStatus();
@@ -240,13 +256,17 @@ export default function MiCuentaPropietarioPage() {
       });
 
       socketInstance.on('disconnect', () => {
-        console.log('[WebSocket] Disconnected');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[WebSocket] Disconnected');
+        }
       });
 
       setSocket(socketInstance);
     } catch (error) {
       console.error('[QR] Error creating session:', error);
-      setErrorMsg('Error al crear sesión de verificación. Intenta nuevamente.');
+      const errorMessage = 'Error al crear sesión de verificación. Intenta nuevamente.';
+      setErrorMsg(errorMessage);
+      toast.error('Error de verificación', errorMessage);
     } finally {
       setLoadingVerification(false);
     }
@@ -703,7 +723,7 @@ export default function MiCuentaPropietarioPage() {
             <Input
               id="delete-confirmation"
               value={deleteConfirmation}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setDeleteConfirmation(e.target.value);
                 setErrorMsg('');
               }}

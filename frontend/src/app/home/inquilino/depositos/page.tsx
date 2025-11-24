@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card-standard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { LoadingState } from '@/components/ui/skeleton';
 import {
   CalendarDays,
   FileText,
@@ -16,6 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import api from '@/lib/api';
+import { useToast } from '@/hooks/useToast';
 
 type Deposit = {
   id: string;
@@ -108,12 +111,14 @@ function calculateProgress(startDate: string, endDate: string): number {
 }
 
 export default function DepositosPage() {
+  const toast = useToast();
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDeposits();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDeposits = async () => {
@@ -123,16 +128,23 @@ export default function DepositosPage() {
       setDeposits(res.data);
     } catch (error) {
       console.error('Error cargando depósitos:', error);
+      toast.error('Error al cargar depósitos', 'Por favor intenta recargar la página');
       setDeposits([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePayWithMercadoPago = async (depositId: string) => {
-    setProcessingId(depositId);
+  const handlePayWithMercadoPago = async (deposit: Deposit) => {
+    // Validar que el monto sea mayor a 0
+    if (!deposit.amount || deposit.amount <= 0) {
+      toast.error('Monto inválido', 'El monto del depósito debe ser mayor a 0. Contacta al propietario.');
+      return;
+    }
+
+    setProcessingId(deposit.id);
     try {
-      const response = await api.post(`/api/deposits/${depositId}/create-payment`);
+      const response = await api.post(`/api/deposits/${deposit.id}/create-payment`);
 
       const { init_point } = response.data;
 
@@ -141,24 +153,21 @@ export default function DepositosPage() {
       }
 
       // Guardar el depositId para cuando vuelva del checkout
-      localStorage.setItem('pending_deposit_id', depositId);
+      localStorage.setItem('pending_deposit_id', deposit.id);
 
       // Redirigir al Checkout Pro de Mercado Pago
       window.location.href = init_point;
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };
-      alert(err.response?.data?.error || 'Error al iniciar el pago con Mercado Pago.');
+      toast.error('Error al procesar el pago', err.response?.data?.error || 'No se pudo iniciar el pago con Mercado Pago.');
       setProcessingId(null);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando depósitos...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+        <LoadingState message="Cargando depósitos..." />
       </div>
     );
   }
@@ -176,17 +185,11 @@ export default function DepositosPage() {
 
         {/* Lista de depósitos */}
         {deposits.length === 0 ? (
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-12 text-center">
-              <DollarSign className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">
-                No tienes depósitos
-              </h2>
-              <p className="text-gray-500">
-                Los depósitos se crean automáticamente cuando firmas un contrato.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={DollarSign}
+            title="No tienes depósitos"
+            description="Los depósitos se crean automáticamente cuando firmas un contrato."
+          />
         ) : (
           <div className="space-y-6">
             {deposits.map((deposit) => {
@@ -195,8 +198,7 @@ export default function DepositosPage() {
                 : 0;
 
               return (
-                <Card key={deposit.id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
+                <Card key={deposit.id} hover>
                     {/* Header: Monto + Estado */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                       <div>
@@ -220,7 +222,7 @@ export default function DepositosPage() {
                       {deposit.status === 'pending_payment' && (
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Button
-                            onClick={() => handlePayWithMercadoPago(deposit.id)}
+                            onClick={() => handlePayWithMercadoPago(deposit)}
                             disabled={processingId === deposit.id}
                             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-sm"
                           >
@@ -361,7 +363,6 @@ export default function DepositosPage() {
                         </div>
                       </div>
                     )}
-                  </CardContent>
                 </Card>
               );
             })}

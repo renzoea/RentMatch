@@ -4,6 +4,7 @@ import type { AxiosInstance, AxiosError } from 'axios'
 import { Button } from '@/components/ui/button'
 import { SearchProfileDetail } from './search-profile-detail-modal'
 import LocationSelector from './location-selector'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   MapPin, 
   DollarSign, 
@@ -257,9 +258,36 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
-              <p className="mt-4 text-gray-500 text-sm">Cargando información...</p>
+            <div className="space-y-5">
+              {/* Ubicación skeleton */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200 space-y-3">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+
+              {/* Economía skeleton */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200 space-y-3">
+                <Skeleton className="h-5 w-32" />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+
+              {/* Características skeleton */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200 space-y-3">
+                <Skeleton className="h-5 w-40" />
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              </div>
             </div>
           )}
 
@@ -287,10 +315,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
           {!loading && !error && initial && (
             <>
               {/* Ubicación */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-200">
+              <div className="bg-gray-50/80 rounded-xl p-5 border border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Ubicación</h3>
+                  <MapPin className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Ubicación</h3>
                 </div>
                 <LocationSelector
                   selectedCity={form.city}
@@ -301,46 +329,46 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
               </div>
 
               {/* Economía */}
-              <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 border border-green-200">
+              <div className="bg-orange-50/30 rounded-xl p-5 border border-orange-100">
                 <div className="flex items-center gap-2 mb-4">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <h3 className="text-sm font-bold text-green-900 uppercase tracking-wide">Economía & Estado</h3>
+                  <DollarSign className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Economía & Estado</h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Mín ($)</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Presupuesto Mín ($)</label>
                     <input
                       type="number"
-                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all bg-white"
                       value={numberInput(form.budget_min)}
                       onChange={e => handleChange('budget_min', e.target.value === '' ? undefined : Number(e.target.value))}
                       placeholder="0"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Máx ($)</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Presupuesto Máx ($)</label>
                     <input
                       type="number"
-                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all bg-white"
                       value={numberInput(form.budget_max)}
                       onChange={e => handleChange('budget_max', e.target.value === '' ? undefined : Number(e.target.value))}
                       placeholder="∞"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-green-700 block mb-2">Plazo del Contrato (meses)</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Plazo del Contrato (meses)</label>
                     <input
                       type="number"
-                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all bg-white"
                       value={numberInput(form.lease_term_months)}
                       onChange={e => handleChange('lease_term_months', e.target.value === '' ? undefined : Number(e.target.value))}
                       placeholder="12"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-green-700 block mb-2">Estado del Perfil</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Estado del Perfil</label>
                     <select
-                      className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white bg-white"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all bg-white"
                       value={form.status || STATUS_OPTIONS[0]}
                       onChange={e => handleChange('status', e.target.value as FormState['status'])}
                     >
@@ -353,10 +381,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
               </div>
 
               {/* Tipos de Propiedad */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-5 border border-purple-200">
+              <div className="bg-gray-50/80 rounded-xl p-5 border border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
-                  <Building2 className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Tipos de Propiedad</h3>
+                  <Building2 className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Tipos de Propiedad</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {PROPERTY_TYPE_OPTIONS.map(pt => {
@@ -366,10 +394,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                         key={pt}
                         type="button"
                         onClick={() => toggleInArray('property_types', pt)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
                           active
-                            ? 'bg-purple-500 border-purple-600 text-white shadow-md scale-105'
-                            : 'bg-white border-purple-200 text-purple-700 hover:border-purple-400 hover:bg-purple-50'
+                            ? 'bg-orange-500 border-orange-600 text-white shadow-sm'
+                            : 'bg-white border-gray-300 text-gray-700 hover:border-orange-300 hover:bg-orange-50'
                         }`}
                       >
                         {titleCase(pt)}
@@ -378,20 +406,20 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                   })}
                 </div>
                 {(form.property_types || []).some(t => !isKnownPropertyType(t)) && (
-                  <div className="mt-4 pt-4 border-t border-purple-200">
-                    <p className="text-xs font-semibold text-purple-700 mb-2">Otros tipos personalizados:</p>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Otros tipos personalizados:</p>
                     <div className="flex flex-wrap gap-2">
                       {(form.property_types || [])
                         .filter(t => !isKnownPropertyType(t))
                         .map(t => (
                           <span
                             key={t}
-                            className="flex items-center gap-2 bg-purple-100 text-purple-800 px-3 py-1.5 rounded-lg text-sm font-medium"
+                            className="flex items-center gap-2 bg-orange-100 text-orange-800 px-3 py-1.5 rounded-lg text-sm font-medium"
                           >
                             {titleCase(t)}
                             <button
                               type="button"
-                              className="text-purple-600 hover:text-red-600 font-bold"
+                              className="text-orange-600 hover:text-red-600 font-bold"
                               onClick={() =>
                                 handleChange(
                                   'property_types',
@@ -409,25 +437,25 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
               </div>
 
               {/* Rangos */}
-              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-5 border border-indigo-200">
+              <div className="bg-gray-50/80 rounded-xl p-5 border border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
-                  <Building2 className="w-5 h-5 text-indigo-600" />
-                  <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide">Características de la Propiedad</h3>
+                  <Building2 className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Características de la Propiedad</h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Dormitorios (Mín - Máx)</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Dormitorios (Mín - Máx)</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.bedroom_min)}
                         onChange={e => handleChange('bedroom_min', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="0"
                       />
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.bedroom_max)}
                         onChange={e => handleChange('bedroom_max', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="∞"
@@ -435,18 +463,18 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Ambientes (Mín - Máx)</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Ambientes (Mín - Máx)</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.rooms_min)}
                         onChange={e => handleChange('rooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="0"
                       />
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.rooms_max)}
                         onChange={e => handleChange('rooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="∞"
@@ -454,18 +482,18 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Baños (Mín - Máx)</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Baños (Mín - Máx)</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.bathrooms_min)}
                         onChange={e => handleChange('bathrooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="0"
                       />
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.bathrooms_max)}
                         onChange={e => handleChange('bathrooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="∞"
@@ -473,18 +501,18 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-indigo-700 block mb-2">Área m² (Mín - Máx)</label>
+                    <label className="text-xs font-semibold text-gray-700 block mb-2">Área m² (Mín - Máx)</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.area_min)}
                         onChange={e => handleChange('area_min', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="0"
                       />
                       <input
                         type="number"
-                        className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-1/2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                         value={numberInput(form.area_max)}
                         onChange={e => handleChange('area_max', e.target.value === '' ? undefined : Number(e.target.value))}
                         placeholder="∞"
@@ -495,10 +523,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
               </div>
 
               {/* Preferencias */}
-              <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-5 border border-amber-200">
+              <div className="bg-orange-50/30 rounded-xl p-5 border border-orange-100">
                 <div className="flex items-center gap-2 mb-4">
-                  <Users className="w-5 h-5 text-amber-600" />
-                  <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide">Preferencias & Condiciones</h3>
+                  <Users className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Preferencias & Condiciones</h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-3">
                   <ToggleSwitch label="Amoblado" fieldKey="furnished" />
@@ -517,10 +545,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
               </div>
 
               {/* Amenidades */}
-              <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-5 border border-teal-200">
+              <div className="bg-gray-50/80 rounded-xl p-5 border border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="w-5 h-5 text-teal-600" />
-                  <h3 className="text-sm font-bold text-teal-900 uppercase tracking-wide">Amenidades</h3>
+                  <Sparkles className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Amenidades</h3>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {AMENITY_OPTIONS.map(a => {
@@ -530,10 +558,10 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                         key={a}
                         type="button"
                         onClick={() => toggleInArray('amenities', a)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                        className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
                           active
-                            ? 'bg-teal-500 border-teal-600 text-white shadow-md'
-                            : 'bg-white border-teal-200 text-teal-700 hover:border-teal-400 hover:bg-teal-50'
+                            ? 'bg-orange-500 border-orange-600 text-white shadow-sm'
+                            : 'bg-white border-gray-300 text-gray-700 hover:border-orange-300 hover:bg-orange-50'
                         }`}
                       >
                         {titleCase(a)}
@@ -542,13 +570,13 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                   })}
                 </div>
 
-                <div className="pt-4 border-t border-teal-200">
-                  <label className="block text-xs font-semibold text-teal-700 mb-2">
+                <div className="pt-4 border-t border-gray-200">
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">
                     Añadir Amenidad Personalizada
                   </label>
                   <div className="flex gap-2">
                     <input
-                      className="flex-1 rounded-lg border-2 border-teal-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent bg-white"
                       placeholder="Ej: cine, cowork..."
                       value={newAmenity}
                       onChange={e => setNewAmenity(e.target.value)}
@@ -562,7 +590,7 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                     <Button
                       type="button"
                       variant="outline"
-                      className="border-teal-300 text-teal-700 hover:bg-teal-50"
+                      className="border-gray-300 text-gray-700 hover:bg-orange-50 hover:border-orange-300"
                       onClick={addCustomAmenity}
                     >
                       Agregar
@@ -574,20 +602,20 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
                 </div>
 
                 {(form.amenities || []).some(a => !AMENITY_OPTIONS.includes(a)) && (
-                  <div className="mt-4 pt-4 border-t border-teal-200">
-                    <p className="text-xs font-semibold text-teal-700 mb-2">Amenidades personalizadas:</p>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Amenidades personalizadas:</p>
                     <div className="flex flex-wrap gap-2">
                       {(form.amenities || [])
                         .filter(a => !AMENITY_OPTIONS.includes(a))
                         .map(a => (
                           <span
                             key={a}
-                            className="flex items-center gap-2 bg-teal-100 text-teal-800 px-3 py-1.5 rounded-lg text-sm font-medium"
+                            className="flex items-center gap-2 bg-orange-100 text-orange-800 px-3 py-1.5 rounded-lg text-sm font-medium"
                           >
                             {titleCase(a)}
                             <button
                               type="button"
-                              className="text-teal-600 hover:text-red-600 font-bold"
+                              className="text-orange-600 hover:text-red-600 font-bold"
                               onClick={() => removeCustomAmenity(a)}
                             >
                               ×

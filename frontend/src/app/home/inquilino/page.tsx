@@ -4,7 +4,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card-standard"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/skeleton"
+import { StatusBadge } from "@/components/ui/status-badge"
 import {
   Search,
   FileText,
@@ -99,8 +102,8 @@ export default function SearchProfileDashboard() {
               </div>
             </div>
             <Button
+              variant="primary"
               onClick={() => router.push('/home/inquilino/crear')}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Perfil
@@ -155,36 +158,21 @@ export default function SearchProfileDashboard() {
 
         {/* Lista de Perfiles */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-200 border-t-orange-500 mb-4"></div>
-            <p className="text-gray-500 text-sm">Cargando perfiles...</p>
-          </div>
+          <LoadingState message="Cargando perfiles..." />
         ) : searchProfiles.length === 0 ? (
-          <Card className="border-2 border-dashed border-gray-300">
-            <CardContent className="pt-12 pb-12">
-              <div className="flex flex-col items-center text-center">
-                <div className="bg-orange-100 p-6 rounded-full mb-6">
-                  <Search className="w-12 h-12 text-orange-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">No tienes perfiles de búsqueda</h3>
-                <p className="text-gray-600 mb-6 max-w-md">
-                  Crea tu primer perfil para que podamos ayudarte a encontrar la propiedad perfecta
-                </p>
-                <Button
-                  onClick={() => router.push('/home/inquilino/crear')}
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Primer Perfil
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Search}
+            title="No tienes perfiles de búsqueda"
+            description="Crea tu primer perfil para que podamos ayudarte a encontrar la propiedad perfecta"
+            action={{
+              label: "Crear Primer Perfil",
+              onClick: () => router.push('/home/inquilino/crear')
+            }}
+          />
         ) : (
           <div className="space-y-4">
             {searchProfiles.map(profile => (
-              <Card key={profile.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
+              <Card key={profile.id} hover>
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -204,15 +192,15 @@ export default function SearchProfileDashboard() {
                         </span>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      profile.status === 'activo'
-                        ? 'bg-green-100 text-green-700'
-                        : profile.status === 'pausado'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
+                    <StatusBadge
+                      variant={
+                        profile.status === 'activo' ? 'active' :
+                        profile.status === 'pausado' ? 'paused' :
+                        'archived'
+                      }
+                    >
                       {capitalize(profile.status)}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                     <div className="bg-green-50 rounded-lg p-3 border border-green-200">
@@ -290,7 +278,6 @@ export default function SearchProfileDashboard() {
                       Eliminar
                     </Button>
                   </div>
-                </CardContent>
               </Card>
             ))}
           </div>

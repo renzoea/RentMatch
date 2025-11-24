@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card-standard';
 import { CheckCircle2, Home, FileText, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 

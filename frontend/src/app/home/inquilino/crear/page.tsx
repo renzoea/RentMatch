@@ -4,15 +4,17 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
+import { InputEnhanced } from '@/components/ui/input-enhanced'
 import LocationSelector from '@/components/location-selector'
-import { 
-  ArrowLeft, 
-  Save, 
-  MapPin, 
-  DollarSign, 
-  Building2, 
-  Users, 
-  Sparkles, 
+import { useToast } from '@/hooks/useToast'
+import {
+  ArrowLeft,
+  Save,
+  MapPin,
+  DollarSign,
+  Building2,
+  Users,
+  Sparkles,
   StickyNote,
   AlertCircle,
   Home as HomeIcon
@@ -94,6 +96,7 @@ const numberInput = (val: number | null | undefined) => (val == null ? '' : val)
 
 export default function CrearPerfilBusqueda() {
   const router = useRouter()
+  const toast = useToast()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [newAmenity, setNewAmenity] = useState('')
@@ -178,12 +181,23 @@ export default function CrearPerfilBusqueda() {
     setError(null)
     setSaving(true)
 
+    // Validar que el presupuesto máximo sea mayor o igual al mínimo
+    if (form.budget_max && form.budget_min && form.budget_max < form.budget_min) {
+      setError('El presupuesto máximo debe ser mayor o igual al mínimo')
+      toast.error('Error de validación', 'El presupuesto máximo debe ser mayor o igual al mínimo')
+      setSaving(false)
+      return
+    }
+
     try {
       await api.post('/api/search-profiles', form)
+      toast.success('¡Perfil creado!', 'Tu perfil de búsqueda se creó correctamente')
       router.push('/home/inquilino')
     } catch (err) {
       const e = err as AxiosError<ApiErrorPayload>
-      setError(e.response?.data?.error || e.response?.data?.message || 'Error creando el perfil')
+      const errorMsg = e.response?.data?.error || e.response?.data?.message || 'Error creando el perfil'
+      setError(errorMsg)
+      toast.error('Error al crear perfil', errorMsg)
     } finally {
       setSaving(false)
     }
@@ -252,9 +266,8 @@ export default function CrearPerfilBusqueda() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Mín ($) *</label>
-                <input
+                <InputEnhanced
                   type="number"
-                  className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
                   value={numberInput(form.budget_min)}
                   onChange={e => handleChange('budget_min', e.target.value === '' ? undefined : Number(e.target.value))}
                   placeholder="0"
@@ -263,9 +276,8 @@ export default function CrearPerfilBusqueda() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Máx ($) *</label>
-                <input
+                <InputEnhanced
                   type="number"
-                  className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
                   value={numberInput(form.budget_max)}
                   onChange={e => handleChange('budget_max', e.target.value === '' ? undefined : Number(e.target.value))}
                   placeholder="∞"
@@ -274,9 +286,8 @@ export default function CrearPerfilBusqueda() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-green-700 block mb-2">Plazo del Contrato (meses)</label>
-                <input
+                <InputEnhanced
                   type="number"
-                  className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
                   value={numberInput(form.lease_term_months)}
                   onChange={e => handleChange('lease_term_months', e.target.value === '' ? undefined : Number(e.target.value))}
                   placeholder="12"
@@ -340,16 +351,14 @@ export default function CrearPerfilBusqueda() {
               <div>
                 <label className="text-xs font-semibold text-indigo-700 block mb-2">Dormitorios (Mín - Máx)</label>
                 <div className="flex gap-2">
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.bedroom_min)}
                     onChange={e => handleChange('bedroom_min', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="0"
                   />
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.bedroom_max)}
                     onChange={e => handleChange('bedroom_max', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="∞"
@@ -359,16 +368,14 @@ export default function CrearPerfilBusqueda() {
               <div>
                 <label className="text-xs font-semibold text-indigo-700 block mb-2">Ambientes (Mín - Máx)</label>
                 <div className="flex gap-2">
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.rooms_min)}
                     onChange={e => handleChange('rooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="0"
                   />
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.rooms_max)}
                     onChange={e => handleChange('rooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="∞"
@@ -378,16 +385,14 @@ export default function CrearPerfilBusqueda() {
               <div>
                 <label className="text-xs font-semibold text-indigo-700 block mb-2">Baños (Mín - Máx)</label>
                 <div className="flex gap-2">
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.bathrooms_min)}
                     onChange={e => handleChange('bathrooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="0"
                   />
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.bathrooms_max)}
                     onChange={e => handleChange('bathrooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="∞"
@@ -397,16 +402,14 @@ export default function CrearPerfilBusqueda() {
               <div>
                 <label className="text-xs font-semibold text-indigo-700 block mb-2">Área m² (Mín - Máx)</label>
                 <div className="flex gap-2">
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.area_min)}
                     onChange={e => handleChange('area_min', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="0"
                   />
-                  <input
+                  <InputEnhanced
                     type="number"
-                    className="w-1/2 rounded-lg border-2 border-indigo-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     value={numberInput(form.area_max)}
                     onChange={e => handleChange('area_max', e.target.value === '' ? undefined : Number(e.target.value))}
                     placeholder="∞"
@@ -469,8 +472,7 @@ export default function CrearPerfilBusqueda() {
                 Añadir Amenidad Personalizada
               </label>
               <div className="flex gap-2">
-                <input
-                  className="flex-1 rounded-lg border-2 border-teal-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                <InputEnhanced
                   placeholder="Ej: cine, cowork..."
                   value={newAmenity}
                   onChange={e => setNewAmenity(e.target.value)}

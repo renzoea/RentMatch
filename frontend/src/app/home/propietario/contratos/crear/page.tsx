@@ -2,10 +2,11 @@
 
 import { useState, useEffect, DragEvent, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card-standard';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { InputEnhanced } from '@/components/ui/input-enhanced';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/useToast';
 import { UploadCloud, FileText, Search, CheckCircle, Loader2, PenTool } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -19,6 +20,7 @@ type Tenant = {
 }
 
 function CrearContratoContent() {
+  const toast = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
@@ -119,7 +121,7 @@ function CrearContratoContent() {
         terms: contract.terms || '',
       });
     } catch {
-      alert('Error al cargar el contrato');
+      toast.error('Error al cargar contrato', 'No se pudo cargar la información del contrato');
       router.push('/home/propietario/contratos');
     } finally {
       setLoading(false);
@@ -161,11 +163,11 @@ function CrearContratoContent() {
     const file = e.target.files?.[0] || null;
     if (!file) return;
     if (file.type !== 'application/pdf') {
-      alert('Solo se aceptan archivos PDF.');
+      toast.error('Archivo inválido', 'Solo se aceptan archivos PDF.');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('El archivo supera el máximo de 10MB.');
+      toast.error('Archivo muy grande', 'El archivo supera el máximo de 10MB.');
       return;
     }
     setPdf(file);
@@ -185,9 +187,9 @@ function CrearContratoContent() {
       });
 
       setPdfUrl(res.data.url);
-      alert('PDF subido correctamente');
+      toast.success('PDF subido', 'El documento se subió correctamente');
     } catch {
-      alert('Error al subir el PDF');
+      toast.error('Error al subir PDF', 'No se pudo subir el documento');
       setPdf(null);
     } finally {
       setUploading(false);
@@ -198,21 +200,36 @@ function CrearContratoContent() {
     e.preventDefault();
 
     if (!tenant) {
-      alert('Por favor busca y selecciona un inquilino');
+      toast.warning('Falta inquilino', 'Por favor busca y selecciona un inquilino');
       return;
     }
 
     if (!pdfUrl) {
-      alert('Por favor sube el PDF del contrato');
+      toast.warning('Falta PDF', 'Por favor sube el PDF del contrato');
+      return;
+    }
+
+    // Validar que los montos no sean 0 o negativos
+    if (!formData.rent_amount || parseFloat(formData.rent_amount) <= 0) {
+      toast.error('Monto inválido', 'El monto de alquiler debe ser mayor a 0');
+      return;
+    }
+
+    if (!formData.deposit_amount || parseFloat(formData.deposit_amount) <= 0) {
+      toast.error('Monto inválido', 'El monto del depósito debe ser mayor a 0');
       return;
     }
 
     setSending(true);
     try {
       // Calcular fecha de fin basada en la fecha de inicio y duración
+      // Usar constructor Date con año/mes/día para evitar problemas con fechas límite
       const startDate = new Date(formData.start_date);
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + formData.duration_months);
+      const endDate = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth() + formData.duration_months,
+        startDate.getDate()
+      );
 
       const contractData = {
         tenant_id: tenant.id,
@@ -240,11 +257,11 @@ function CrearContratoContent() {
       const res = await api.post('/api/contracts', contractData);
 
       setContractId(res.data.contract.id);
-      alert('Contrato creado correctamente.');
+      toast.success('Contrato creado', 'El contrato se creó correctamente');
       router.push('/home/propietario/contratos');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
-      alert(err.response?.data?.error || 'Error al crear el contrato');
+      toast.error('Error al crear contrato', err.response?.data?.error || 'No se pudo crear el contrato');
     } finally {
       setSending(false);
     }
@@ -252,7 +269,7 @@ function CrearContratoContent() {
 
   const handleSign = async () => {
     if (!contractId) {
-      alert('Primero debes crear el contrato');
+      toast.warning('Contrato no creado', 'Primero debes crear el contrato');
       return;
     }
 
@@ -268,7 +285,7 @@ function CrearContratoContent() {
       window.location.href = res.data.url;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
-      alert(err.response?.data?.error || 'Error al iniciar la firma');
+      toast.error('Error al firmar', err.response?.data?.error || 'No se pudo iniciar la firma');
       setSigning(false);
     }
   };
@@ -308,7 +325,7 @@ function CrearContratoContent() {
                 <div className="space-y-2">
                   <Label htmlFor="tenant_email">Email del Inquilino *</Label>
                   <div className="flex gap-2">
-                    <Input
+                    <InputEnhanced
                       id="tenant_email"
                       type="email"
                       placeholder="inquilino@email.com"
@@ -352,7 +369,7 @@ function CrearContratoContent() {
                 {/* Dirección */}
                 <div className="mb-4">
                   <Label htmlFor="address">Dirección *</Label>
-                  <Input
+                  <InputEnhanced
                     id="address"
                     placeholder="Av. Santa Fe 1234"
                     value={formData.address_line}
@@ -392,7 +409,7 @@ function CrearContratoContent() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="rooms">Ambientes</Label>
-                    <Input
+                    <InputEnhanced
                       id="rooms"
                       type="number"
                       min="1"
@@ -402,7 +419,7 @@ function CrearContratoContent() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="bathrooms">Baños</Label>
-                    <Input
+                    <InputEnhanced
                       id="bathrooms"
                       type="number"
                       min="1"
@@ -477,28 +494,32 @@ function CrearContratoContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="rent_amount">Monto del Alquiler (ARS) *</Label>
-                    <Input
+                    <InputEnhanced
                       id="rent_amount"
                       type="number"
+                      min="1"
                       placeholder="550000"
                       value={formData.rent_amount}
                       onChange={(e) => setFormData({ ...formData, rent_amount: e.target.value })}
+                      helperText="El monto debe ser mayor a 0"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="deposit_amount">Monto del Depósito (ARS)</Label>
-                    <Input
+                    <InputEnhanced
                       id="deposit_amount"
                       type="number"
+                      min="1"
                       placeholder="Dejar vacío para usar el mismo monto del alquiler"
                       value={formData.deposit_amount}
                       onChange={(e) => setFormData({ ...formData, deposit_amount: e.target.value })}
+                      helperText="Si se deja vacío, se usará el monto del alquiler"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="payment_day">Día de pago (1-28)</Label>
-                    <Input
+                    <InputEnhanced
                       id="payment_day"
                       type="number"
                       min="1"
@@ -509,7 +530,7 @@ function CrearContratoContent() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="start_date">Fecha de Inicio *</Label>
-                    <Input
+                    <InputEnhanced
                       id="start_date"
                       type="date"
                       value={formData.start_date}
@@ -518,19 +539,18 @@ function CrearContratoContent() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="duration_months">Duración del Contrato *</Label>
-                    <select
+                    <Label htmlFor="duration_months">Duración del Contrato (meses) *</Label>
+                    <InputEnhanced
                       id="duration_months"
+                      type="number"
+                      min="1"
+                      max="120"
+                      placeholder="36"
                       value={formData.duration_months}
-                      onChange={(e) => setFormData({ ...formData, duration_months: parseInt(e.target.value) })}
-                      className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
+                      onChange={(e) => setFormData({ ...formData, duration_months: parseInt(e.target.value) || 36 })}
+                      helperText="Entre 1 y 120 meses (10 años máximo)"
                       required
-                    >
-                      <option value="12">12 meses (1 año)</option>
-                      <option value="24">24 meses (2 años)</option>
-                      <option value="36">36 meses (3 años)</option>
-                      <option value="48">48 meses (4 años)</option>
-                    </select>
+                    />
                   </div>
                 </div>
 

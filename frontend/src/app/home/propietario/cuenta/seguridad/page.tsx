@@ -3,17 +3,19 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card-standard';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { InputEnhanced } from '@/components/ui/input-enhanced';
 import { Lock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
 import api from '@/lib/api';
 import { MESSAGES } from '@/constants/messages';
 
 export default function SeguridadPropietarioPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth({ requiredRole: 'propietario' });
+  const toast = useToast();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -30,16 +32,19 @@ export default function SeguridadPropietarioPage() {
     // Validations
     if (!currentPassword || !newPassword || !confirmPassword) {
       setErrorMsg(MESSAGES.PASSWORD.FILL_ALL_FIELDS);
+      toast.error('Campos incompletos', MESSAGES.PASSWORD.FILL_ALL_FIELDS);
       return;
     }
 
     if (newPassword !== confirmPassword) {
       setErrorMsg(MESSAGES.PASSWORD.MISMATCH);
+      toast.error('Contraseñas no coinciden', MESSAGES.PASSWORD.MISMATCH);
       return;
     }
 
     if (newPassword.length < 6) {
       setErrorMsg(MESSAGES.PASSWORD.TOO_SHORT);
+      toast.error('Contraseña muy corta', MESSAGES.PASSWORD.TOO_SHORT);
       return;
     }
 
@@ -52,6 +57,7 @@ export default function SeguridadPropietarioPage() {
       });
 
       setSuccessMsg(MESSAGES.PASSWORD.UPDATE_SUCCESS);
+      toast.success('Contraseña actualizada', MESSAGES.PASSWORD.UPDATE_SUCCESS);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -60,7 +66,9 @@ export default function SeguridadPropietarioPage() {
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (error) {
       console.error('Error changing password:', error);
-      setErrorMsg((error as { response?: { data?: { error?: string } } })?.response?.data?.error || MESSAGES.PASSWORD.UPDATE_ERROR);
+      const errorMessage = (error as { response?: { data?: { error?: string } } })?.response?.data?.error || MESSAGES.PASSWORD.UPDATE_ERROR;
+      setErrorMsg(errorMessage);
+      toast.error('Error al cambiar contraseña', errorMessage);
     } finally {
       setSavingPass(false);
     }
@@ -130,7 +138,7 @@ export default function SeguridadPropietarioPage() {
             <form className="space-y-5" onSubmit={handleUpdatePassword}>
               <div className="space-y-2">
                 <Label htmlFor="current">Contraseña actual *</Label>
-                <Input
+                <InputEnhanced
                   id="current"
                   type="password"
                   value={currentPassword}
@@ -140,23 +148,29 @@ export default function SeguridadPropietarioPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new">Nueva contraseña *</Label>
-                <Input
+                <InputEnhanced
                   id="new"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
                   required
+                  error={newPassword.length > 0 && newPassword.length < 6 ? 'Mínimo 6 caracteres' : undefined}
+                  success={newPassword.length >= 6}
+                  showValidation
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm">Confirmar nueva contraseña *</Label>
-                <Input
+                <InputEnhanced
                   id="confirm"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  error={confirmPassword.length > 0 && confirmPassword !== newPassword ? 'Las contraseñas no coinciden' : undefined}
+                  success={confirmPassword.length > 0 && confirmPassword === newPassword}
+                  showValidation
                 />
               </div>
 

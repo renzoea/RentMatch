@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
             disabled={loading || !email}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 font-medium rounded-lg disabled:opacity-60"
           >
-            {loading ? "Enviando..." : "Enviar Código"}
+            {loading ? "Enviando..." : "Enviar correo"}
           </Button>
 
           <div className="text-center mt-4">

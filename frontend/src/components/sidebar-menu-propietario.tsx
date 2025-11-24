@@ -6,11 +6,18 @@ import { usePathname } from "next/navigation"
 
 export default function SidebarMenuPropietario({ onLogout }: { onLogout: () => void }) {
   const pathname = usePathname()
-  
-  const isActive = (path: string) => pathname === path
+
+  const isActive = (path: string) => {
+    // For home page, match exactly
+    if (path === "/home/propietario") {
+      return pathname === "/home/propietario"
+    }
+    // For other pages, match path and subpaths
+    return pathname === path || pathname.startsWith(path + '/')
+  }
 
   return (
-    <aside className="w-72 bg-white border-r border-gray-200 min-h-screen">
+    <aside className="w-72 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto">
       <div className="p-6">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">

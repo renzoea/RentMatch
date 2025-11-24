@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import type { AxiosInstance, AxiosError } from 'axios'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   MapPin, 
   DollarSign, 
@@ -148,9 +149,36 @@ export default function SearchProfileDetailModal({ open, id, onClose, apiClient 
 
         <div className="p-6 space-y-5 overflow-y-auto">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
-              <p className="mt-4 text-gray-500 text-sm">Cargando información...</p>
+            <div className="space-y-5">
+              {/* Ubicación skeleton */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-3">
+                <Skeleton className="h-5 w-24" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+
+              {/* Economía skeleton */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-3">
+                <Skeleton className="h-5 w-28" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+
+              {/* Características skeleton */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm space-y-3">
+                <Skeleton className="h-5 w-40" />
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              </div>
             </div>
           )}
 

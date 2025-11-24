@@ -10,7 +10,12 @@ import {
 import React from "react";
 
 import api from "@/lib/api";
-import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/useToast";
+import { Card, CardContent } from "@/components/ui/card-standard";
+import { EmptyState as EmptyStateComponent } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { InputEnhanced } from "@/components/ui/input-enhanced";
 
 type TenantProfile = {
   id: string;
@@ -95,7 +100,21 @@ const ARGENTINA_LOCATIONS: Record<string, string[]> = {
 };
 
 export default function PropietarioHomePage() {
-  const [filters, setFilters] = useState<Filters>({ amenities: [] });
+  // Cargar filtros desde localStorage al inicio
+  const [filters, setFilters] = useState<Filters>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('landlord_filters');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return { amenities: [] };
+        }
+      }
+    }
+    return { amenities: [] };
+  });
+
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<TenantProfile[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -105,13 +124,21 @@ export default function PropietarioHomePage() {
   const [landlordVerificationStatus, setLandlordVerificationStatus] = useState<{status?: string | null} | null>(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
+  // Guardar filtros en localStorage cuando cambian
+  useEffect(() => {
+    localStorage.setItem('landlord_filters', JSON.stringify(filters));
+  }, [filters]);
+
   const cities = useMemo(() => Object.keys(ARGENTINA_LOCATIONS).sort(), []);
   const neighborhoods = useMemo(() => {
     if (!filters.city) return [];
     return ARGENTINA_LOCATIONS[filters.city] || [];
   }, [filters.city]);
 
-  const clearFilters = () => setFilters({ amenities: [] });
+  const clearFilters = () => {
+    setFilters({ amenities: [] });
+    localStorage.removeItem('landlord_filters');
+  };
 
   const search = React.useCallback(async () => {
     setLoading(true);
@@ -138,7 +165,12 @@ export default function PropietarioHomePage() {
   }, [filters]);
 
   useEffect(() => {
-    search();
+    // Agregar debounce para evitar búsquedas múltiples simultáneas
+    const debounceTimeout = setTimeout(() => {
+      search();
+    }, 500);
+
+    return () => clearTimeout(debounceTimeout);
   }, [search]);
 
   useEffect(() => {
@@ -255,50 +287,48 @@ export default function PropietarioHomePage() {
 
                 <FilterSection title="Costo del Alquiler">
                   <label className="text-xs font-semibold text-gray-700 block mb-1">Precio mensual ($)</label>
-                  <input
+                  <InputEnhanced
                     type="number"
                     value={filters.rent_cost || ''}
                     onChange={(e) => setFilters(f => ({ ...f, rent_cost: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="Ej: 5000"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </FilterSection>
 
                 <FilterSection title="Características">
                   <label className="text-xs font-semibold text-gray-700 block mb-2">Dormitorios</label>
-                  <input
+                  <InputEnhanced
                     type="number"
                     value={filters.bedrooms || ''}
                     onChange={(e) => setFilters(f => ({ ...f, bedrooms: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="Ej: 2"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                    className="mb-3"
                   />
 
                   <label className="text-xs font-semibold text-gray-700 block mb-2">Ambientes</label>
-                  <input
+                  <InputEnhanced
                     type="number"
                     value={filters.rooms || ''}
                     onChange={(e) => setFilters(f => ({ ...f, rooms: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="Ej: 3"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                    className="mb-3"
                   />
 
                   <label className="text-xs font-semibold text-gray-700 block mb-2">Baños</label>
-                  <input
+                  <InputEnhanced
                     type="number"
                     value={filters.bathrooms || ''}
                     onChange={(e) => setFilters(f => ({ ...f, bathrooms: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="Ej: 1"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                    className="mb-3"
                   />
 
                   <label className="text-xs font-semibold text-gray-700 block mb-2">Área (m²)</label>
-                  <input
+                  <InputEnhanced
                     type="number"
                     value={filters.area || ''}
                     onChange={(e) => setFilters(f => ({ ...f, area: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="Ej: 60"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </FilterSection>
 
@@ -371,21 +401,20 @@ export default function PropietarioHomePage() {
                   />
 
                   <label className="text-xs font-semibold text-gray-700 block mb-2 mt-3">Duración del contrato (meses)</label>
-                  <input
+                  <InputEnhanced
                     type="number"
                     value={filters.lease_term_months || ''}
                     onChange={(e) => setFilters(f => ({ ...f, lease_term_months: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="Ej: 12"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-3"
+                    className="mb-3"
                   />
 
                   <label className="text-xs font-semibold text-gray-700 block mb-2">Número de ocupantes</label>
-                  <input
+                  <InputEnhanced
                     type="number"
                     value={filters.occupants || ''}
                     onChange={(e) => setFilters(f => ({ ...f, occupants: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="Ej: 2"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </FilterSection>
               </div>
@@ -417,9 +446,13 @@ export default function PropietarioHomePage() {
             )}
 
             {loading && list.length === 0 ? (
-              <SkeletonCards />
+              <LoadingState message="Buscando inquilinos..." count={3} />
             ) : list.length === 0 ? (
-              <EmptyState />
+              <EmptyStateComponent
+                icon={Users}
+                title="No se encontraron inquilinos"
+                description="Intenta ajustar los filtros de búsqueda para encontrar más perfiles que coincidan con tus criterios."
+              />
             ) : (
               <div className="space-y-4">
                 {list.map(profile => (
@@ -602,8 +635,7 @@ function ProfileCard({
   const isVerified = profile.profile_status && profile.profile_status === 'verified';
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-6">
+    <Card hover>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">
@@ -612,15 +644,9 @@ function ProfileCard({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-lg text-gray-900">{profile.full_name || 'Inquilino'}</h3>
-                {isVerified ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                    <Check className="w-3 h-3" /> Verificado
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
-                    <X className="w-3 h-3" /> No verificado
-                  </span>
-                )}
+                <StatusBadge variant={isVerified ? 'verified' : 'pending'}>
+                  {isVerified ? 'Verificado' : 'No verificado'}
+                </StatusBadge>
               </div>
               <div className="flex items-center gap-2 text-gray-600 text-sm mt-1">
                 <MapPin className="w-4 h-4 text-orange-500" />
@@ -628,11 +654,9 @@ function ProfileCard({
               </div>
             </div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            profile.status === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-          }`}>
+          <StatusBadge variant={profile.status === 'activo' ? 'active' : 'archived'}>
             {cap(profile.status || 'activo')}
-          </span>
+          </StatusBadge>
         </div>
 
         {profile.property_types && profile.property_types.length > 0 && (
@@ -734,7 +758,6 @@ function ProfileCard({
             <span className="hidden sm:inline">Email</span>
           </button>
         </div>
-      </CardContent>
     </Card>
   );
 }
@@ -1078,51 +1101,6 @@ function ProfileDetailModal({
   );
 }
 
-function EmptyState() {
-  return (
-    <Card className="border-2 border-dashed border-gray-300">
-      <CardContent className="pt-12 pb-12">
-        <div className="flex flex-col items-center text-center">
-          <div className="bg-orange-100 p-6 rounded-full mb-6">
-            <Users className="w-12 h-12 text-orange-600" />
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">No se encontraron inquilinos</h3>
-          <p className="text-gray-600 max-w-md">
-            Intenta ajustar los filtros de búsqueda para encontrar más perfiles que coincidan con tus criterios.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function SkeletonCards() {
-  return (
-    <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-gray-200" />
-            <div className="flex-1">
-              <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
-              <div className="h-3 bg-gray-200 rounded w-1/4" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="h-20 bg-gray-200 rounded-xl" />
-            <div className="h-20 bg-gray-200 rounded-xl" />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="h-10 bg-gray-200 rounded-lg" />
-            <div className="h-10 bg-gray-200 rounded-lg" />
-            <div className="h-10 bg-gray-200 rounded-lg" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function ContactModal({
   type,
   profile,
@@ -1132,23 +1110,31 @@ function ContactModal({
   profile: TenantProfile;
   onClose: () => void;
 }) {
+  const toast = useToast();
   const isWhatsApp = type === 'whatsapp';
   const contactInfo = isWhatsApp ? profile.phone : profile.email;
 
   const handleCopyToClipboard = () => {
     if (contactInfo) {
       navigator.clipboard.writeText(contactInfo);
-      alert('Copiado al portapapeles');
+      toast.success('Copiado al portapapeles', `Se copió ${isWhatsApp ? 'el número de teléfono' : 'el correo electrónico'}`);
     }
   };
 
   const handleOpenContact = () => {
     if (isWhatsApp && profile.phone) {
-      // Limpiar el número de teléfono y abrir WhatsApp
+      // Validar y limpiar el número de teléfono
       const cleanPhone = profile.phone.replace(/\D/g, '');
+
+      if (cleanPhone.length < 10 || cleanPhone.length > 13) {
+        toast.error('Número inválido', 'El número de teléfono no tiene un formato válido');
+        return;
+      }
+
       window.open(`https://wa.me/${cleanPhone}`, '_blank');
     } else if (!isWhatsApp && profile.email) {
-      window.location.href = `mailto:${profile.email}`;
+      // Codificar el email para evitar problemas con caracteres especiales
+      window.location.href = `mailto:${encodeURIComponent(profile.email)}`;
     }
   };
 

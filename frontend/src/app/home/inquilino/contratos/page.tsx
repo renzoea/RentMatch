@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card-standard"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/useToast"
 import {
   FileText,
   CalendarDays,
@@ -88,8 +91,10 @@ function formatDate(date: string) {
 }
 
 export default function ContractDashboard() {
+  const toast = useToast()
   const [contracts, setContracts] = useState<Contract[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
@@ -97,11 +102,24 @@ export default function ContractDashboard() {
   const [signingContractId, setSigningContractId] = useState<string | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
+  const loadContracts = () => {
+    setLoading(true)
+    setError(null)
     api.get("/api/contracts/my")
       .then(res => setContracts(res.data))
-      .catch(() => setContracts([]))
+      .catch((error) => {
+        console.error('Error loading contracts:', error)
+        const errorMsg = 'No se pudieron cargar los contratos. Verifica tu conexión.'
+        setError(errorMsg)
+        toast.error('Error al cargar contratos', errorMsg)
+        setContracts([])
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadContracts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSignContract = async (contractId: string) => {
@@ -112,7 +130,7 @@ export default function ContractDashboard() {
       localStorage.setItem('envelopeId', res.data.envelopeId)
       window.location.href = res.data.url
     } catch {
-      alert('Error al iniciar la firma del contrato')
+      toast.error('Error al firmar contrato', 'No se pudo iniciar el proceso de firma del contrato')
       setSigningContractId(null)
     }
   }
@@ -125,11 +143,8 @@ export default function ContractDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando contratos...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+        <LoadingState message="Cargando contratos..." />
       </div>
     )
   }
@@ -205,23 +220,26 @@ export default function ContractDashboard() {
         </div>
 
         {/* Lista de Contratos */}
-        {contracts.length === 0 ? (
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-12 text-center">
-              <ShieldCheck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">
-                No tienes contratos
-              </h2>
-              <p className="text-gray-500">
-                Cuando tengas contratos de alquiler, aparecerán aquí.
-              </p>
-            </CardContent>
-          </Card>
+        {error ? (
+          <EmptyState
+            icon={AlertCircle}
+            title="Error al cargar contratos"
+            description={error}
+            action={{
+              label: "Reintentar",
+              onClick: loadContracts
+            }}
+          />
+        ) : contracts.length === 0 ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="No tienes contratos"
+            description="Cuando tengas contratos de alquiler, aparecerán aquí."
+          />
         ) : (
           <div className="space-y-6">
             {contracts.map(contract => (
-              <Card key={contract.id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
+              <Card key={contract.id} hover>
                   {/* Header: Dirección + Estado */}
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div>
@@ -403,7 +421,6 @@ export default function ContractDashboard() {
                       </div>
                     </div>
                   )}
-                </CardContent>
               </Card>
             ))}
           </div>
