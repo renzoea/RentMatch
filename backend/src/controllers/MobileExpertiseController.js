@@ -13,6 +13,8 @@ const NewExpertise = async (req, res) => {
     }
 
     const payload = {
+      contract_id,
+      tenet_id,
       reason,
       description: description || '',
       date: date || null,
