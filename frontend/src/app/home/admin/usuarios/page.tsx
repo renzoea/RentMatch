@@ -7,7 +7,6 @@ import api from '@/lib/api'
 import {
   Users,
   Search,
-  Filter,
   Ban,
   Trash2,
   RotateCcw,
@@ -20,8 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  UserCog,
-  MoreVertical
+  UserCog
 } from 'lucide-react'
 
 type User = {
@@ -66,6 +64,7 @@ export default function UsersManagement() {
 
   useEffect(() => {
     loadUsers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, roleFilter, statusFilter, searchQuery])
 
   const loadUsers = async () => {

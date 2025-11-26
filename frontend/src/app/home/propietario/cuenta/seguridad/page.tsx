@@ -77,7 +77,7 @@ export default function SeguridadPropietarioPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
       </div>
     );
   }
@@ -107,7 +107,7 @@ export default function SeguridadPropietarioPage() {
           >
             Verificación
           </button>
-          <button className="text-orange-600 font-semibold border-b-2 border-orange-600 pb-1">
+          <button className="text-green-600 font-semibold border-b-2 border-green-600 pb-1">
             Seguridad
           </button>
         </div>
@@ -178,7 +178,7 @@ export default function SeguridadPropietarioPage() {
                 <Button
                   type="submit"
                   disabled={savingPass}
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  className="bg-green-500 hover:bg-green-600 text-white"
                 >
                   {savingPass ? (
                     <>

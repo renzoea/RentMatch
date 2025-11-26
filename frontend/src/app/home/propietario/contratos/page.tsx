@@ -71,7 +71,7 @@ function getStatusBadgeClass(status: string) {
     case "draft": return "bg-gray-400 text-white"
     case "expired": return "bg-gray-400 text-white"
     case "cancelled": return "bg-red-500 text-white"
-    default: return "bg-orange-500 text-white"
+    default: return "bg-green-500 text-white"
   }
 }
 
@@ -168,7 +168,7 @@ export default function LandlordContractsDashboard() {
           </div>
           <Button
             asChild
-            className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
+            className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
           >
             <Link href="/home/propietario/contratos/crear">
               <Plus className="w-4 h-4" />
@@ -276,7 +276,7 @@ export default function LandlordContractsDashboard() {
                         <Button
                           asChild
                           size="sm"
-                          className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
+                          className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
                         >
                           <Link href={`/home/propietario/contratos/crear?edit=${contract.id}`}>
                             <Edit className="w-4 h-4" />
@@ -311,7 +311,7 @@ export default function LandlordContractsDashboard() {
                   {/* Grid de información */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
                     <div className="flex items-start gap-2">
-                      <DollarSign className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <DollarSign className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-gray-500">Alquiler mensual</p>
                         <p className="font-medium text-gray-900">
@@ -322,7 +322,7 @@ export default function LandlordContractsDashboard() {
 
                     {contract.deposit_amount && (
                       <div className="flex items-start gap-2">
-                        <ShieldCheck className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                        <ShieldCheck className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-gray-500">Depósito requerido</p>
                           <p className="font-medium text-gray-900">
@@ -333,7 +333,7 @@ export default function LandlordContractsDashboard() {
                     )}
 
                     <div className="flex items-start gap-2">
-                      <CalendarDays className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <CalendarDays className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-gray-500">Vigencia</p>
                         <p className="font-medium text-gray-900">
@@ -344,7 +344,7 @@ export default function LandlordContractsDashboard() {
 
                     {contract.tenant && (
                       <div className="flex items-start gap-2">
-                        <User className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                        <User className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-gray-500">Inquilino</p>
                           <p className="font-medium text-gray-900">{contract.tenant.full_name}</p>
@@ -473,7 +473,7 @@ export default function LandlordContractsDashboard() {
         <Card className="border border-gray-200 shadow-sm mt-8">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Info className="w-5 h-5 text-orange-600" />
+              <Info className="w-5 h-5 text-green-600" />
               <h2 className="text-lg font-extrabold text-gray-900">
                 Información sobre Contratos
               </h2>
@@ -529,7 +529,7 @@ export default function LandlordContractsDashboard() {
                   Importante:
                 </span>{' '}
                 Los contratos creados en{' '}
-                <span className="font-semibold text-orange-600">RentMatch</span> son legalmente vinculantes.
+                <span className="font-semibold text-green-600">RentMatch</span> son legalmente vinculantes.
                 Asegúrate de revisar todos los términos antes de firmar.
               </p>
             </div>

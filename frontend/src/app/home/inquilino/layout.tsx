@@ -4,9 +4,41 @@ import SidebarMenuInquilino from '@/components/sidebar-menu-inquilino'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { LogOut, User } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { usePathname } from 'next/navigation'
 
 export default function InquilinoLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth({ requiredRole: 'inquilino' })
+  const pathname = usePathname()
+
+  // Generar breadcrumb dinámico
+  const getBreadcrumb = () => {
+    const pathMap: Record<string, string> = {
+      '/home/inquilino': 'Inicio',
+      '/home/inquilino/crear': 'Crear Perfil',
+      '/home/inquilino/contratos': 'Contratos',
+      '/home/inquilino/depositos': 'Depósitos',
+      '/home/inquilino/depositos/success': 'Pago Exitoso',
+      '/home/inquilino/depositos/pending': 'Pago Pendiente',
+      '/home/inquilino/depositos/failure': 'Pago Fallido',
+      '/home/inquilino/cuenta': 'Mi Cuenta',
+      '/home/inquilino/cuenta/seguridad': 'Seguridad'
+    };
+
+    // Buscar coincidencia exacta primero
+    if (pathMap[pathname]) {
+      return pathMap[pathname];
+    }
+
+    // Si contiene "contratos/signed" mostrar "Firmar Contrato"
+    if (pathname.includes('/contratos/signed')) {
+      return 'Firmar Contrato';
+    }
+
+    // Por defecto
+    return 'Inquilino';
+  };
+
+  const currentPage = getBreadcrumb();
 
   // Mostrar pantalla de carga mientras valida
   if (loading) {
@@ -33,7 +65,13 @@ export default function InquilinoLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-2">
             <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></div>
             <span className="text-gray-600 text-sm font-medium">
-              Dashboard / <span className="text-orange-600 font-semibold">Inquilino</span>
+              Dashboard / <span className="text-gray-700">Inquilino</span>
+              {currentPage !== 'Inquilino' && currentPage !== 'Inicio' && (
+                <> / <span className="text-orange-600 font-semibold">{currentPage}</span></>
+              )}
+              {currentPage === 'Inicio' && (
+                <span className="text-orange-600 font-semibold"> / Inicio</span>
+              )}
             </span>
           </div>
           <div className="flex items-center gap-4">

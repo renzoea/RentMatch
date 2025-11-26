@@ -16,11 +16,9 @@ import {
   ChevronRight,
   X,
   DollarSign,
-  Users,
   Eye,
   Trash2,
   Edit3,
-  Download,
   ExternalLink,
   Filter,
   ChevronDown,
@@ -117,6 +115,7 @@ export default function ContractsManagement() {
 
   useEffect(() => {
     loadContracts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, statusFilter, searchQuery, signatureFilter, startDateFrom, startDateTo, endDateFrom, endDateTo, minRent, maxRent, minDeposit, maxDeposit])
 
   const loadContracts = async () => {

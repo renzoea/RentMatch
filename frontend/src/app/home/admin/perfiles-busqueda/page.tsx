@@ -228,6 +228,7 @@ export default function SearchProfilesManagement() {
 
   useEffect(() => {
     fetchSearchProfiles()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, statusFilter, visibilityFilter])
 
   // Handlers

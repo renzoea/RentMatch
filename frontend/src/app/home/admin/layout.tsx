@@ -4,9 +4,26 @@ import SidebarMenuAdmin from '@/components/sidebar-menu-admin'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { LogOut, Shield } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { usePathname } from 'next/navigation'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth({ requiredRole: 'admin' })
+  const pathname = usePathname()
+
+  // Generar breadcrumb dinámico
+  const getBreadcrumb = () => {
+    const pathMap: Record<string, string> = {
+      '/home/admin': 'Panel General',
+      '/home/admin/usuarios': 'Usuarios',
+      '/home/admin/contratos': 'Contratos',
+      '/home/admin/depositos': 'Depósitos',
+      '/home/admin/perfiles-busqueda': 'Perfiles de Búsqueda'
+    };
+
+    return pathMap[pathname] || 'Administrador';
+  };
+
+  const currentPage = getBreadcrumb();
 
   // Mostrar pantalla de carga mientras valida
   if (loading) {
@@ -33,7 +50,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2">
             <div className="h-8 w-1 bg-gradient-to-b from-purple-600 to-purple-700 rounded-full"></div>
             <span className="text-gray-600 text-sm font-medium">
-              Dashboard / <span className="text-purple-600 font-semibold">Administrador</span>
+              Dashboard / <span className="text-gray-700">Admin</span>
+              {currentPage !== 'Administrador' && currentPage !== 'Panel General' && (
+                <> / <span className="text-purple-600 font-semibold">{currentPage}</span></>
+              )}
+              {currentPage === 'Panel General' && (
+                <span className="text-purple-600 font-semibold"> / Panel General</span>
+              )}
             </span>
           </div>
           <div className="flex items-center gap-4">

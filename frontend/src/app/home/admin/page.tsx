@@ -555,7 +555,11 @@ export default function AdminDashboard() {
                             {alert.message}
                           </p>
                           <p className="text-xs text-gray-600 mt-1">
-                            Métrica: {alert.metric} • Severidad: {alert.severity}
+                            Métrica: {alert.metric} • Severidad: {
+                              alert.severity === 'high' ? 'Alta' :
+                              alert.severity === 'medium' ? 'Media' :
+                              'Baja'
+                            }
                           </p>
                         </div>
                       </div>

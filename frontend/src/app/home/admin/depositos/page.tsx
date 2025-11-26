@@ -138,6 +138,7 @@ export default function DepositsManagement() {
 
   useEffect(() => {
     loadDeposits()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, statusFilter, outcomeFilter, searchQuery, minAmount, maxAmount, hasProof, verified, released])
 
   const loadDeposits = async () => {

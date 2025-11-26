@@ -54,7 +54,7 @@ export default function LandlordContractSignedPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 max-w-md w-full text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-200 border-t-orange-500 mx-auto mb-6"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-200 border-t-green-500 mx-auto mb-6"></div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Confirmando firma...</h2>
           <p className="text-gray-600 text-sm">
             Estamos procesando tu firma digital
@@ -150,12 +150,12 @@ export default function LandlordContractSignedPage() {
         {/* Pasos siguientes */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
           <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <ArrowRight className="w-5 h-5 text-orange-600" />
+            <ArrowRight className="w-5 h-5 text-green-600" />
             ¿Qué sigue ahora?
           </h3>
           <div className="space-y-4">
             <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl border border-orange-200">
-              <div className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+              <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
                 1
               </div>
               <div>
@@ -196,7 +196,7 @@ export default function LandlordContractSignedPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             onClick={handleGoToContracts}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg px-8 py-3 text-lg"
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg px-8 py-3 text-lg"
           >
             <FileText className="w-5 h-5 mr-2" />
             Ver Mis Contratos
@@ -205,7 +205,7 @@ export default function LandlordContractSignedPage() {
           <Button
             variant="outline"
             onClick={handleGoToDashboard}
-            className="hover:bg-orange-50 hover:border-orange-300 hover:text-orange-700 px-8 py-3 text-lg"
+            className="hover:bg-orange-50 hover:border-orange-300 hover:text-green-700 px-8 py-3 text-lg"
           >
             <Home className="w-5 h-5 mr-2" />
             Ir al Dashboard

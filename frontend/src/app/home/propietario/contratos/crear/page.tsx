@@ -294,7 +294,7 @@ function CrearContratoContent() {
     return (
       <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 animate-spin text-orange-500 mx-auto mb-4" />
+          <Loader2 className="w-16 h-16 animate-spin text-green-500 mx-auto mb-4" />
           <p className="text-gray-600">Cargando contrato...</p>
         </div>
       </div>
@@ -342,7 +342,7 @@ function CrearContratoContent() {
                       type="button"
                       onClick={searchTenant}
                       disabled={searchingTenant}
-                      className="bg-orange-500 hover:bg-orange-600"
+                      className="bg-green-500 hover:bg-green-600"
                     >
                       {searchingTenant ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                     </Button>
@@ -433,7 +433,7 @@ function CrearContratoContent() {
                         type="checkbox"
                         checked={formData.furnished}
                         onChange={(e) => setFormData({ ...formData, furnished: e.target.checked })}
-                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                       />
                       <span className="text-sm text-gray-700">Amoblado</span>
                     </label>
@@ -442,7 +442,7 @@ function CrearContratoContent() {
                         type="checkbox"
                         checked={formData.pets_allowed}
                         onChange={(e) => setFormData({ ...formData, pets_allowed: e.target.checked })}
-                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                       />
                       <span className="text-sm text-gray-700">Acepta mascotas</span>
                     </label>
@@ -465,7 +465,7 @@ function CrearContratoContent() {
                               setFormData({ ...formData, amenities: formData.amenities.filter(a => a !== amenity) });
                             }
                           }}
-                          className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                         />
                         <span className="text-sm text-gray-700">{amenity}</span>
                       </label>
@@ -586,7 +586,7 @@ function CrearContratoContent() {
                 >
                   {uploading ? (
                     <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+                      <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
                       <p className="text-sm text-gray-700">Subiendo PDF...</p>
                     </div>
                   ) : pdfUrl ? (
@@ -653,7 +653,7 @@ function CrearContratoContent() {
                   <Button
                     type="submit"
                     disabled={sending || !tenant || !pdfUrl}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-6"
+                    className="bg-green-500 hover:bg-green-600 text-white px-6"
                   >
                     {sending ? (
                       <>
@@ -714,7 +714,7 @@ export default function CrearContratoPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 p-6 md:p-10 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 animate-spin text-orange-500 mx-auto mb-4" />
+          <Loader2 className="w-16 h-16 animate-spin text-green-500 mx-auto mb-4" />
           <p className="text-gray-600">Cargando...</p>
         </div>
       </div>

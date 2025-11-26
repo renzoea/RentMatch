@@ -208,7 +208,7 @@ export default function PropietarioHomePage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="bg-orange-500 p-2.5 rounded-lg">
+              <div className="bg-green-500 p-2.5 rounded-lg">
                 <Users className="w-7 h-7 text-white" />
               </div>
               <div>
@@ -218,7 +218,7 @@ export default function PropietarioHomePage() {
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-orange-600 transition-colors"
+              className="lg:hidden bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-600 transition-colors"
             >
               <Filter className="w-4 h-4" />
               Filtros
@@ -247,7 +247,7 @@ export default function PropietarioHomePage() {
             <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 sticky top-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-orange-500" />
+                  <Filter className="w-5 h-5 text-green-500" />
                   Filtros
                 </h2>
                 <button onClick={() => setShowFilters(false)} className="lg:hidden">
@@ -423,7 +423,7 @@ export default function PropietarioHomePage() {
                 <button
                   onClick={search}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-2.5 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2.5 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Filter className="w-4 h-4" />}
                   {loading ? 'Buscando...' : 'Aplicar Filtros'}
@@ -524,7 +524,7 @@ function MetricCard({ icon, label, value, color }: { icon: React.ReactElement; l
   const colors = {
     blue: 'bg-blue-500',
     green: 'bg-green-500',
-    orange: 'bg-orange-500'
+    orange: 'bg-green-500'
   };
 
   return (
@@ -568,7 +568,7 @@ function Checkbox({
       />
       <div
         className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-          checked ? 'bg-orange-500 border-orange-500' : 'border-gray-300 group-hover:border-orange-400'
+          checked ? 'bg-green-500 border-green-500' : 'border-gray-300 group-hover:border-orange-400'
         }`}
         aria-hidden="true"
       >
@@ -603,7 +603,7 @@ function Select({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
       >
         <option value="">{placeholder || 'Seleccionar...'}</option>
         {options.filter((o: string) => o).map((o: string) => (
@@ -638,7 +638,7 @@ function ProfileCard({
     <Card hover>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">
+            <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">
               {initials}
             </div>
             <div>
@@ -649,7 +649,7 @@ function ProfileCard({
                 </StatusBadge>
               </div>
               <div className="flex items-center gap-2 text-gray-600 text-sm mt-1">
-                <MapPin className="w-4 h-4 text-orange-500" />
+                <MapPin className="w-4 h-4 text-green-500" />
                 <span>{[profile.neighborhood, profile.city].filter(Boolean).join(', ') || 'Sin especificar'}</span>
               </div>
             </div>
@@ -662,7 +662,7 @@ function ProfileCard({
         {profile.property_types && profile.property_types.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
             {profile.property_types.map((type) => (
-              <span key={type} className="inline-flex items-center px-2 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-medium border border-orange-200 capitalize">
+              <span key={type} className="inline-flex items-center px-2 py-1 bg-orange-50 text-green-700 rounded-lg text-xs font-medium border border-orange-200 capitalize">
                 {PROPERTY_TYPES[type] || cap(type)}
               </span>
             ))}
@@ -701,25 +701,25 @@ function ProfileCard({
         <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
           {(profile.bedroom_min || profile.bedroom_max) && (
             <div className="flex items-center gap-1.5">
-              <Bed className="w-4 h-4 text-orange-500" />
+              <Bed className="w-4 h-4 text-green-500" />
               <span>{profile.bedroom_min || 0} - {profile.bedroom_max || '∞'} dorm</span>
             </div>
           )}
           {(profile.rooms_min || profile.rooms_max) && (
             <div className="flex items-center gap-1.5">
-              <Home className="w-4 h-4 text-orange-500" />
+              <Home className="w-4 h-4 text-green-500" />
               <span>{profile.rooms_min || 0} - {profile.rooms_max || '∞'} amb</span>
             </div>
           )}
           {(profile.bathrooms_min || profile.bathrooms_max) && (
             <div className="flex items-center gap-1.5">
-              <Bath className="w-4 h-4 text-orange-500" />
+              <Bath className="w-4 h-4 text-green-500" />
               <span>{profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'} baño</span>
             </div>
           )}
           {profile.lease_term_months && (
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-orange-500" />
+              <Calendar className="w-4 h-4 text-green-500" />
               <span>{profile.lease_term_months} meses</span>
             </div>
           )}
@@ -809,7 +809,7 @@ function ProfileDetailModal({
       <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-200 max-h-[90vh] flex flex-col">
         <div className="bg-white px-6 py-5 flex items-center justify-between border-b border-gray-200 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="bg-orange-500 p-2 rounded-lg">
+            <div className="bg-green-500 p-2 rounded-lg">
               <Users className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">Perfil del Inquilino</h2>
@@ -825,7 +825,7 @@ function ProfileDetailModal({
         <div className="p-6 space-y-5 overflow-y-auto">
           <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Users className="w-5 h-5 text-orange-600" />
+              <Users className="w-5 h-5 text-green-600" />
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Información Personal</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -845,7 +845,7 @@ function ProfileDetailModal({
           {(profile.city || profile.neighborhood) && (
             <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-orange-600" />
+                <MapPin className="w-5 h-5 text-green-600" />
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ubicación Deseada</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -867,7 +867,7 @@ function ProfileDetailModal({
 
           <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <DollarSign className="w-5 h-5 text-orange-600" />
+              <DollarSign className="w-5 h-5 text-green-600" />
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Presupuesto</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -886,7 +886,7 @@ function ProfileDetailModal({
               {profile.lease_term_months && (
                 <div className="md:col-span-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-orange-600" />
+                    <Calendar className="w-4 h-4 text-green-600" />
                     <span className="text-gray-700 font-medium text-sm">Duración del contrato:</span>
                     <span className="text-gray-900 text-sm">{profile.lease_term_months} meses</span>
                   </div>
@@ -897,7 +897,7 @@ function ProfileDetailModal({
 
           <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-5 h-5 text-orange-600" />
+              <Building2 className="w-5 h-5 text-green-600" />
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Propiedad Buscada</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -915,28 +915,28 @@ function ProfileDetailModal({
               )}
               {(profile.bedroom_min || profile.bedroom_max) && (
                 <div className="flex items-center gap-2">
-                  <Bed className="w-4 h-4 text-orange-600" />
+                  <Bed className="w-4 h-4 text-green-600" />
                   <span className="text-gray-700 font-medium text-sm">Dormitorios:</span>
                   <span className="text-gray-900 text-sm">{profile.bedroom_min || 0} - {profile.bedroom_max || '∞'}</span>
                 </div>
               )}
               {(profile.rooms_min || profile.rooms_max) && (
                 <div className="flex items-center gap-2">
-                  <Home className="w-4 h-4 text-orange-600" />
+                  <Home className="w-4 h-4 text-green-600" />
                   <span className="text-gray-700 font-medium text-sm">Ambientes:</span>
                   <span className="text-gray-900 text-sm">{profile.rooms_min || 0} - {profile.rooms_max || '∞'}</span>
                 </div>
               )}
               {(profile.bathrooms_min || profile.bathrooms_max) && (
                 <div className="flex items-center gap-2">
-                  <Bath className="w-4 h-4 text-orange-600" />
+                  <Bath className="w-4 h-4 text-green-600" />
                   <span className="text-gray-700 font-medium text-sm">Baños:</span>
                   <span className="text-gray-900 text-sm">{profile.bathrooms_min || 0} - {profile.bathrooms_max || '∞'}</span>
                 </div>
               )}
               {(profile.area_min || profile.area_max) && (
                 <div className="flex items-center gap-2">
-                  <Maximize className="w-4 h-4 text-orange-600" />
+                  <Maximize className="w-4 h-4 text-green-600" />
                   <span className="text-gray-700 font-medium text-sm">Área (m²):</span>
                   <span className="text-gray-900 text-sm">{profile.area_min || 0} - {profile.area_max || '∞'}</span>
                 </div>
@@ -952,7 +952,7 @@ function ProfileDetailModal({
 
           <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Shield className="w-5 h-5 text-orange-600" />
+              <Shield className="w-5 h-5 text-green-600" />
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Preferencias</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -982,14 +982,14 @@ function ProfileDetailModal({
               )}
               {profile.parking_needed !== undefined && (
                 <div className="flex items-center gap-2">
-                  <Car className="w-4 h-4 text-orange-600" />
+                  <Car className="w-4 h-4 text-green-600" />
                   <span className="text-gray-700 font-medium text-sm">Cochera:</span>
                   <BooleanBadge value={profile.parking_needed} trueText="Necesaria" falseText="Opcional" />
                 </div>
               )}
               {profile.require_verified_landlord !== undefined && (
                 <div className="flex items-center gap-2">
-                  <BadgeCheck className="w-4 h-4 text-orange-600" />
+                  <BadgeCheck className="w-4 h-4 text-green-600" />
                   <span className="text-gray-700 font-medium text-sm">Propietario verificado:</span>
                   <BooleanBadge value={profile.require_verified_landlord} />
                 </div>
@@ -1000,37 +1000,37 @@ function ProfileDetailModal({
           {(profile.amenities?.length || profile.balcony || profile.terrace || profile.laundry || profile.security || profile.elevator) && (
             <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-orange-600" />
+                <Sparkles className="w-5 h-5 text-green-600" />
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Comodidades Deseadas</h3>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {profile.balcony && (
                   <div className="flex items-center gap-2">
-                    <Sun className="w-4 h-4 text-orange-600" />
+                    <Sun className="w-4 h-4 text-green-600" />
                     <span className="text-gray-900 text-sm">Balcón</span>
                   </div>
                 )}
                 {profile.terrace && (
                   <div className="flex items-center gap-2">
-                    <Waves className="w-4 h-4 text-orange-600" />
+                    <Waves className="w-4 h-4 text-green-600" />
                     <span className="text-gray-900 text-sm">Terraza</span>
                   </div>
                 )}
                 {profile.laundry && (
                   <div className="flex items-center gap-2">
-                    <Wind className="w-4 h-4 text-orange-600" />
+                    <Wind className="w-4 h-4 text-green-600" />
                     <span className="text-gray-900 text-sm">Lavadero</span>
                   </div>
                 )}
                 {profile.security && (
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-orange-600" />
+                    <Lock className="w-4 h-4 text-green-600" />
                     <span className="text-gray-900 text-sm">Seguridad</span>
                   </div>
                 )}
                 {profile.elevator && (
                   <div className="flex items-center gap-2">
-                    <MoveUp className="w-4 h-4 text-orange-600" />
+                    <MoveUp className="w-4 h-4 text-green-600" />
                     <span className="text-gray-900 text-sm">Ascensor</span>
                   </div>
                 )}
@@ -1041,7 +1041,7 @@ function ProfileDetailModal({
           {(profile.metadata?.preferencias || profile.metadata?.notas) && (
             <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <StickyNote className="w-5 h-5 text-orange-600" />
+                <StickyNote className="w-5 h-5 text-green-600" />
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Notas Adicionales</h3>
               </div>
               <div className="space-y-3">
@@ -1240,7 +1240,7 @@ function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100">
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-lg">
               <AlertCircle className="w-6 h-6 text-white" />
@@ -1258,7 +1258,7 @@ function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
         <div className="p-6">
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-orange-900 font-semibold mb-2">
                   Debes tener tu perfil verificado para ver la información de contacto de los inquilinos.
@@ -1276,7 +1276,7 @@ function VerificationRequiredModal({ onClose }: { onClose: () => void }) {
                 onClose();
                 window.location.href = '/home/propietario/cuenta';
               }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-semibold"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold"
             >
               <BadgeCheck className="w-5 h-5" />
               Verificar Mi Cuenta

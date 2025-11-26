@@ -285,7 +285,7 @@ export default function MiCuentaPropietarioPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
       </div>
     );
   }
@@ -307,7 +307,7 @@ export default function MiCuentaPropietarioPage() {
             <button
               className={`pb-1 ${
                 activeTab === 'datos'
-                  ? 'text-orange-600 font-semibold border-b-2 border-orange-600'
+                  ? 'text-green-600 font-semibold border-b-2 border-green-600'
                   : 'text-gray-500 hover:text-gray-800'
               }`}
               onClick={() => setActiveTab('datos')}
@@ -317,7 +317,7 @@ export default function MiCuentaPropietarioPage() {
             <button
               className={`pb-1 ${
                 activeTab === 'verificacion'
-                  ? 'text-orange-600 font-semibold border-b-2 border-orange-600'
+                  ? 'text-green-600 font-semibold border-b-2 border-green-600'
                   : 'text-gray-500 hover:text-gray-800'
               }`}
               onClick={() => setActiveTab('verificacion')}
@@ -327,7 +327,7 @@ export default function MiCuentaPropietarioPage() {
             <button
               className={`pb-1 ${
                 activeTab === 'seguridad'
-                  ? 'text-orange-600 font-semibold border-b-2 border-orange-600'
+                  ? 'text-green-600 font-semibold border-b-2 border-green-600'
                   : 'text-gray-500 hover:text-gray-800'
               }`}
               onClick={() => router.push('/home/propietario/cuenta/seguridad')}
@@ -415,7 +415,7 @@ export default function MiCuentaPropietarioPage() {
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    className="bg-green-500 hover:bg-green-600 text-white"
                   >
                     {saving ? (
                       <>
@@ -458,7 +458,7 @@ export default function MiCuentaPropietarioPage() {
             <Card className="border border-gray-200">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-6">
-                  <ShieldCheck className="w-6 h-6 text-orange-500" />
+                  <ShieldCheck className="w-6 h-6 text-green-500" />
                   <h2 className="text-2xl font-bold text-gray-900">Verificación de Identidad</h2>
                 </div>
 
@@ -589,7 +589,7 @@ export default function MiCuentaPropietarioPage() {
                       }
                     </p>
                     <Button
-                      className="mt-4 bg-orange-500 hover:bg-orange-600 text-white"
+                      className="mt-4 bg-green-500 hover:bg-green-600 text-white"
                       onClick={() => {
                         handleCancelVerification();
                         loadVerificationStatus();
@@ -606,7 +606,7 @@ export default function MiCuentaPropietarioPage() {
                     <Card className="bg-orange-50 border-orange-200">
                       <CardContent className="p-4">
                         <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Camera className="w-5 h-5 text-orange-600" />
+                          <Camera className="w-5 h-5 text-green-600" />
                           Verificación con teléfono móvil
                         </h3>
                         <ol className="space-y-2 text-sm text-gray-700">
@@ -637,7 +637,7 @@ export default function MiCuentaPropietarioPage() {
                     </div>
 
                     <Button
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white"
                       onClick={handleStartQRVerification}
                       disabled={loadingVerification}
                     >
