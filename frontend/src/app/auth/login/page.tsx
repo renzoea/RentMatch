@@ -84,6 +84,7 @@ export default function LoginPage() {
 
       if (data.user.role === "inquilino") router.push("/home/inquilino")
       else if (data.user.role === "propietario") router.push("/home/propietario")
+      else if (data.user.role === "admin") router.push("/home/admin")
       else router.push("/")
     } catch (error: unknown) {
       const errorMessage = error instanceof AxiosError && error.response

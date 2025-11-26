@@ -11,10 +11,25 @@ async function authenticateToken(req, res, next) {
   next();
 }
 
+// Middleware para verificar si el usuario está baneado (uso general)
+async function checkBannedStatus(req, res, next) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('is_banned')
+    .eq('id', req.user.id)
+    .single();
+
+  if (error || !data) return res.status(403).json({ message: 'No se encontró el perfil' });
+  if (data.is_banned) {
+    return res.status(403).json({ message: 'Tu cuenta ha sido suspendida. Contacta al administrador para más información.' });
+  }
+  next();
+}
+
 async function authorizeTenant(req, res, next) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_banned')
     .eq('id', req.user.id)
     .single();
 
@@ -31,7 +46,7 @@ async function authorizeTenant(req, res, next) {
 async function authorizeLandlord(req, res, next) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_banned')
     .eq('id', req.user.id)
     .single();
 
@@ -45,4 +60,21 @@ async function authorizeLandlord(req, res, next) {
   next();
 }
 
-module.exports = { authenticateToken, authorizeTenant, authorizeLandlord };
+async function requireAdmin(req, res, next) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role, is_banned')
+    .eq('id', req.user.id)
+    .single();
+
+  if (error || !data) return res.status(403).json({ message: 'No se encontró el perfil' });
+  if (data.role !== 'admin') {
+    return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
+  }
+  if (data.is_banned) {
+    return res.status(403).json({ message: 'Usuario baneado, no puedes hacer eso.' });
+  }
+  next();
+}
+
+module.exports = { authenticateToken, checkBannedStatus, authorizeTenant, authorizeLandlord, requireAdmin };

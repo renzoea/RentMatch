@@ -83,6 +83,7 @@ const MobileInicialRoutes = require('./src/routes/MobileInicialRoutes');
 const MobileEndRoutes = require('./src/routes/MobileEndRoutes');
 const MobileExpertise = require('./src/routes/MobileExpertiseRoutes');
 const verificationRoutes = require('./src/routes/verificationRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
 
 // Usar rutas
 app.use('/api/search-profiles', searchProfileRoutes);
@@ -99,6 +100,7 @@ app.use('/api/mobile-Inicial', MobileInicialRoutes);
 app.use('/api/mobile-End', MobileEndRoutes);
 app.use('/api/mobile-Expertise', MobileExpertise);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {

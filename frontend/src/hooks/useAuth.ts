@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
-type UserRole = 'inquilino' | 'propietario';
+type UserRole = 'inquilino' | 'propietario' | 'admin';
 
 interface User {
   id: string;
