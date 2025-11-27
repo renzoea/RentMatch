@@ -2,7 +2,7 @@ const supabase = require('../config/supabase');
 
 const NewExpertise = async (req, res) => {
   try {
-    const { reason, description, date, phone, email } = req.body;
+    const { contract_id, tenant_id, reason, description, date, phone, email } = req.body;
 
     // Validaciones básicas
     if (!reason) {
@@ -14,7 +14,7 @@ const NewExpertise = async (req, res) => {
 
     const payload = {
       contract_id,
-      tenet_id,
+      tenant_id,
       reason,
       description: description || '',
       date: date || null,
