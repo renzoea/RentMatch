@@ -1,6 +1,7 @@
 const { differenceInDays } = require('date-fns');
 const multer = require('multer');
 const path = require('path');
+const supabase = require('../config/supabase');
 
 // Configuración de multer para almacenamiento local
 const storage = multer.diskStorage({
@@ -29,9 +30,9 @@ const EndState = async (req, res) => {
     return res.status(401).json({ success: false, message: 'Autenticación requerida.' });
   }
 
-  const { contract_id } = req.body;
+  const { contract_id, description } = req.body;
 
-  if (!contract_id || !req.file) {
+  if (!contract_id) {
     return res.status(400).json({
       success: false,
       message: 'Faltan campos obligatorios: contract_id y archivo.',
@@ -65,24 +66,41 @@ const EndState = async (req, res) => {
       });
     }
 
-    // Ruta del archivo subido
-    const archivoUrl = path.join('uploads', req.file.filename);
-
-    // Insertar en la tabla inicial_state_report
+    // Insertar en la tabla end_state_report
     const { data: report, error: reportError } = await supabase
       .from('end_state_report')
       .insert({
         contract_id,
         tenant_id: userId,
-        archivo_url: archivoUrl,
-        created_at: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
-        description
+        description: description || null,
+        created_at: new Date().toISOString()
       })
       .select()
       .single();
 
     if (reportError) {
       return res.status(500).json({ success: false, message: 'Error al guardar el reporte.', error: reportError.message });
+    }
+
+    // Si hay archivos, guardarlos en la tabla de adjuntos
+    if (req.files && req.files.length > 0) {
+      const attachments = req.files.map(file => ({
+        end_state_id: report.id,
+        file_url: path.join('uploads', file.filename),
+        media_type: file.mimetype
+      }));
+
+      const { error: attachError } = await supabase
+        .from('end_state_attachments')
+        .insert(attachments);
+
+      if (attachError) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error al guardar los archivos adjuntos',
+          error: attachError.message
+        });
+      }
     }
 
     return res.status(201).json({ success: true, message: 'Reporte creado exitosamente.', data: report });
