@@ -3,7 +3,7 @@
 import { Mail, Phone, MapPin, Clock, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { InputEnhanced } from "@/components/ui/input-enhanced";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -13,7 +13,10 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Navbar from "@/components/navbar";
+import { contactSchema, type ContactFormData } from "@/lib/schemas";
 
 // ======================================================
 // NOTA: Se eliminaron todas las animaciones de F-M y CSS.
@@ -23,11 +26,24 @@ import Navbar from "@/components/navbar";
 export default function ContactoPage() {
   const [sending, setSending] = useState(false);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      subject: "",
+      message: "",
+    },
+  });
+
+  async function onSubmit(data: ContactFormData) {
     setSending(true);
     // TODO: mandalo a tu endpoint /action o API route
-    setTimeout(() => setSending(false), 900);
+    console.log('Contact form data:', data);
+    setTimeout(() => {
+      setSending(false);
+      reset();
+    }, 900);
   }
 
   return (
@@ -72,39 +88,55 @@ export default function ContactoPage() {
                       Envíanos un Mensaje
                     </h2>
                     
-                    <form className="space-y-6" onSubmit={onSubmit}>
+                    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label htmlFor="name" className="text-gray-700 font-medium">Nombre completo</Label>
-                          <Input id="name" name="name" placeholder="Tu nombre" required className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all" />
+                          <InputEnhanced
+                            id="name"
+                            {...register("name")}
+                            placeholder="Tu nombre"
+                            className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
+                            error={errors.name?.message}
+                            disabled={sending}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
-                          <Input
+                          <InputEnhanced
                             id="email"
-                            name="email"
                             type="email"
+                            {...register("email")}
                             placeholder="tu@email.com"
-                            required
                             className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
+                            error={errors.email?.message}
+                            disabled={sending}
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="subject" className="text-gray-700 font-medium">Asunto</Label>
-                        <Input id="subject" name="subject" placeholder="Consulta sobre…" required className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all" />
+                        <InputEnhanced
+                          id="subject"
+                          {...register("subject")}
+                          placeholder="Consulta sobre…"
+                          className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
+                          error={errors.subject?.message}
+                          disabled={sending}
+                        />
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="message" className="text-gray-700 font-medium">Mensaje</Label>
                         <Textarea
                           id="message"
-                          name="message"
+                          {...register("message")}
                           placeholder="Escribe tu mensaje aquí…"
                           className="min-h-[160px] rounded-xl bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
-                          required
+                          disabled={sending}
                         />
+                        {errors.message && <p className="text-sm text-red-500 mt-1">{errors.message.message}</p>}
                       </div>
 
                       <div className="pt-2">

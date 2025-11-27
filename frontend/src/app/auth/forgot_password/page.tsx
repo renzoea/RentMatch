@@ -1,31 +1,35 @@
 'use client'
 
 import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { InputEnhanced } from "@/components/ui/input-enhanced"
 import api from "@/lib/api"
 import type { AxiosError } from "axios"
 import Link from "next/link"
+import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/schemas"
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  })
+
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     setErrorMsg(null)
     setSuccessMsg(null)
-    if (!email.trim()) {
-      setErrorMsg("El correo es obligatorio.")
-      return
-    }
     setLoading(true)
     try {
-      const res = await api.post("/api/auth/forgot-password", { email: email.trim().toLowerCase() })
+      const res = await api.post("/api/auth/forgot-password", { email: data.email.trim().toLowerCase() })
       setSuccessMsg(res.data.message || "Correo enviado. Revisa tu bandeja.")
-      setEmail("")
+      reset()
     } catch (err) {
       const error = err as AxiosError<{ error?: string }>
       setErrorMsg(error.response?.data?.error || "No se pudo enviar el correo.")
@@ -54,21 +58,18 @@ export default function ForgotPasswordPage() {
           <p className="text-gray-600">Te enviaremos un correo para restablecer tu contraseña</p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Correo Electrónico
-            </label>
-            <Input
+            <InputEnhanced
+              label="Correo Electrónico"
               id="email"
               type="email"
               placeholder="tu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")}
               disabled={loading}
-              required
+              error={errors.email?.message}
+              helperText="Ingresa el correo asociado a tu cuenta"
             />
-            <p className="text-sm text-gray-500 mt-2">Ingresa el correo asociado a tu cuenta</p>
           </div>
 
           {errorMsg && <p className="text-red-600 text-sm text-center">{errorMsg}</p>}
@@ -76,7 +77,7 @@ export default function ForgotPasswordPage() {
 
           <Button
             type="submit"
-            disabled={loading || !email}
+            disabled={loading}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 font-medium rounded-lg disabled:opacity-60"
           >
             {loading ? "Enviando..." : "Enviar correo"}

@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card-standard';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { InputEnhanced } from '@/components/ui/input-enhanced';
 import { Modal } from '@/components/ui/modal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ShieldCheck, Info, AlertTriangle, CheckCircle, XCircle, Loader2, Eye, EyeOff, Camera } from 'lucide-react';
@@ -15,6 +17,7 @@ import api from '@/lib/api';
 import { MESSAGES } from '@/constants/messages';
 import QRCode from 'qrcode';
 import { io, Socket } from 'socket.io-client';
+import { accountDetailsSchema, type AccountDetailsFormData, deleteAccountSchema, type DeleteAccountFormData } from '@/lib/schemas';
 
 export default function MiCuentaInquilinoPage() {
   const router = useRouter();
@@ -24,20 +27,32 @@ export default function MiCuentaInquilinoPage() {
   // Tab management
   const [activeTab, setActiveTab] = useState('datos');
 
-  const [form, setForm] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    public_search_profiles: true,
-  });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // Form management with react-hook-form
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<AccountDetailsFormData>({
+    resolver: zodResolver(accountDetailsSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      isPublic: true,
+    },
+  });
+
+  // Delete account form
+  const { register: registerDelete, handleSubmit: handleSubmitDelete, formState: { errors: errorsDelete }, reset: resetDelete } = useForm<DeleteAccountFormData>({
+    resolver: zodResolver(deleteAccountSchema),
+    defaultValues: {
+      confirmation: '',
+    },
+  });
 
   // Verification states
   const [verificationStatus, setVerificationStatus] = useState<{
@@ -85,13 +100,12 @@ export default function MiCuentaInquilinoPage() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      setForm({
-        first_name: firstName,
-        last_name: lastName,
-        email: profile.email || '',
-        phone: profile.phone || '',
-        public_search_profiles: profile.public_search_profiles ?? true,
-      });
+      // Update form values
+      setValue('firstName', firstName);
+      setValue('lastName', lastName);
+      setValue('email', profile.email || '');
+      setValue('phone', profile.phone || '');
+      setValue('isPublic', profile.public_search_profiles ?? true);
     } catch (error) {
       console.error('Error loading profile:', error);
       setErrorMsg((error as { response?: { data?: { error?: string } } })?.response?.data?.error || MESSAGES.PROFILE.LOAD_ERROR);
@@ -100,40 +114,19 @@ export default function MiCuentaInquilinoPage() {
     }
   };
 
-  const onChange =
-    (key: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm((s) => ({ ...s, [key]: e.target.value }));
-      // Clear messages when user starts typing
-      if (successMsg) setSuccessMsg('');
-      if (errorMsg) setErrorMsg('');
-    };
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate names
-    if (!form.first_name || form.first_name.trim().length === 0) {
-      setErrorMsg(MESSAGES.PROFILE.NAME_REQUIRED);
-      return;
-    }
-    if (!form.last_name || form.last_name.trim().length === 0) {
-      setErrorMsg(MESSAGES.PROFILE.LAST_NAME_REQUIRED);
-      return;
-    }
-
+  const onSubmit = async (data: AccountDetailsFormData) => {
     setSaving(true);
     setSuccessMsg('');
     setErrorMsg('');
 
     try {
       // Combine first and last name for backend
-      const full_name = `${form.first_name.trim()} ${form.last_name.trim()}`;
+      const full_name = `${data.firstName.trim()} ${data.lastName.trim()}`;
 
       const response = await api.patch('/api/users/profile', {
         full_name,
-        phone: form.phone,
-        public_search_profiles: form.public_search_profiles,
+        phone: data.phone || '',
+        public_search_profiles: data.isPublic,
       });
 
       setSuccessMsg(MESSAGES.PROFILE.UPDATE_SUCCESS);
@@ -155,19 +148,13 @@ export default function MiCuentaInquilinoPage() {
     }
   };
 
-  const onDeleteAccount = async () => {
-    if (deleteConfirmation !== MESSAGES.PROFILE.DELETE_CONFIRM_TEXT) {
-      setErrorMsg(MESSAGES.PROFILE.DELETE_INVALID_CONFIRMATION);
-      toast.error('Confirmación inválida', MESSAGES.PROFILE.DELETE_INVALID_CONFIRMATION);
-      return;
-    }
-
+  const onDeleteAccount = async (data: DeleteAccountFormData) => {
     setDeleting(true);
     setErrorMsg('');
 
     try {
       await api.delete('/api/users/account', {
-        data: { confirmation: deleteConfirmation }
+        data: { confirmation: data.confirmation }
       });
 
       // Clear local storage
@@ -370,36 +357,36 @@ export default function MiCuentaInquilinoPage() {
                 <h2 className="text-lg font-extrabold text-gray-900">Información personal</h2>
               </div>
 
-              <form className="space-y-5" onSubmit={onSubmit}>
+              <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="first_name">Nombre *</Label>
-                    <Input
-                      id="first_name"
-                      value={form.first_name}
-                      onChange={onChange('first_name')}
+                    <Label htmlFor="firstName">Nombre *</Label>
+                    <InputEnhanced
+                      id="firstName"
+                      {...register('firstName')}
                       placeholder="Ej: Juan"
-                      required
+                      error={errors.firstName?.message}
+                      disabled={saving}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="last_name">Apellido *</Label>
-                    <Input
-                      id="last_name"
-                      value={form.last_name}
-                      onChange={onChange('last_name')}
+                    <Label htmlFor="lastName">Apellido *</Label>
+                    <InputEnhanced
+                      id="lastName"
+                      {...register('lastName')}
                       placeholder="Ej: Pérez"
-                      required
+                      error={errors.lastName?.message}
+                      disabled={saving}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Correo electrónico</Label>
-                  <Input
+                  <InputEnhanced
                     id="email"
                     type="email"
-                    value={form.email}
+                    {...register('email')}
                     className="bg-gray-100"
                     disabled
                     readOnly
@@ -411,11 +398,12 @@ export default function MiCuentaInquilinoPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone">Teléfono</Label>
-                  <Input
+                  <InputEnhanced
                     id="phone"
-                    value={form.phone}
-                    onChange={onChange('phone')}
+                    {...register('phone')}
                     placeholder="Ej: +54 9 11 1234-5678"
+                    error={errors.phone?.message}
+                    disabled={saving}
                   />
                 </div>
 
@@ -443,7 +431,7 @@ export default function MiCuentaInquilinoPage() {
           <Card className="border border-gray-200 mb-8">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                {form.public_search_profiles ? (
+                {watch('isPublic') ? (
                   <Eye className="w-5 h-5 text-gray-700" />
                 ) : (
                   <EyeOff className="w-5 h-5 text-gray-700" />
@@ -451,20 +439,15 @@ export default function MiCuentaInquilinoPage() {
                 <h2 className="text-lg font-extrabold text-gray-900">Configuración de privacidad</h2>
               </div>
 
-              <form className="space-y-4" onSubmit={onSubmit}>
+              <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <Checkbox
-                    id="public_search_profiles"
-                    checked={form.public_search_profiles}
-                    onCheckedChange={(checked) => {
-                      setForm((s) => ({ ...s, public_search_profiles: checked === true }));
-                      if (successMsg) setSuccessMsg('');
-                      if (errorMsg) setErrorMsg('');
-                    }}
+                    id="isPublic"
+                    {...register('isPublic')}
                   />
                   <div className="flex-1 space-y-1">
                     <Label
-                      htmlFor="public_search_profiles"
+                      htmlFor="isPublic"
                       className="text-sm font-semibold text-gray-900 cursor-pointer"
                     >
                       Perfil público
@@ -731,7 +714,7 @@ export default function MiCuentaInquilinoPage() {
         isOpen={showDeleteModal}
         onClose={() => {
           setShowDeleteModal(false);
-          setDeleteConfirmation('');
+          resetDelete();
           setErrorMsg('');
         }}
         title="Confirmar eliminación de cuenta"
@@ -741,7 +724,7 @@ export default function MiCuentaInquilinoPage() {
               variant="outline"
               onClick={() => {
                 setShowDeleteModal(false);
-                setDeleteConfirmation('');
+                resetDelete();
                 setErrorMsg('');
               }}
               disabled={deleting}
@@ -749,9 +732,10 @@ export default function MiCuentaInquilinoPage() {
               Cancelar
             </Button>
             <Button
+              type="submit"
+              form="delete-account-form"
               className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={onDeleteAccount}
-              disabled={deleting || deleteConfirmation !== 'ELIMINAR MI CUENTA'}
+              disabled={deleting}
             >
               {deleting ? (
                 <>
@@ -781,28 +765,27 @@ export default function MiCuentaInquilinoPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="delete-confirmation">
-              Para confirmar, escribe exactamente: <strong>{MESSAGES.PROFILE.DELETE_CONFIRM_TEXT}</strong>
-            </Label>
-            <Input
-              id="delete-confirmation"
-              value={deleteConfirmation}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setDeleteConfirmation(e.target.value);
-                setErrorMsg('');
-              }}
-              placeholder={MESSAGES.PROFILE.DELETE_CONFIRM_TEXT}
-              disabled={deleting}
-            />
-          </div>
-
-          {errorMsg && (
-            <div className="text-sm text-red-600 flex items-center gap-2">
-              <XCircle className="w-4 h-4" />
-              <span>{errorMsg}</span>
+          <form id="delete-account-form" onSubmit={handleSubmitDelete(onDeleteAccount)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirmation">
+                Para confirmar, escribe exactamente: <strong>{MESSAGES.PROFILE.DELETE_CONFIRM_TEXT}</strong>
+              </Label>
+              <InputEnhanced
+                id="confirmation"
+                {...registerDelete('confirmation')}
+                placeholder={MESSAGES.PROFILE.DELETE_CONFIRM_TEXT}
+                disabled={deleting}
+                error={errorsDelete.confirmation?.message}
+              />
             </div>
-          )}
+
+            {errorMsg && (
+              <div className="text-sm text-red-600 flex items-center gap-2">
+                <XCircle className="w-4 h-4" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+          </form>
         </div>
       </Modal>
     </>

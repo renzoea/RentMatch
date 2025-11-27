@@ -2,6 +2,8 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { InputEnhanced } from '@/components/ui/input-enhanced'
@@ -20,46 +22,11 @@ import {
   Home as HomeIcon
 } from 'lucide-react'
 import type { AxiosError } from 'axios'
+import { searchProfileSchema, type SearchProfileFormData } from '@/lib/schemas'
 
 interface ApiErrorPayload {
   error?: string
   message?: string
-}
-
-type FormData = {
-  city?: string
-  neighborhood?: string
-  budget_min?: number
-  budget_max?: number
-  property_types: string[]
-  rooms_min?: number
-  rooms_max?: number
-  bathrooms_min?: number
-  bathrooms_max?: number
-  furnished?: boolean
-  pets_allowed?: boolean
-  smokers_allowed?: boolean
-  amenities: string[]
-  lease_term_months?: number
-  occupants?: number
-  children?: boolean
-  students?: boolean
-  parking_needed?: boolean
-  require_verified_landlord?: boolean
-  status: string
-  bedroom_min?: number
-  bedroom_max?: number
-  balcony?: boolean
-  terrace?: boolean
-  laundry?: boolean
-  security?: boolean
-  elevator?: boolean
-  area_min?: number
-  area_max?: number
-  metadata?: {
-    preferencias?: string
-    notas?: string
-  }
 }
 
 const STATUS_OPTIONS = ['activo', 'pausado', 'archivado'] as const
@@ -92,8 +59,6 @@ const titleCase = (s: string) =>
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
 
-const numberInput = (val: number | null | undefined) => (val == null ? '' : val)
-
 export default function CrearPerfilBusqueda() {
   const router = useRouter()
   const toast = useToast()
@@ -102,33 +67,39 @@ export default function CrearPerfilBusqueda() {
   const [newAmenity, setNewAmenity] = useState('')
   const [newAmenityError, setNewAmenityError] = useState<string | null>(null)
 
-  const [form, setForm] = useState<FormData>({
-    status: 'activo',
-    property_types: [],
-    amenities: [],
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm({
+    resolver: zodResolver(searchProfileSchema),
+    defaultValues: {
+      city: '',
+      neighborhood: '',
+      minBudget: undefined,
+      maxBudget: undefined,
+      contractDuration: undefined,
+      propertyTypes: [],
+      status: 'activo' as const,
+      amenities: [],
+      preferences: '',
+      notes: '',
+      minBedrooms: undefined,
+      maxBedrooms: undefined,
+      minRooms: undefined,
+      maxRooms: undefined,
+      minBathrooms: undefined,
+      maxBathrooms: undefined,
+      minArea: undefined,
+      maxArea: undefined,
+    },
   })
 
-  const handleChange = useCallback(<K extends keyof FormData>(key: K, value: FormData[K]) => {
-    setForm(prev => ({ ...prev, [key]: value }))
-  }, [])
+  const amenities = watch('amenities') || []
 
-  const toggleBool = useCallback(<K extends keyof FormData>(key: K) => {
-    setForm(prev => {
-      const current = prev[key]
-      const nextValue = typeof current === 'boolean' ? !current : true
-      return { ...prev, [key]: nextValue as FormData[K] }
-    })
-  }, [])
-
-  const toggleInArray = useCallback((field: 'property_types' | 'amenities', value: string) => {
-    setForm(prev => {
-      const current = prev[field]
-      const next = current.includes(value)
-        ? current.filter(v => v !== value)
-        : [...current, value]
-      return { ...prev, [field]: next }
-    })
-  }, [])
+  const toggleInArray = useCallback((field: 'propertyTypes' | 'amenities', value: string) => {
+    const currentValue = watch(field) || []
+    const next = currentValue.includes(value)
+      ? currentValue.filter(v => v !== value)
+      : [...currentValue, value]
+    setValue(field, next, { shouldValidate: true })
+  }, [watch, setValue])
 
   const addCustomAmenity = useCallback(() => {
     const v = newAmenity.trim().toLowerCase()
@@ -138,27 +109,28 @@ export default function CrearPerfilBusqueda() {
       setNewAmenityError('Mínimo 3 caracteres')
       return
     }
-    if (form.amenities.includes(v)) {
+    if (amenities.includes(v)) {
       setNewAmenityError('Ya agregada')
       return
     }
-    setForm(prev => ({ ...prev, amenities: [...prev.amenities, v] }))
+    setValue('amenities', [...amenities, v], { shouldValidate: true })
     setNewAmenity('')
-  }, [newAmenity, form.amenities])
+  }, [newAmenity, amenities, setValue])
 
   const removeCustomAmenity = useCallback((a: string) => {
-    setForm(prev => ({ ...prev, amenities: prev.amenities.filter(x => x !== a) }))
-  }, [])
+    setValue('amenities', amenities.filter(x => x !== a), { shouldValidate: true })
+  }, [amenities, setValue])
 
-  const ToggleSwitch = useCallback(({ label, fieldKey }: { label: string; fieldKey: keyof FormData }) => {
-    const isActive = !!form[fieldKey]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ToggleSwitch = useCallback(({ label, fieldKey }: { label: string; fieldKey: any }) => {
+    const isActive = !!watch(fieldKey)
     return (
       <button
         type="button"
-        onClick={() => toggleBool(fieldKey)}
+        onClick={() => setValue(fieldKey, !watch(fieldKey), { shouldValidate: true })}
         className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
-          isActive 
-            ? 'bg-green-50 border-green-300 hover:bg-green-100' 
+          isActive
+            ? 'bg-green-50 border-green-300 hover:bg-green-100'
             : 'bg-gray-50 border-gray-200 hover:border-gray-300'
         }`}
       >
@@ -174,23 +146,50 @@ export default function CrearPerfilBusqueda() {
         </div>
       </button>
     )
-  }, [form, toggleBool])
+  }, [watch, setValue])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: SearchProfileFormData) => {
     setError(null)
     setSaving(true)
 
-    // Validar que el presupuesto máximo sea mayor o igual al mínimo
-    if (form.budget_max && form.budget_min && form.budget_max < form.budget_min) {
-      setError('El presupuesto máximo debe ser mayor o igual al mínimo')
-      toast.error('Error de validación', 'El presupuesto máximo debe ser mayor o igual al mínimo')
-      setSaving(false)
-      return
-    }
-
     try {
-      await api.post('/api/search-profiles', form)
+      // Mapear los datos al formato del backend
+      const payload = {
+        city: data.city,
+        neighborhood: data.neighborhood,
+        budget_min: data.minBudget,
+        budget_max: data.maxBudget,
+        property_types: data.propertyTypes,
+        status: data.status,
+        rooms_min: data.minRooms,
+        rooms_max: data.maxRooms,
+        bathrooms_min: data.minBathrooms,
+        bathrooms_max: data.maxBathrooms,
+        bedroom_min: data.minBedrooms,
+        bedroom_max: data.maxBedrooms,
+        area_min: data.minArea,
+        area_max: data.maxArea,
+        furnished: data.furnished,
+        pets_allowed: data.petsAllowed,
+        smokers_allowed: data.smokersAllowed,
+        children: data.childrenAllowed,
+        students: data.studentsAllowed,
+        parking_needed: data.parking,
+        require_verified_landlord: data.verifiedLandlord,
+        balcony: data.balcony,
+        terrace: data.terrace,
+        laundry: data.laundry,
+        security: data.security,
+        elevator: data.elevator,
+        amenities: data.amenities,
+        lease_term_months: data.contractDuration,
+        metadata: {
+          preferencias: data.preferences,
+          notas: data.notes,
+        },
+      }
+
+      await api.post('/api/search-profiles', payload)
       toast.success('¡Perfil creado!', 'Tu perfil de búsqueda se creó correctamente')
       router.push('/home/inquilino')
     } catch (err) {
@@ -229,7 +228,7 @@ export default function CrearPerfilBusqueda() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
               <div className="flex items-start gap-3">
@@ -248,13 +247,28 @@ export default function CrearPerfilBusqueda() {
               <MapPin className="w-5 h-5 text-orange-600" />
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Ubicación</h3>
             </div>
-            <LocationSelector
-              selectedCity={form.city}
-              selectedNeighborhood={form.neighborhood}
-              onCityChange={city => handleChange('city', city)}
-              onNeighborhoodChange={neighborhood => handleChange('neighborhood', neighborhood)}
-              required
+            <Controller
+              name="city"
+              control={control}
+              render={({ field }) => (
+                <LocationSelector
+                  selectedCity={field.value}
+                  selectedNeighborhood={watch('neighborhood')}
+                  onCityChange={city => {
+                    field.onChange(city);
+                    setValue('neighborhood', '');
+                  }}
+                  onNeighborhoodChange={neighborhood => setValue('neighborhood', neighborhood)}
+                  required
+                />
+              )}
             />
+            {errors.city && (
+              <p className="text-xs text-red-600 flex items-center gap-1 mt-2">
+                <AlertCircle className="w-3 h-3" />
+                {errors.city.message}
+              </p>
+            )}
           </div>
 
           {/* Economía */}
@@ -268,37 +282,34 @@ export default function CrearPerfilBusqueda() {
                 <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Mín ($) *</label>
                 <InputEnhanced
                   type="number"
-                  value={numberInput(form.budget_min)}
-                  onChange={e => handleChange('budget_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                  {...register('minBudget', { valueAsNumber: true })}
                   placeholder="0"
-                  required
+                  error={errors.minBudget?.message}
                 />
               </div>
               <div>
                 <label className="text-xs font-semibold text-green-700 block mb-2">Presupuesto Máx ($) *</label>
                 <InputEnhanced
                   type="number"
-                  value={numberInput(form.budget_max)}
-                  onChange={e => handleChange('budget_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                  {...register('maxBudget', { valueAsNumber: true })}
                   placeholder="∞"
-                  required
+                  error={errors.maxBudget?.message}
                 />
               </div>
               <div>
                 <label className="text-xs font-semibold text-green-700 block mb-2">Plazo del Contrato (meses)</label>
                 <InputEnhanced
                   type="number"
-                  value={numberInput(form.lease_term_months)}
-                  onChange={e => handleChange('lease_term_months', e.target.value === '' ? undefined : Number(e.target.value))}
+                  {...register('contractDuration', { valueAsNumber: true })}
                   placeholder="12"
+                  error={errors.contractDuration?.message}
                 />
               </div>
               <div>
                 <label className="text-xs font-semibold text-green-700 block mb-2">Estado del Perfil</label>
                 <select
                   className="w-full rounded-lg border-2 border-green-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
-                  value={form.status}
-                  onChange={e => handleChange('status', e.target.value)}
+                  {...register('status')}
                 >
                   {STATUS_OPTIONS.map(s => (
                     <option key={s} value={s}>{titleCase(s)}</option>
@@ -316,12 +327,12 @@ export default function CrearPerfilBusqueda() {
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               {PROPERTY_TYPE_OPTIONS.map(pt => {
-                const active = form.property_types.includes(pt)
+                const active = watch('propertyTypes')?.includes(pt) || false
                 return (
                   <button
                     key={pt}
                     type="button"
-                    onClick={() => toggleInArray('property_types', pt)}
+                    onClick={() => toggleInArray('propertyTypes', pt)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
                       active
                         ? 'bg-purple-500 border-purple-600 text-white shadow-md scale-105'
@@ -333,10 +344,10 @@ export default function CrearPerfilBusqueda() {
                 )
               })}
             </div>
-            {form.property_types.length === 0 && (
+            {errors.propertyTypes && (
               <p className="text-xs text-red-600 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
-                Selecciona al menos un tipo de propiedad
+                {errors.propertyTypes.message}
               </p>
             )}
           </div>
@@ -353,14 +364,12 @@ export default function CrearPerfilBusqueda() {
                 <div className="flex gap-2">
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.bedroom_min)}
-                    onChange={e => handleChange('bedroom_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('minBedrooms', { valueAsNumber: true })}
                     placeholder="0"
                   />
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.bedroom_max)}
-                    onChange={e => handleChange('bedroom_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('maxBedrooms', { valueAsNumber: true })}
                     placeholder="∞"
                   />
                 </div>
@@ -370,14 +379,12 @@ export default function CrearPerfilBusqueda() {
                 <div className="flex gap-2">
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.rooms_min)}
-                    onChange={e => handleChange('rooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('minRooms', { valueAsNumber: true })}
                     placeholder="0"
                   />
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.rooms_max)}
-                    onChange={e => handleChange('rooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('maxRooms', { valueAsNumber: true })}
                     placeholder="∞"
                   />
                 </div>
@@ -387,14 +394,12 @@ export default function CrearPerfilBusqueda() {
                 <div className="flex gap-2">
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.bathrooms_min)}
-                    onChange={e => handleChange('bathrooms_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('minBathrooms', { valueAsNumber: true })}
                     placeholder="0"
                   />
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.bathrooms_max)}
-                    onChange={e => handleChange('bathrooms_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('maxBathrooms', { valueAsNumber: true })}
                     placeholder="∞"
                   />
                 </div>
@@ -404,14 +409,12 @@ export default function CrearPerfilBusqueda() {
                 <div className="flex gap-2">
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.area_min)}
-                    onChange={e => handleChange('area_min', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('minArea', { valueAsNumber: true })}
                     placeholder="0"
                   />
                   <InputEnhanced
                     type="number"
-                    value={numberInput(form.area_max)}
-                    onChange={e => handleChange('area_max', e.target.value === '' ? undefined : Number(e.target.value))}
+                    {...register('maxArea', { valueAsNumber: true })}
                     placeholder="∞"
                   />
                 </div>
@@ -449,7 +452,7 @@ export default function CrearPerfilBusqueda() {
             </div>
             <div className="flex flex-wrap gap-2 mb-4">
               {AMENITY_OPTIONS.map(a => {
-                const active = form.amenities.includes(a)
+                const active = watch('amenities')?.includes(a) || false
                 return (
                   <button
                     key={a}
@@ -500,12 +503,12 @@ export default function CrearPerfilBusqueda() {
               )}
             </div>
 
-            {form.amenities.some(a => !AMENITY_OPTIONS.includes(a)) && (
+            {watch('amenities')?.some(a => !AMENITY_OPTIONS.includes(a)) && (
               <div className="mt-4 pt-4 border-t border-teal-200">
                 <p className="text-xs font-semibold text-teal-700 mb-2">Amenidades personalizadas:</p>
                 <div className="flex flex-wrap gap-2">
-                  {form.amenities
-                    .filter(a => !AMENITY_OPTIONS.includes(a))
+                  {watch('amenities')
+                    ?.filter(a => !AMENITY_OPTIONS.includes(a))
                     .map(a => (
                       <span
                         key={a}
@@ -539,13 +542,7 @@ export default function CrearPerfilBusqueda() {
                 </label>
                 <textarea
                   className="w-full rounded-lg border-2 border-slate-200 px-3 py-2.5 text-sm h-24 resize-y focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white"
-                  value={form.metadata?.preferencias || ''}
-                  onChange={e =>
-                    handleChange('metadata', {
-                      ...(form.metadata || {}),
-                      preferencias: e.target.value
-                    })
-                  }
+                  {...register('preferences')}
                   placeholder="Describe tus preferencias específicas..."
                 />
               </div>
@@ -553,13 +550,7 @@ export default function CrearPerfilBusqueda() {
                 <label className="text-xs font-semibold text-slate-700 block mb-2">Notas</label>
                 <textarea
                   className="w-full rounded-lg border-2 border-slate-200 px-3 py-2.5 text-sm h-24 resize-y focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white"
-                  value={form.metadata?.notas || ''}
-                  onChange={e =>
-                    handleChange('metadata', {
-                      ...(form.metadata || {}),
-                      notas: e.target.value
-                    })
-                  }
+                  {...register('notes')}
                   placeholder="Agrega notas adicionales..."
                 />
               </div>
@@ -579,10 +570,10 @@ export default function CrearPerfilBusqueda() {
             </Button>
             <Button
               type="submit"
-              disabled={saving || form.property_types.length === 0}
+              disabled={saving || errors.propertyTypes !== undefined}
               className={`${
-                form.property_types.length > 0
-                  ? 'bg-orange-500 hover:bg-orange-600' 
+                !errors.propertyTypes
+                  ? 'bg-orange-500 hover:bg-orange-600'
                   : 'bg-gray-300'
               } text-white transition-all shadow-lg`}
             >

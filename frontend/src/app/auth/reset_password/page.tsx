@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { InputEnhanced } from "@/components/ui/input-enhanced"
 import { createClient } from "@supabase/supabase-js"
+import { resetPasswordSchema, type ResetPasswordFormData } from "@/lib/schemas"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,12 +19,21 @@ export default function ResetPasswordPage() {
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [refreshToken, setRefreshToken] = useState<string | null>(null)
   const [sessionReady, setSessionReady] = useState(false)
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [passwordMatch, setPasswordMatch] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  })
+
+  const password = watch("password")
+  const confirmPassword = watch("confirmPassword")
+  const passwordMatch = password === confirmPassword || confirmPassword === ""
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -43,28 +55,15 @@ export default function ResetPasswordPage() {
     })()
   }, [])
 
-  useEffect(() => {
-    setPasswordMatch(newPassword === confirmPassword || confirmPassword === "")
-  }, [newPassword, confirmPassword])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: ResetPasswordFormData) => {
     setErrorMsg(null)
     setSuccessMsg(null)
     if (!sessionReady || !accessToken || !refreshToken) {
       setErrorMsg("Sesión de recuperación no lista.")
       return
     }
-    if (!passwordMatch) {
-      setErrorMsg("Las contraseñas no coinciden.")
-      return
-    }
-    if (newPassword.length < 8) {
-      setErrorMsg("Mínimo 8 caracteres.")
-      return
-    }
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    const { error } = await supabase.auth.updateUser({ password: data.password })
     if (error) {
       setErrorMsg(error.message || "No se pudo actualizar.")
     } else {
@@ -95,32 +94,30 @@ export default function ResetPasswordPage() {
           <p className="text-gray-600">Ingresa tu nueva contraseña</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Nueva Contraseña
-            </label>
-            <Input
-              id="newPassword"
+            <InputEnhanced
+              label="Nueva Contraseña"
+              id="password"
               type="password"
-              value={newPassword}
-              onChange={(e)=>setNewPassword(e.target.value)}
+              placeholder="••••••••"
+              {...register("password")}
               disabled={!sessionReady || loading}
-              required
+              error={errors.password?.message}
+              helperText="Mínimo 8 caracteres, una mayúscula y un número"
             />
           </div>
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Contraseña
-            </label>
-            <Input
+            <InputEnhanced
+              label="Confirmar Contraseña"
               id="confirmPassword"
               type="password"
-              value={confirmPassword}
-              onChange={(e)=>setConfirmPassword(e.target.value)}
-              className={!passwordMatch ? "border border-red-500" : ""}
+              placeholder="••••••••"
+              {...register("confirmPassword")}
               disabled={!sessionReady || loading}
-              required
+              error={errors.confirmPassword?.message}
+              success={passwordMatch && confirmPassword.length > 0}
+              showValidation
             />
           </div>
 

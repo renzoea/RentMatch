@@ -2,6 +2,8 @@
 import type { AxiosError } from "axios";
 import Link from "next/link"
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/api";
 import { InputEnhanced } from "@/components/ui/input-enhanced";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/useToast";
 import { motion } from "framer-motion";
 import { Home, Building2, Key } from "lucide-react";
-import { validatePassword, validatePhone } from "@/lib/validations";
+import { registerSchema, type RegisterFormData } from "@/lib/schemas";
 
 // ======================================================
 // BG: Íconos flotando (casas, edificios, llaves)
@@ -60,74 +62,38 @@ function FloatingBackground() {
 
 export default function RegisterPage() {
   const toast = useToast();
-  const [userType, setUserType] = useState("inquilino");
-  const [formData, setFormData] = useState({
-    nombre: "",
-    apellido: "",
-    email: "",
-    telefono: "",
-    password: "",
-    confirmPassword: "",
-    acceptTerms: false,
-  });
-  const [passwordMatch, setPasswordMatch] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+      userType: "inquilino",
+      acceptTerms: false,
+    },
+  });
 
-    if (field === "confirmPassword" || field === "password") {
-      const newPassword = field === "password" ? value : formData.password;
-      const newConfirmPassword = field === "confirmPassword" ? value : formData.confirmPassword;
-      setPasswordMatch(newPassword === newConfirmPassword || newConfirmPassword === "");
-    }
-  };
+  const password = watch("password");
+  const confirmPassword = watch("confirmPassword");
+  const userType = watch("userType");
+  const passwordMatch = password === confirmPassword || confirmPassword === "";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validar teléfono
-    const phoneError = validatePhone(formData.telefono);
-    if (phoneError) {
-      toast.error("Teléfono inválido", phoneError);
-      return;
-    }
-
-    // Validar contraseña
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) {
-      toast.error("Contraseña débil", passwordError);
-      return;
-    }
-
-    if (!passwordMatch) {
-      toast.error("Contraseñas no coinciden", "Las contraseñas ingresadas deben ser iguales.");
-      return;
-    }
-    if (!formData.acceptTerms) {
-      toast.warning("Acepta los términos", "Debes aceptar los términos y condiciones para continuar.");
-      return;
-    }
-
+  const onSubmit = async (data: RegisterFormData) => {
     setLoading(true);
     try {
       await api.post("/api/auth/register", {
-        full_name: `${formData.nombre} ${formData.apellido}`,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.telefono,
-        role: userType,
+        full_name: `${data.firstName} ${data.lastName}`,
+        email: data.email,
+        password: data.password,
+        phone: data.phone || undefined,
+        role: data.userType,
       });
       toast.success("¡Registro exitoso!", "Revisa tu correo para confirmar tu cuenta.");
-      setFormData({
-        nombre: "",
-        apellido: "",
-        email: "",
-        telefono: "",
-        password: "",
-        confirmPassword: "",
-        acceptTerms: false,
-      });
     } catch (error) {
       const err = error as AxiosError<{ error: string }>;
       console.log(err);
@@ -161,11 +127,11 @@ export default function RegisterPage() {
           Únete a RentMatch y encuentra tu hogar ideal
         </h1>
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
           {/* User Type */}
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-3">¿Qué tipo de usuario eres?</Label>
-            <RadioGroup value={userType} onValueChange={setUserType} className="flex gap-8">
+            <RadioGroup value={userType} onValueChange={(val) => setValue("userType", val as "inquilino" | "propietario")} className="flex gap-8">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="inquilino" id="inquilino" />
                 <Label htmlFor="inquilino">Inquilino</Label>
@@ -175,78 +141,92 @@ export default function RegisterPage() {
                 <Label htmlFor="propietario">Propietario</Label>
               </div>
             </RadioGroup>
+            {errors.userType && <p className="text-sm text-red-500 mt-1">{errors.userType.message}</p>}
           </div>
 
           {/* Nombre y Apellido */}
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <InputEnhanced
+                id="firstName"
+                type="text"
+                placeholder="Nombre"
+                {...register("firstName")}
+                error={errors.firstName?.message}
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <InputEnhanced
+                id="lastName"
+                type="text"
+                placeholder="Apellido"
+                {...register("lastName")}
+                error={errors.lastName?.message}
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div>
             <InputEnhanced
-              id="nombre"
-              type="text"
-              placeholder="Nombre"
-              value={formData.nombre}
-              onChange={(e) => handleInputChange("nombre", e.target.value)}
-              required
-            />
-            <InputEnhanced
-              id="apellido"
-              type="text"
-              placeholder="Apellido"
-              value={formData.apellido}
-              onChange={(e) => handleInputChange("apellido", e.target.value)}
-              required
+              id="email"
+              type="email"
+              placeholder="Correo Electrónico"
+              {...register("email")}
+              error={errors.email?.message}
+              disabled={loading}
             />
           </div>
 
-          <InputEnhanced
-            id="email"
-            type="email"
-            placeholder="Correo Electrónico"
-            value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
-            required
-          />
+          <div>
+            <InputEnhanced
+              id="phone"
+              type="tel"
+              placeholder="Teléfono (opcional)"
+              {...register("phone")}
+              error={errors.phone?.message}
+              disabled={loading}
+            />
+          </div>
 
-          <InputEnhanced
-            id="telefono"
-            type="tel"
-            placeholder="Teléfono"
-            value={formData.telefono}
-            onChange={(e) => handleInputChange("telefono", e.target.value)}
-            required
-          />
+          <div>
+            <InputEnhanced
+              id="password"
+              type="password"
+              placeholder="Contraseña"
+              {...register("password")}
+              helperText="Mínimo 8 caracteres, una mayúscula y un número"
+              error={errors.password?.message}
+              disabled={loading}
+            />
+          </div>
 
-          <InputEnhanced
-            id="password"
-            type="password"
-            placeholder="Contraseña"
-            value={formData.password}
-            onChange={(e) => handleInputChange("password", e.target.value)}
-            helperText="Mínimo 8 caracteres, una mayúscula y un número"
-            required
-          />
-
-          <InputEnhanced
-            id="confirmPassword"
-            type="password"
-            placeholder="Confirmar contraseña"
-            value={formData.confirmPassword}
-            onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-            error={!passwordMatch && formData.confirmPassword ? "Las contraseñas no coinciden" : undefined}
-            success={passwordMatch && formData.confirmPassword.length > 0}
-            showValidation
-            required
-          />
+          <div>
+            <InputEnhanced
+              id="confirmPassword"
+              type="password"
+              placeholder="Confirmar contraseña"
+              {...register("confirmPassword")}
+              error={errors.confirmPassword?.message}
+              success={passwordMatch && confirmPassword.length > 0}
+              showValidation
+              disabled={loading}
+            />
+          </div>
 
           <div className="flex items-start space-x-2">
             <Checkbox
               id="terms"
-              checked={formData.acceptTerms}
-              onCheckedChange={(checked) => handleInputChange("acceptTerms", checked as boolean)}
-              required
+              {...register("acceptTerms")}
+              disabled={loading}
             />
-            <Label htmlFor="terms" className="text-xs text-gray-700 leading-relaxed">
-              Acepto los <a href="#" className="underline">Términos y Condiciones</a> y la <a href="#" className="underline">Política de Privacidad</a>
-            </Label>
+            <div className="flex-1">
+              <Label htmlFor="terms" className="text-xs text-gray-700 leading-relaxed">
+                Acepto los <a href="#" className="underline">Términos y Condiciones</a> y la <a href="#" className="underline">Política de Privacidad</a>
+              </Label>
+              {errors.acceptTerms && <p className="text-sm text-red-500 mt-1">{errors.acceptTerms.message}</p>}
+            </div>
           </div>
 
           <Button variant="primary" type="submit" className="w-full font-semibold py-3" disabled={loading}>

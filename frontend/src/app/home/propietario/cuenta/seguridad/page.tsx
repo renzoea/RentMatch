@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card-standard';
 import { Label } from '@/components/ui/label';
@@ -11,56 +13,44 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import api from '@/lib/api';
 import { MESSAGES } from '@/constants/messages';
+import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/schemas';
 
 export default function SeguridadPropietarioPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth({ requiredRole: 'propietario' });
   const toast = useToast();
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPass, setSavingPass] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
+
+  const newPassword = watch('newPassword');
+  const confirmPassword = watch('confirmPassword');
+  const passwordMatch = newPassword === confirmPassword || confirmPassword === '';
+
+  const onSubmit = async (data: ChangePasswordFormData) => {
     setSuccessMsg('');
     setErrorMsg('');
-
-    // Validations
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setErrorMsg(MESSAGES.PASSWORD.FILL_ALL_FIELDS);
-      toast.error('Campos incompletos', MESSAGES.PASSWORD.FILL_ALL_FIELDS);
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setErrorMsg(MESSAGES.PASSWORD.MISMATCH);
-      toast.error('Contraseñas no coinciden', MESSAGES.PASSWORD.MISMATCH);
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setErrorMsg(MESSAGES.PASSWORD.TOO_SHORT);
-      toast.error('Contraseña muy corta', MESSAGES.PASSWORD.TOO_SHORT);
-      return;
-    }
-
     setSavingPass(true);
 
     try {
       await api.post('/api/users/change-password', {
-        current_password: currentPassword,
-        new_password: newPassword,
+        current_password: data.currentPassword,
+        new_password: data.newPassword,
       });
 
       setSuccessMsg(MESSAGES.PASSWORD.UPDATE_SUCCESS);
       toast.success('Contraseña actualizada', MESSAGES.PASSWORD.UPDATE_SUCCESS);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      reset();
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -77,7 +67,7 @@ export default function SeguridadPropietarioPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
       </div>
     );
   }
@@ -90,7 +80,7 @@ export default function SeguridadPropietarioPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Mi Cuenta</h1>
-          <p className="text-gray-600">Gestiona tu información personal, verificación y seguridad</p>
+          <p className="text-gray-600">Gestioná tu información personal, verificación y seguridad</p>
         </div>
 
         {/* Tabs */}
@@ -135,42 +125,40 @@ export default function SeguridadPropietarioPage() {
               <h2 className="text-lg font-extrabold text-gray-900">Cambiar contraseña</h2>
             </div>
 
-            <form className="space-y-5" onSubmit={handleUpdatePassword}>
+            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-2">
-                <Label htmlFor="current">Contraseña actual *</Label>
+                <Label htmlFor="currentPassword">Contraseña actual *</Label>
                 <InputEnhanced
-                  id="current"
+                  id="currentPassword"
                   type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
+                  {...register('currentPassword')}
+                  error={errors.currentPassword?.message}
+                  disabled={savingPass}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new">Nueva contraseña *</Label>
+                <Label htmlFor="newPassword">Nueva contraseña *</Label>
                 <InputEnhanced
-                  id="new"
+                  id="newPassword"
                   type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                  error={newPassword.length > 0 && newPassword.length < 6 ? 'Mínimo 6 caracteres' : undefined}
-                  success={newPassword.length >= 6}
+                  {...register('newPassword')}
+                  placeholder="Mínimo 8 caracteres, una mayúscula y un número"
+                  error={errors.newPassword?.message}
+                  success={newPassword.length >= 8}
                   showValidation
+                  disabled={savingPass}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm">Confirmar nueva contraseña *</Label>
+                <Label htmlFor="confirmPassword">Confirmar nueva contraseña *</Label>
                 <InputEnhanced
-                  id="confirm"
+                  id="confirmPassword"
                   type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  error={confirmPassword.length > 0 && confirmPassword !== newPassword ? 'Las contraseñas no coinciden' : undefined}
-                  success={confirmPassword.length > 0 && confirmPassword === newPassword}
+                  {...register('confirmPassword')}
+                  error={errors.confirmPassword?.message}
+                  success={passwordMatch && confirmPassword.length > 0}
                   showValidation
+                  disabled={savingPass}
                 />
               </div>
 
@@ -178,7 +166,7 @@ export default function SeguridadPropietarioPage() {
                 <Button
                   type="submit"
                   disabled={savingPass}
-                  className="bg-green-500 hover:bg-green-600 text-white"
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
                 >
                   {savingPass ? (
                     <>

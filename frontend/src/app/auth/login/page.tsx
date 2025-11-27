@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { InputEnhanced } from "@/components/ui/input-enhanced"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -11,6 +13,7 @@ import api from "@/lib/api"
 import { AxiosError } from "axios"
 import { motion } from "framer-motion"
 import { Home, Building2, Key } from "lucide-react"
+import { loginSchema, type LoginFormData } from "@/lib/schemas"
 
 // ======================================================
 // BG: Íconos flotando (casas, edificios, llaves)
@@ -63,28 +66,37 @@ function FloatingBackground() {
 export default function LoginPage() {
   const toast = useToast()
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      remember: false,
+    },
+  })
+
+  const onSubmit = async (data: LoginFormData) => {
     setLoading(true)
 
     try {
-      const response = await api.post("/api/auth/login", { email, password })
-      const data = response.data
+      const response = await api.post("/api/auth/login", {
+        email: data.email,
+        password: data.password
+      })
+      const responseData = response.data
 
-      localStorage.setItem("access_token", data.access_token)
-      localStorage.setItem("refresh_token", data.refresh_token)
-      localStorage.setItem("expires_at", data.expires_at)
-      localStorage.setItem("user", JSON.stringify(data.user))
+      localStorage.setItem("access_token", responseData.access_token)
+      localStorage.setItem("refresh_token", responseData.refresh_token)
+      localStorage.setItem("expires_at", responseData.expires_at)
+      localStorage.setItem("user", JSON.stringify(responseData.user))
 
       toast.success("¡Bienvenido!", "Inicio de sesión exitoso")
 
-      if (data.user.role === "inquilino") router.push("/home/inquilino")
-      else if (data.user.role === "propietario") router.push("/home/propietario")
-      else if (data.user.role === "admin") router.push("/home/admin")
+      if (responseData.user.role === "inquilino") router.push("/home/inquilino")
+      else if (responseData.user.role === "propietario") router.push("/home/propietario")
+      else if (responseData.user.role === "admin") router.push("/home/admin")
       else router.push("/")
     } catch (error: unknown) {
       const errorMessage = error instanceof AxiosError && error.response
@@ -126,32 +138,34 @@ export default function LoginPage() {
           <p className="text-gray-600">Accede a tu cuenta de RentMatch</p>
         </div>
 
-        <form className="space-y-5" onSubmit={handleLogin}>
-          <InputEnhanced
-            label="Correo Electrónico"
-            id="email"
-            type="email"
-            placeholder="tu@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={loading}
-          />
+        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+          <div>
+            <InputEnhanced
+              label="Correo Electrónico"
+              id="email"
+              type="email"
+              placeholder="tu@email.com"
+              {...register("email")}
+              disabled={loading}
+              error={errors.email?.message}
+            />
+          </div>
 
-          <InputEnhanced
-            label="Contraseña"
-            id="password"
-            type="password"
-            placeholder="••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
+          <div>
+            <InputEnhanced
+              label="Contraseña"
+              id="password"
+              type="password"
+              placeholder="••••••"
+              {...register("password")}
+              disabled={loading}
+              error={errors.password?.message}
+            />
+          </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox id="remember" disabled={loading} />
+              <Checkbox id="remember" {...register("remember")} disabled={loading} />
               <label htmlFor="remember" className="text-sm text-gray-700">Recordarme</label>
             </div>
             <Link href="forgot_password" className="text-sm text-orange-500 hover:text-orange-600">
