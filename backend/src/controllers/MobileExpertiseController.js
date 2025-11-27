@@ -79,7 +79,46 @@ const getAllEcpertise = async (req, res) => {
   }
 };
 
+const getExpertiseByTenant = async (req, res) => {
+  try {
+    const { tenant_id } = req.body;
+
+    if (!tenant_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'El campo tenant_id es obligatorio'
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('expertise')
+      .select('*')
+      .eq('tenant_id', tenant_id);
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Error al obtener expertises',
+        error: error.message
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   NewExpertise,
-  getAllEcpertise
+  getAllEcpertise,
+  getExpertiseByTenant
 };
