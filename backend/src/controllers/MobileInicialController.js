@@ -59,7 +59,8 @@ const IncialState = async (req, res) => {
       .insert({
         contract_id,
         tenant_id: userId,
-        description: description || null
+        description: description || null,
+        created_at: new Date().toISOString()
       })
       .select()
       .single();
