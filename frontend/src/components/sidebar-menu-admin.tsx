@@ -25,7 +25,7 @@ export default function SidebarMenuAdmin({ onLogout }: { onLogout: () => void })
   }
 
   return (
-    <aside className="w-72 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto">
+    <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto flex-shrink-0">
       <div className="p-6">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">

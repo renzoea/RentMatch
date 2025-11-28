@@ -363,15 +363,15 @@ export default function SearchProfilesManagement() {
   }, [])
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 lg:p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Perfiles de Búsqueda</h1>
-        <p className="text-gray-600 mt-2">Gestiona los perfiles de búsqueda de inquilinos</p>
+      <div className="mb-6">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Perfiles de Búsqueda</h1>
+        <p className="text-sm lg:text-base text-gray-600 mt-1">Gestiona los perfiles de búsqueda de inquilinos</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <StatsCard
           title="Total de Perfiles"
           value={stats.total}
@@ -405,8 +405,8 @@ export default function SearchProfilesManagement() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow mb-6 p-6 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div className="bg-white rounded-lg shadow mb-6 p-4 border border-gray-200">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
           {/* Search */}
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -617,7 +617,7 @@ export default function SearchProfilesManagement() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
