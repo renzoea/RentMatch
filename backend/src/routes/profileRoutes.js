@@ -1,16 +1,24 @@
-// backend/src/routes/profileRoutes.js
 const express = require('express');
-const { getAllProfiles, createProfile, getProfileById } = require('../controllers/profileController');
-
 const router = express.Router();
+const profileController = require('../controllers/profileController');
+const { authenticateToken } = require('../middleware/authMiddleware');
 
-// GET /api/profiles - Obtener todos los perfiles
-router.get('/', getAllProfiles);
+// All profile routes require authentication
+router.use(authenticateToken);
 
-// POST /api/profiles - Crear nuevo perfil
-router.post('/', createProfile);
+// Get current user profile
+router.get('/profile', profileController.getProfile);
 
-// GET /api/profiles/:id - Obtener perfil por ID
-router.get('/:id', getProfileById);
+// Get verification status
+router.get('/verification-status', profileController.getVerificationStatus);
+
+// Update current user profile
+router.patch('/profile', profileController.updateProfile);
+
+// Change password
+router.post('/change-password', profileController.changePassword);
+
+// Delete account
+router.delete('/account', profileController.deleteAccount);
 
 module.exports = router;
