@@ -107,15 +107,32 @@ const ReporterUpdate = async (req, res) => {
   }
 };
 
+
 const getAllReport = async (req, res) => {
   try {
+    const { contract_id } = req.query;
+
+    if (!contract_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'contract_id es requerido en query (?contract_id=123)'
+      });
+    }
+
     const { data, error } = await supabase
       .from('incidents')
-      .select(`*, 
-        incident_attachments(id,
+      .select(`
+        *,
+        incident_attachments (
+          id,
           file_url,
           media_type,
-          created_at)`);
+          created_at
+        )
+      `)
+      .eq('contract_id', contract_id)
+      .order('created_at', { ascending: false });
+
     if (error) {
       return res.status(400).json({ success: false, message: 'Error al obtener los reportes', error: error.message });
     }
@@ -125,6 +142,7 @@ const getAllReport = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Error interno', error: e.message });
   }
 };
+
 
 module.exports = {
   getAllReport,
