@@ -53,9 +53,18 @@ const NewExpertise = async (req, res) => {
 
 const getAllEcpertise = async (req, res) => {
   try {
+    const { contract_id } = req.body;
+
+    if (!contract_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'El campo contract_id es obligatorio'
+      });
+    }
     const { data, error } = await supabase
       .from('expertise')
-      .select('*');
+      .select('*')
+      .eq('contract_id', contract_id);
 
     if (error) {
       return res.status(400).json({

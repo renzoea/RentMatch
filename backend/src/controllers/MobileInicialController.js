@@ -102,7 +102,16 @@ const GetAllStatusInitial = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('inicial_state_report')
-      .select('*');
+      .select(`
+        *,
+        inicial_state_attachments (
+          id,
+          file_url,
+          media_type,
+          created_at
+        )
+      `);
+    
     if (error) {
       return res.status(400).json({
         success: false,
@@ -110,12 +119,14 @@ const GetAllStatusInitial = async (req, res) => {
         error: error.message
       });
     }
+    
     return res.status(200).json({ success: true, data });
   } catch (error) {
     console.error('Error interno:', error.message);
     return res.status(500).json({ success: false, message: 'Error interno.', error: error.message });
   }
 };
+
 
 module.exports = {
   IncialState,
