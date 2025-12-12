@@ -110,12 +110,12 @@ const ReporterUpdate = async (req, res) => {
 
 const getAllReport = async (req, res) => {
   try {
-    const { contract_id } = req.query;
+    const contract_id = req.query.contract_id || req.body.contract_id;
 
     if (!contract_id) {
       return res.status(400).json({
         success: false,
-        message: 'contract_id es requerido en query (?contract_id=123)'
+        message: 'contract_id es requerido (en URL ?contract_id=xxx o en Body)'
       });
     }
 

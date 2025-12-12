@@ -8,6 +8,6 @@ const { authenticateToken, authorizeTenant } = require('../middleware/authMiddle
 router.post('/incidents', upload.array('images',5), authenticateToken, authorizeTenant, ReporterUpdate);
 
 
-router.get('/Getincidents', authenticateToken, authorizeTenant, getAllReport);
+router.post('/Getincidents', authenticateToken, authorizeTenant, getAllReport);
 
 module.exports = router;
