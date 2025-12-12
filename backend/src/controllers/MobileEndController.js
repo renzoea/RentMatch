@@ -115,7 +115,15 @@ const GetAllStatusEnd = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('end_state_report')
-      .select('*');
+      .select(`
+        *,
+        end_state_attachments (
+          id,
+          file_url,
+          media_type,
+          created_at
+        )
+      `);
     if (error) {
       return res.status(400).json({
         success: false, 
