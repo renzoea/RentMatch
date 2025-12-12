@@ -1,3 +1,4 @@
+const { get } = require('http');
 const supabase = require('../config/supabase');
 const multer = require('multer');
 const path = require('path');
@@ -60,7 +61,8 @@ const IncialState = async (req, res) => {
         contract_id,
         tenant_id: userId,
         description: description || null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        loaded: true 
       })
       .select()
       .single();
@@ -96,8 +98,27 @@ const IncialState = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Error interno.', error: error.message });
   }
 };
+const GetAllStatusInitial = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('inicial_state_report')
+      .select('*');
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Error al obtener reportes de estado inicial',
+        error: error.message
+      });
+    }
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error('Error interno:', error.message);
+    return res.status(500).json({ success: false, message: 'Error interno.', error: error.message });
+  }
+};
 
 module.exports = {
   IncialState,
+  GetAllStatusInitial,
   upload,
 };
