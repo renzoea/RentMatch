@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/useToast";
 import { motion } from "framer-motion";
 import { Home, Building2, Key } from "lucide-react";
-import { validatePassword, validatePhone } from "@/lib/validations";
+import { validatePassword, validatePhone, validateEmail, validateName } from "@/lib/validations";
 
 // ======================================================
 // BG: Íconos flotando (casas, edificios, llaves)
@@ -86,6 +86,28 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validar nombre
+    const nombreError = validateName(formData.nombre, "El nombre");
+    if (nombreError) {
+      toast.error("Nombre inválido", nombreError);
+      return;
+    }
+
+    // Validar apellido
+    const apellidoError = validateName(formData.apellido, "El apellido");
+    if (apellidoError) {
+      toast.error("Apellido inválido", apellidoError);
+      return;
+    }
+
+    // Validar email
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const emailError = validateEmail(cleanEmail);
+    if (emailError) {
+      toast.error("Email inválido", emailError);
+      return;
+    }
+
     // Validar teléfono
     const phoneError = validatePhone(formData.telefono);
     if (phoneError) {
@@ -112,8 +134,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.post("/api/auth/register", {
-        full_name: `${formData.nombre} ${formData.apellido}`,
-        email: formData.email,
+        full_name: `${formData.nombre.trim()} ${formData.apellido.trim()}`,
+        email: cleanEmail,
         password: formData.password,
         phone: formData.telefono,
         role: userType,
@@ -130,7 +152,6 @@ export default function RegisterPage() {
       });
     } catch (error) {
       const err = error as AxiosError<{ error: string }>;
-      console.log(err);
       toast.error("Error al registrar", err.response?.data?.error || "No se pudo completar el registro.");
     } finally {
       setLoading(false);

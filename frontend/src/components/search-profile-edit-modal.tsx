@@ -5,18 +5,25 @@ import { Button } from '@/components/ui/button'
 import { SearchProfileDetail } from './search-profile-detail-modal'
 import LocationSelector from './location-selector'
 import { Skeleton } from '@/components/ui/skeleton'
-import { 
-  MapPin, 
-  DollarSign, 
-  Building2, 
-  Users, 
-  Sparkles, 
+import {
+  MapPin,
+  DollarSign,
+  Building2,
+  Users,
+  Sparkles,
   StickyNote,
   X,
   Save,
   AlertCircle,
   CheckCircle2
 } from 'lucide-react'
+import {
+  validateBudgetRange,
+  validateContractDuration,
+  validateNumberRange,
+  validateTextLength,
+  validateAmenityName
+} from '@/lib/validations'
 
 interface ApiErrorPayload { error?: string; message?: string }
 
@@ -156,6 +163,79 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
 
   const submit = useCallback(async () => {
     if (!id || !isDirty) return
+
+    // Validar presupuesto (si cambió)
+    if ('budget_min' in diff || 'budget_max' in diff) {
+      const budgetError = validateBudgetRange(form.budget_min, form.budget_max)
+      if (budgetError) {
+        setError(budgetError)
+        return
+      }
+    }
+
+    // Validar plazo del contrato (si cambió y tiene valor)
+    if ('lease_term_months' in diff && form.lease_term_months) {
+      const leaseError = validateContractDuration(form.lease_term_months)
+      if (leaseError) {
+        setError(leaseError)
+        return
+      }
+    }
+
+    // Validar dormitorios (si cambió)
+    if ('bedroom_min' in diff || 'bedroom_max' in diff) {
+      const bedroomError = validateNumberRange(form.bedroom_min, form.bedroom_max, 'Dormitorios', 20)
+      if (bedroomError) {
+        setError(bedroomError)
+        return
+      }
+    }
+
+    // Validar ambientes (si cambió)
+    if ('rooms_min' in diff || 'rooms_max' in diff) {
+      const roomsError = validateNumberRange(form.rooms_min, form.rooms_max, 'Ambientes', 30)
+      if (roomsError) {
+        setError(roomsError)
+        return
+      }
+    }
+
+    // Validar baños (si cambió)
+    if ('bathrooms_min' in diff || 'bathrooms_max' in diff) {
+      const bathroomsError = validateNumberRange(form.bathrooms_min, form.bathrooms_max, 'Baños', 10)
+      if (bathroomsError) {
+        setError(bathroomsError)
+        return
+      }
+    }
+
+    // Validar área (si cambió)
+    if ('area_min' in diff || 'area_max' in diff) {
+      const areaError = validateNumberRange(form.area_min, form.area_max, 'Área m²', 10000)
+      if (areaError) {
+        setError(areaError)
+        return
+      }
+    }
+
+    // Validar preferencias (si cambió)
+    if ('metadata' in diff && form.metadata?.preferencias) {
+      const preferencesError = validateTextLength(form.metadata.preferencias, 1000, 'Las preferencias')
+      if (preferencesError) {
+        setError(preferencesError)
+        return
+      }
+    }
+
+    // Validar notas (si cambió)
+    if ('metadata' in diff && form.metadata?.notas) {
+      const notesError = validateTextLength(form.metadata.notas, 1000, 'Las notas')
+      if (notesError) {
+        setError(notesError)
+        return
+      }
+    }
+
     setSaving(true)
     setError(null)
     setSuccess(null)
@@ -174,7 +254,7 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
     } finally {
       setSaving(false)
     }
-  }, [apiClient, diff, id, isDirty, onUpdated])
+  }, [apiClient, diff, id, isDirty, onUpdated, form])
 
   const toggleInArray = useCallback((field: 'property_types' | 'amenities', value: string) => {
     setForm(prev => {
@@ -190,10 +270,14 @@ export default function SearchProfileEditModal({ open, id, onClose, apiClient, o
     const v = newAmenity.trim().toLowerCase()
     setNewCustomAmenityError(null)
     if (!v) return
-    if (v.length < 3) {
-      setNewCustomAmenityError('Mínimo 3 caracteres')
+
+    // Validar nombre de amenidad
+    const amenityError = validateAmenityName(v)
+    if (amenityError) {
+      setNewCustomAmenityError(amenityError)
       return
     }
+
     const current = form.amenities || []
     if (current.includes(v)) {
       setNewCustomAmenityError('Ya agregada')

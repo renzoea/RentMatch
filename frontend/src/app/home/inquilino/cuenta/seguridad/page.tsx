@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import api from '@/lib/api';
 import { MESSAGES } from '@/constants/messages';
+import { validatePassword } from '@/lib/validations';
 
 export default function SeguridadInquilinoPage() {
   const router = useRouter();
@@ -42,9 +43,11 @@ export default function SeguridadInquilinoPage() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setErrorMsg(MESSAGES.PASSWORD.TOO_SHORT);
-      toast.error('Contraseña muy corta', MESSAGES.PASSWORD.TOO_SHORT);
+    // Validar contraseña con la misma función que registro
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setErrorMsg(passwordError);
+      toast.error('Contraseña débil', passwordError);
       return;
     }
 
@@ -153,10 +156,11 @@ export default function SeguridadInquilinoPage() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres, una mayúscula y un número"
+                  helperText="Mínimo 8 caracteres, una mayúscula y un número"
                   required
-                  error={newPassword.length > 0 && newPassword.length < 6 ? 'Mínimo 6 caracteres' : undefined}
-                  success={newPassword.length >= 6}
+                  error={newPassword.length > 0 && validatePassword(newPassword) ? validatePassword(newPassword) || undefined : undefined}
+                  success={newPassword.length > 0 && !validatePassword(newPassword)}
                   showValidation
                 />
               </div>

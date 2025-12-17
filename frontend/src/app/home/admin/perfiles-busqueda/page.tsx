@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import api from '@/lib/api'
+import { Card, CardContent } from '@/components/ui/card-standard'
 import {
   Search,
   Filter,
@@ -99,26 +100,41 @@ function translateAmenity(amenity: string): string {
 }
 
 // Stats Card Component
-function StatsCard({ title, value, icon, color }: {
+function StatsCard({
+  title,
+  value,
+  icon,
+  color
+}: {
   title: string
   value: number
   icon: React.ReactNode
-  color: string
+  color: 'blue' | 'green' | 'orange' | 'purple' | 'red'
 }) {
+  const colors = {
+    blue: 'bg-blue-500',
+    green: 'bg-green-500',
+    orange: 'bg-orange-500',
+    purple: 'bg-purple-500',
+    red: 'bg-red-500'
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-        </div>
-        <div className={`p-3 rounded-lg ${color}`}>
-          <div className="w-6 h-6 text-white">
-            {icon}
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600 mb-1">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
+          </div>
+          <div className={`${colors[color]} p-3 rounded-xl flex items-center justify-center`}>
+            <div className="w-6 h-6 text-white">
+              {icon}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -363,117 +379,115 @@ export default function SearchProfilesManagement() {
   }, [])
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-6 md:p-10 space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Perfiles de Búsqueda</h1>
-        <p className="text-sm lg:text-base text-gray-600 mt-1">Gestiona los perfiles de búsqueda de inquilinos</p>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Perfiles de Búsqueda</h1>
+        <p className="text-gray-600 mt-1">Gestiona los perfiles de búsqueda de inquilinos</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <StatsCard
           title="Total de Perfiles"
           value={stats.total}
           icon={<Users />}
-          color="bg-purple-600"
+          color="purple"
         />
         <StatsCard
           title="Activos"
           value={stats.active}
           icon={<Check />}
-          color="bg-green-600"
+          color="green"
         />
         <StatsCard
           title="Pausados"
           value={stats.paused}
           icon={<AlertCircle />}
-          color="bg-yellow-600"
+          color="orange"
         />
         <StatsCard
           title="Archivados"
           value={stats.archived}
           icon={<X />}
-          color="bg-gray-600"
+          color="red"
         />
         <StatsCard
           title="Públicos"
           value={stats.public}
           icon={<Globe />}
-          color="bg-blue-600"
+          color="blue"
         />
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow mb-6 p-4 border border-gray-200">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
-          {/* Search */}
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Buscar Inquilino
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Nombre o email..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Estado
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="activo">Activo</option>
-              <option value="pausado">Pausado</option>
-              <option value="archivado">Archivado</option>
-            </select>
-          </div>
+            {/* Status Filter */}
+            <div className="lg:w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="all">Todos los estados</option>
+                <option value="activo">Activo</option>
+                <option value="pausado">Pausado</option>
+                <option value="archivado">Archivado</option>
+              </select>
+            </div>
 
-          {/* Visibility Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Visibilidad
-            </label>
-            <select
-              value={visibilityFilter}
-              onChange={(e) => setVisibilityFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              <option value="all">Todas</option>
-              <option value="publico">Público</option>
-              <option value="privado">Privado</option>
-            </select>
-          </div>
+            {/* Visibility Filter */}
+            <div className="lg:w-48">
+              <select
+                value={visibilityFilter}
+                onChange={(e) => setVisibilityFilter(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="all">Todas</option>
+                <option value="publico">Público</option>
+                <option value="privado">Privado</option>
+              </select>
+            </div>
 
-          {/* Actions */}
-          <div className="flex items-end gap-2">
+            {/* Search Button */}
             <button
               onClick={handleSearch}
-              className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              className="lg:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              Buscar
+              <Search className="w-5 h-5" />
+              <span>Buscar</span>
             </button>
+
+            {/* Advanced Filters Toggle */}
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              className={`lg:w-auto px-6 py-2.5 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                showAdvancedFilters
+                  ? 'bg-purple-100 text-purple-700 border-2 border-purple-600 hover:bg-purple-200'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
             >
               <Filter className="w-5 h-5" />
+              <span>Filtros</span>
             </button>
           </div>
-        </div>
 
         {/* Advanced Filters */}
         {showAdvancedFilters && (
@@ -614,10 +628,12 @@ export default function SearchProfilesManagement() {
             </div>
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <Card>
+        <div className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -724,28 +740,28 @@ export default function SearchProfilesManagement() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleViewDetails(profile)}
-                            className="text-purple-600 hover:text-purple-900"
+                            className="p-2 hover:bg-purple-50 text-purple-600 rounded-lg transition-colors"
                             title="Ver detalles"
                           >
                             <Eye className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleChangeStatus(profile)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
                             title="Cambiar estado"
                           >
                             <AlertCircle className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleChangeVisibility(profile)}
-                            className="text-yellow-600 hover:text-yellow-900"
+                            className="p-2 hover:bg-yellow-50 text-yellow-600 rounded-lg transition-colors"
                             title="Cambiar visibilidad"
                           >
                             {profile.visibility === 'publico' ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                           </button>
                           <button
                             onClick={() => handleDeleteProfile(profile)}
-                            className="text-red-600 hover:text-red-900"
+                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
                             title="Eliminar"
                           >
                             <Trash2 className="w-5 h-5" />
@@ -787,37 +803,36 @@ export default function SearchProfilesManagement() {
                       de <span className="font-medium">{pagination.total}</span> resultados
                     </p>
                   </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      <button
-                        onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                        disabled={pagination.page === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                        Página {pagination.page} de {pagination.pages}
-                      </span>
-                      <button
-                        onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                        disabled={pagination.page === pagination.pages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </nav>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                      disabled={pagination.page === 1}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-sm font-semibold text-gray-700">
+                      Página {pagination.page} de {pagination.pages}
+                    </span>
+                    <button
+                      onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                      disabled={pagination.page === pagination.pages}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
               </div>
             )}
           </>
         )}
-      </div>
+        </div>
+      </Card>
 
       {/* Details Modal */}
       {showDetailsModal && selectedProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Detalles del Perfil de Búsqueda</h2>
@@ -1013,7 +1028,7 @@ export default function SearchProfilesManagement() {
 
       {/* Status Change Modal */}
       {showStatusModal && selectedProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="border-b border-gray-200 px-6 py-4">
               <h2 className="text-xl font-bold text-gray-900">Cambiar Estado</h2>
@@ -1058,7 +1073,7 @@ export default function SearchProfilesManagement() {
 
       {/* Visibility Change Modal */}
       {showVisibilityModal && selectedProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="border-b border-gray-200 px-6 py-4">
               <h2 className="text-xl font-bold text-gray-900">Cambiar Visibilidad</h2>
@@ -1109,7 +1124,7 @@ export default function SearchProfilesManagement() {
 
       {/* Delete Modal */}
       {showDeleteModal && selectedProfile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="border-b border-gray-200 px-6 py-4">
               <h2 className="text-xl font-bold text-red-900">Eliminar Perfil de Búsqueda</h2>
@@ -1157,7 +1172,7 @@ export default function SearchProfilesManagement() {
 
       {/* Error Modal */}
       {showErrorModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="border-b border-gray-200 px-6 py-4">
               <h2 className="text-xl font-bold text-red-900">Error</h2>

@@ -85,8 +85,8 @@ export default function SearchProfileDashboard() {
   const archivados = searchProfiles.filter(p => p.status === 'archivado').length
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+      <div className="max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -95,7 +95,7 @@ export default function SearchProfileDashboard() {
                 <Search className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mis Perfiles de Búsqueda</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Mis Perfiles de Búsqueda</h1>
                 <p className="text-sm text-gray-600">
                   Gestiona tus perfiles para encontrar la propiedad ideal
                 </p>
@@ -115,13 +115,13 @@ export default function SearchProfileDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Activos</p>
-                  <p className="text-3xl font-bold text-gray-900">{activos}</p>
+                  <p className="text-2xl font-bold text-gray-900">{activos}</p>
                 </div>
-                <div className="bg-green-500 p-2 rounded-lg">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
+                <div className="bg-green-500 p-3 rounded-xl flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -129,13 +129,13 @@ export default function SearchProfileDashboard() {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Pausados</p>
-                  <p className="text-3xl font-bold text-gray-900">{pausados}</p>
+                  <p className="text-2xl font-bold text-gray-900">{pausados}</p>
                 </div>
-                <div className="bg-yellow-500 p-2 rounded-lg">
-                  <Clock className="w-5 h-5 text-white" />
+                <div className="bg-yellow-500 p-3 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -143,13 +143,13 @@ export default function SearchProfileDashboard() {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Archivados</p>
-                  <p className="text-3xl font-bold text-gray-900">{archivados}</p>
+                  <p className="text-2xl font-bold text-gray-900">{archivados}</p>
                 </div>
-                <div className="bg-gray-500 p-2 rounded-lg">
-                  <Archive className="w-5 h-5 text-white" />
+                <div className="bg-gray-500 p-3 rounded-xl flex items-center justify-center">
+                  <Archive className="w-6 h-6 text-white" />
                 </div>
               </div>
             </CardContent>

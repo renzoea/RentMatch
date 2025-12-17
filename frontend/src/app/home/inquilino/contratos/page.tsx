@@ -151,7 +151,7 @@ export default function ContractDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 md:p-10">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Mis Contratos</h1>
@@ -163,56 +163,56 @@ export default function ContractDashboard() {
         {/* Métricas */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className="bg-green-500 p-2 rounded-lg">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Activos</p>
+                  <p className="text-sm text-gray-600 mb-1">Activos</p>
                   <p className="text-2xl font-bold text-gray-900">{activos}</p>
                 </div>
+                <div className="bg-green-500 p-3 rounded-xl flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className="bg-yellow-500 p-2 rounded-lg">
-                  <Clock className="w-5 h-5 text-white" />
-                </div>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Por firmar</p>
+                  <p className="text-sm text-gray-600 mb-1">Por firmar</p>
                   <p className="text-2xl font-bold text-gray-900">{pendientes}</p>
                 </div>
+                <div className="bg-yellow-500 p-3 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className="bg-blue-500 p-2 rounded-lg">
-                  <DollarSign className="w-5 h-5 text-white" />
-                </div>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Por depositar</p>
+                  <p className="text-sm text-gray-600 mb-1">Por depositar</p>
                   <p className="text-2xl font-bold text-gray-900">{depositos}</p>
                 </div>
+                <div className="bg-blue-500 p-3 rounded-xl flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className="bg-gray-500 p-2 rounded-lg">
-                  <Archive className="w-5 h-5 text-white" />
-                </div>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Otros</p>
+                  <p className="text-sm text-gray-600 mb-1">Otros</p>
                   <p className="text-2xl font-bold text-gray-900">{otros}</p>
+                </div>
+                <div className="bg-gray-500 p-3 rounded-xl flex items-center justify-center">
+                  <Archive className="w-6 h-6 text-white" />
                 </div>
               </div>
             </CardContent>

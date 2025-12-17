@@ -16,6 +16,7 @@ import { EmptyState as EmptyStateComponent } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { InputEnhanced } from "@/components/ui/input-enhanced";
+import { ARGENTINA_LOCATIONS } from "@/constants/locations";
 
 type TenantProfile = {
   id: string;
@@ -91,12 +92,6 @@ const PROPERTY_TYPES: Record<string, string> = {
   'duplex': 'Duplex',
   'casa': 'Casa',
   'estudio': 'Estudio'
-};
-
-const ARGENTINA_LOCATIONS: Record<string, string[]> = {
-  'Buenos Aires': ['Palermo', 'Recoleta', 'Belgrano', 'Caballito', 'Villa Crespo'],
-  'Córdoba': ['Nueva Córdoba', 'General Paz', 'Cerro de las Rosas'],
-  'Rosario': ['Centro', 'Pichincha', 'Fisherton']
 };
 
 export default function PropietarioHomePage() {
@@ -203,8 +198,8 @@ export default function PropietarioHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+      <div className="max-w-[1400px] mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -212,7 +207,7 @@ export default function PropietarioHomePage() {
                 <Users className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Inquilinos Disponibles</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Inquilinos Disponibles</h1>
                 <p className="text-sm text-gray-600">Encuentra inquilinos que se ajusten a tu propiedad</p>
               </div>
             </div>
@@ -244,7 +239,7 @@ export default function PropietarioHomePage() {
 
         <div className="flex gap-6">
           <aside className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-80 flex-shrink-0`}>
-            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 sticky top-6">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 sticky top-6 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Filter className="w-5 h-5 text-green-500" />
@@ -524,19 +519,19 @@ function MetricCard({ icon, label, value, color }: { icon: React.ReactElement; l
   const colors = {
     blue: 'bg-blue-500',
     green: 'bg-green-500',
-    orange: 'bg-green-500'
+    orange: 'bg-orange-500'
   };
 
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-600 mb-1">{label}</p>
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
           </div>
-          <div className={`${colors[color as keyof typeof colors]} p-2 rounded-lg`}>
-            {React.cloneElement(icon, { className: "w-5 h-5 text-white" } as React.HTMLAttributes<HTMLElement>)}
+          <div className={`${colors[color as keyof typeof colors]} p-3 rounded-xl flex items-center justify-center`}>
+            {React.cloneElement(icon, { className: "w-6 h-6 text-white" } as React.HTMLAttributes<HTMLElement>)}
           </div>
         </div>
       </CardContent>

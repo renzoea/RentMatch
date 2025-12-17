@@ -8,6 +8,13 @@ import { InputEnhanced } from '@/components/ui/input-enhanced'
 import LocationSelector from '@/components/location-selector'
 import { useToast } from '@/hooks/useToast'
 import {
+  validateBudgetRange,
+  validateContractDuration,
+  validateNumberRange,
+  validateTextLength,
+  validateAmenityName
+} from '@/lib/validations'
+import {
   ArrowLeft,
   Save,
   MapPin,
@@ -134,10 +141,14 @@ export default function CrearPerfilBusqueda() {
     const v = newAmenity.trim().toLowerCase()
     setNewAmenityError(null)
     if (!v) return
-    if (v.length < 3) {
-      setNewAmenityError('Mínimo 3 caracteres')
+
+    // Validar nombre de amenidad
+    const amenityError = validateAmenityName(v)
+    if (amenityError) {
+      setNewAmenityError(amenityError)
       return
     }
+
     if (form.amenities.includes(v)) {
       setNewAmenityError('Ya agregada')
       return
@@ -181,10 +192,88 @@ export default function CrearPerfilBusqueda() {
     setError(null)
     setSaving(true)
 
-    // Validar que el presupuesto máximo sea mayor o igual al mínimo
-    if (form.budget_max && form.budget_min && form.budget_max < form.budget_min) {
-      setError('El presupuesto máximo debe ser mayor o igual al mínimo')
-      toast.error('Error de validación', 'El presupuesto máximo debe ser mayor o igual al mínimo')
+    // Validar presupuesto
+    const budgetError = validateBudgetRange(form.budget_min, form.budget_max)
+    if (budgetError) {
+      setError(budgetError)
+      toast.error('Error de validación', budgetError)
+      setSaving(false)
+      return
+    }
+
+    // Validar plazo del contrato (si se proporciona)
+    if (form.lease_term_months) {
+      const leaseError = validateContractDuration(form.lease_term_months)
+      if (leaseError) {
+        setError(leaseError)
+        toast.error('Error de validación', leaseError)
+        setSaving(false)
+        return
+      }
+    }
+
+    // Validar dormitorios
+    const bedroomError = validateNumberRange(form.bedroom_min, form.bedroom_max, 'Dormitorios', 20)
+    if (bedroomError) {
+      setError(bedroomError)
+      toast.error('Error de validación', bedroomError)
+      setSaving(false)
+      return
+    }
+
+    // Validar ambientes
+    const roomsError = validateNumberRange(form.rooms_min, form.rooms_max, 'Ambientes', 30)
+    if (roomsError) {
+      setError(roomsError)
+      toast.error('Error de validación', roomsError)
+      setSaving(false)
+      return
+    }
+
+    // Validar baños
+    const bathroomsError = validateNumberRange(form.bathrooms_min, form.bathrooms_max, 'Baños', 10)
+    if (bathroomsError) {
+      setError(bathroomsError)
+      toast.error('Error de validación', bathroomsError)
+      setSaving(false)
+      return
+    }
+
+    // Validar área
+    const areaError = validateNumberRange(form.area_min, form.area_max, 'Área m²', 10000)
+    if (areaError) {
+      setError(areaError)
+      toast.error('Error de validación', areaError)
+      setSaving(false)
+      return
+    }
+
+    // Validar preferencias (texto)
+    if (form.metadata?.preferencias) {
+      const preferencesError = validateTextLength(form.metadata.preferencias, 1000, 'Las preferencias')
+      if (preferencesError) {
+        setError(preferencesError)
+        toast.error('Error de validación', preferencesError)
+        setSaving(false)
+        return
+      }
+    }
+
+    // Validar notas (texto)
+    if (form.metadata?.notas) {
+      const notesError = validateTextLength(form.metadata.notas, 1000, 'Las notas')
+      if (notesError) {
+        setError(notesError)
+        toast.error('Error de validación', notesError)
+        setSaving(false)
+        return
+      }
+    }
+
+    // Validar que al menos un tipo de propiedad esté seleccionado
+    if (form.property_types.length === 0) {
+      setError('Debes seleccionar al menos un tipo de propiedad')
+      toast.error('Error de validación', 'Debes seleccionar al menos un tipo de propiedad')
       setSaving(false)
       return
     }

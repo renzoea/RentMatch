@@ -11,6 +11,7 @@ import api from "@/lib/api"
 import { AxiosError } from "axios"
 import { motion } from "framer-motion"
 import { Home, Building2, Key } from "lucide-react"
+import { validateEmail } from "@/lib/validations"
 
 // ======================================================
 // BG: Íconos flotando (casas, edificios, llaves)
@@ -71,8 +72,24 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
+    // Limpiar y validar email
+    const cleanEmail = email.trim().toLowerCase()
+    const emailError = validateEmail(cleanEmail)
+    if (emailError) {
+      toast.error("Email inválido", emailError)
+      setLoading(false)
+      return
+    }
+
+    // Validar contraseña
+    if (!password || password.length < 6) {
+      toast.error("Contraseña inválida", "La contraseña debe tener al menos 6 caracteres")
+      setLoading(false)
+      return
+    }
+
     try {
-      const response = await api.post("/api/auth/login", { email, password })
+      const response = await api.post("/api/auth/login", { email: cleanEmail, password })
       const data = response.data
 
       localStorage.setItem("access_token", data.access_token)

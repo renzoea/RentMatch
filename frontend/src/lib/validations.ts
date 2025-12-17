@@ -51,10 +51,47 @@ export const validatePassword = (password: string): string | null => {
 export const validateEmail = (email: string): string | null => {
   if (!email) return 'El email es requerido';
 
+  // Trim y lowercase
+  const cleanEmail = email.trim().toLowerCase();
+
+  // Longitud máxima
+  if (cleanEmail.length > 100) {
+    return 'El email no puede tener más de 100 caracteres';
+  }
+
+  // Regex robusto para email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!emailRegex.test(email)) {
+  if (!emailRegex.test(cleanEmail)) {
     return 'Formato de email inválido';
+  }
+
+  return null;
+};
+
+/**
+ * Valida nombre o apellido
+ * Solo permite letras, espacios, tildes, guiones y apóstrofes
+ */
+export const validateName = (name: string, fieldName: string = 'Este campo'): string | null => {
+  if (!name) return `${fieldName} es requerido`;
+
+  const cleanName = name.trim();
+
+  // Longitud mínima y máxima
+  if (cleanName.length < 2) {
+    return `${fieldName} debe tener al menos 2 caracteres`;
+  }
+
+  if (cleanName.length > 50) {
+    return `${fieldName} no puede tener más de 50 caracteres`;
+  }
+
+  // Solo letras, espacios, tildes, guiones y apóstrofes
+  const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/;
+
+  if (!nameRegex.test(cleanName)) {
+    return `${fieldName} solo puede contener letras, espacios, tildes y guiones`;
   }
 
   return null;
@@ -116,6 +153,90 @@ export const validateContractDuration = (months: number): string | null => {
 
   if (months > 120) {
     return 'La duración máxima es 120 meses (10 años)';
+  }
+
+  return null;
+};
+
+/**
+ * Valida un rango numérico (mínimo y máximo)
+ */
+export const validateNumberRange = (
+  min?: number,
+  max?: number,
+  fieldName: string = 'El valor',
+  maxLimit?: number
+): string | null => {
+  // Si ambos son undefined o null, está ok (no es obligatorio)
+  if (min === undefined && max === undefined) return null;
+
+  // Validar que sean >= 0
+  if (min !== undefined && min < 0) {
+    return `${fieldName} mínimo no puede ser negativo`;
+  }
+
+  if (max !== undefined && max < 0) {
+    return `${fieldName} máximo no puede ser negativo`;
+  }
+
+  // Validar que max >= min (si ambos existen)
+  if (min !== undefined && max !== undefined && max < min) {
+    return `${fieldName} máximo debe ser mayor o igual al mínimo`;
+  }
+
+  // Validar límite máximo si se proporciona
+  if (maxLimit && max !== undefined && max > maxLimit) {
+    return `${fieldName} máximo no puede superar ${maxLimit}`;
+  }
+
+  if (maxLimit && min !== undefined && min > maxLimit) {
+    return `${fieldName} mínimo no puede superar ${maxLimit}`;
+  }
+
+  return null;
+};
+
+/**
+ * Valida longitud de texto
+ */
+export const validateTextLength = (
+  text: string,
+  maxLength: number,
+  fieldName: string = 'Este campo'
+): string | null => {
+  if (!text) return null; // Texto vacío es válido (es opcional)
+
+  const cleanText = text.trim();
+
+  if (cleanText.length > maxLength) {
+    return `${fieldName} no puede tener más de ${maxLength} caracteres`;
+  }
+
+  return null;
+};
+
+/**
+ * Valida nombre de amenidad personalizada
+ * Solo permite letras, números, espacios, guiones y underscores
+ */
+export const validateAmenityName = (name: string): string | null => {
+  if (!name) return 'El nombre es requerido';
+
+  const cleanName = name.trim();
+
+  if (cleanName.length < 3) {
+    return 'Mínimo 3 caracteres';
+  }
+
+  if (cleanName.length > 50) {
+    return 'Máximo 50 caracteres';
+  }
+
+  // Solo letras, números, espacios, guiones, underscores y tildes
+  const amenityRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s_-]+$/;
+
+  if (!amenityRegex.test(cleanName)) {
+    return 'Solo se permiten letras, números, espacios, guiones y guiones bajos';
   }
 
   return null;

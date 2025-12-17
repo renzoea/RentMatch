@@ -62,6 +62,15 @@ export default function UsersManagement() {
   const [userToBan, setUserToBan] = useState<User | null>(null)
   const [banReason, setBanReason] = useState('')
 
+  // Modal de cambio de rol
+  const [roleModalOpen, setRoleModalOpen] = useState(false)
+  const [userToChangeRole, setUserToChangeRole] = useState<User | null>(null)
+  const [newRole, setNewRole] = useState<string>('')
+
+  // Modal de eliminar
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+
   useEffect(() => {
     loadUsers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,30 +139,47 @@ export default function UsersManagement() {
     }
   }
 
-  const handleChangeRole = async (userId: string, newRole: string) => {
-    if (!confirm(`¿Estás seguro de cambiar el rol de este usuario a ${newRole}?`)) {
-      return
-    }
+  const handleChangeRole = (user: User, role: string) => {
+    setUserToChangeRole(user)
+    setNewRole(role)
+    setRoleModalOpen(true)
+  }
+
+  const confirmChangeRole = async () => {
+    if (!userToChangeRole || !newRole) return
 
     try {
-      await api.patch(`/api/admin/users/${userId}/role`, { role: newRole })
+      await api.patch(`/api/admin/users/${userToChangeRole.id}/role`, { role: newRole })
+      setRoleModalOpen(false)
+      setUserToChangeRole(null)
+      setNewRole('')
       loadUsers()
     } catch (err) {
       console.error('Error changing user role:', err)
+      setRoleModalOpen(false)
+      setUserToChangeRole(null)
+      setNewRole('')
       alert('Error al cambiar el rol del usuario')
     }
   }
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')) {
-      return
-    }
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user)
+    setDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return
 
     try {
-      await api.delete(`/api/admin/users/${userId}`)
+      await api.delete(`/api/admin/users/${userToDelete.id}`)
+      setDeleteModalOpen(false)
+      setUserToDelete(null)
       loadUsers()
     } catch (err) {
       console.error('Error deleting user:', err)
+      setDeleteModalOpen(false)
+      setUserToDelete(null)
       alert('Error al eliminar el usuario')
     }
   }
@@ -173,7 +199,7 @@ export default function UsersManagement() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <StatsCard
           title="Total Usuarios"
           value={pagination.total}
@@ -311,8 +337,8 @@ export default function UsersManagement() {
                       key={user.id}
                       user={user}
                       onBan={() => handleBanUser(user)}
-                      onChangeRole={(newRole) => handleChangeRole(user.id, newRole)}
-                      onDelete={() => handleDeleteUser(user.id)}
+                      onChangeRole={(newRole) => handleChangeRole(user, newRole)}
+                      onDelete={() => handleDeleteUser(user)}
                     />
                   ))}
                 </tbody>
@@ -363,6 +389,32 @@ export default function UsersManagement() {
             setBanModalOpen(false)
             setUserToBan(null)
             setBanReason('')
+          }}
+        />
+      )}
+
+      {/* Modal de Cambio de Rol */}
+      {roleModalOpen && userToChangeRole && (
+        <RoleChangeModal
+          user={userToChangeRole}
+          newRole={newRole}
+          onConfirm={confirmChangeRole}
+          onCancel={() => {
+            setRoleModalOpen(false)
+            setUserToChangeRole(null)
+            setNewRole('')
+          }}
+        />
+      )}
+
+      {/* Modal de Eliminar */}
+      {deleteModalOpen && userToDelete && (
+        <DeleteUserModal
+          user={userToDelete}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setDeleteModalOpen(false)
+            setUserToDelete(null)
           }}
         />
       )}
@@ -674,6 +726,195 @@ function BanModal({
   )
 }
 
+function RoleChangeModal({
+  user,
+  newRole,
+  onConfirm,
+  onCancel
+}: {
+  user: User
+  newRole: string
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [onCancel])
+
+  const roleLabels: Record<string, string> = {
+    inquilino: 'Inquilino',
+    propietario: 'Propietario',
+    admin: 'Administrador'
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="bg-purple-100 p-2.5 rounded-xl">
+              <UserCog className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Cambiar Rol</h2>
+              <p className="text-sm text-gray-600 mt-0.5">
+                {user.full_name || user.email}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-6 h-6 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-purple-900">
+              <span className="font-semibold">Nuevo rol: </span>
+              {roleLabels[newRole] || newRole}
+            </p>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                <p className="font-semibold mb-1">¿Estás seguro?</p>
+                <p>Esta acción cambiará los permisos del usuario en la plataforma.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-6 py-2.5 border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold rounded-xl transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-colors"
+          >
+            Cambiar Rol
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DeleteUserModal({
+  user,
+  onConfirm,
+  onCancel
+}: {
+  user: User
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="bg-red-100 p-2.5 rounded-xl">
+              <Trash2 className="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-red-900">Eliminar Usuario</h2>
+              <p className="text-sm text-gray-600 mt-0.5">
+                {user.full_name || user.email}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-6 h-6 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <p className="text-gray-900 font-medium mb-1">
+                ¿Estás seguro de eliminar este usuario?
+              </p>
+              <p className="text-sm text-gray-600">
+                {user.full_name} ({user.email})
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-800 font-semibold">
+              ⚠️ Esta acción no se puede deshacer
+            </p>
+            <p className="text-sm text-red-700 mt-2">
+              Se eliminarán todos los datos asociados a este usuario, incluyendo contratos,
+              perfiles de búsqueda y depósitos.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-6 py-2.5 border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold rounded-xl transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function UsersSkeleton() {
   return (
     <div className="p-6 md:p-10 space-y-6">
@@ -682,8 +923,8 @@ function UsersSkeleton() {
         <Skeleton className="h-5 w-96" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i}>
             <CardContent className="pt-6">
               <Skeleton className="h-20" />

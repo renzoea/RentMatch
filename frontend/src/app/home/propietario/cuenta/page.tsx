@@ -14,6 +14,7 @@ import api from '@/lib/api';
 import { MESSAGES } from '@/constants/messages';
 import QRCode from 'qrcode';
 import { io, Socket } from 'socket.io-client';
+import { validateName, validatePhone } from '@/lib/validations';
 
 export default function MiCuentaPropietarioPage() {
   const router = useRouter();
@@ -109,14 +110,30 @@ export default function MiCuentaPropietarioPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate names
-    if (!form.first_name || form.first_name.trim().length === 0) {
-      setErrorMsg(MESSAGES.PROFILE.NAME_REQUIRED);
+    // Validar nombre
+    const firstNameError = validateName(form.first_name, 'El nombre');
+    if (firstNameError) {
+      setErrorMsg(firstNameError);
+      toast.error('Nombre inválido', firstNameError);
       return;
     }
-    if (!form.last_name || form.last_name.trim().length === 0) {
-      setErrorMsg(MESSAGES.PROFILE.LAST_NAME_REQUIRED);
+
+    // Validar apellido
+    const lastNameError = validateName(form.last_name, 'El apellido');
+    if (lastNameError) {
+      setErrorMsg(lastNameError);
+      toast.error('Apellido inválido', lastNameError);
       return;
+    }
+
+    // Validar teléfono (solo si no está vacío)
+    if (form.phone && form.phone.trim().length > 0) {
+      const phoneError = validatePhone(form.phone);
+      if (phoneError) {
+        setErrorMsg(phoneError);
+        toast.error('Teléfono inválido', phoneError);
+        return;
+      }
     }
 
     setSaving(true);
@@ -129,7 +146,7 @@ export default function MiCuentaPropietarioPage() {
 
       const response = await api.patch('/api/users/profile', {
         full_name,
-        phone: form.phone,
+        phone: form.phone.trim(),
       });
 
       setSuccessMsg(MESSAGES.PROFILE.UPDATE_SUCCESS);
@@ -202,17 +219,9 @@ export default function MiCuentaPropietarioPage() {
       setErrorMsg('');
 
       const response = await api.post('/api/verification/qr/create');
-      const { session_token, expires_at } = response.data;
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[QR] Session created:', session_token);
-        console.log('[QR] Expires at:', expires_at);
-      }
+      const { session_token } = response.data;
 
       const mobileURL = `${window.location.origin}/verificacion/mobile/${session_token}`;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[QR] Mobile URL:', mobileURL);
-      }
 
       const qrDataURL = await QRCode.toDataURL(mobileURL, {
         width: 300,
@@ -226,9 +235,6 @@ export default function MiCuentaPropietarioPage() {
       setQrDataURL(qrDataURL);
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[WebSocket] Connecting to:', API_URL);
-      }
 
       const socketInstance = io(API_URL, {
         withCredentials: true,
@@ -236,16 +242,10 @@ export default function MiCuentaPropietarioPage() {
       });
 
       socketInstance.on('connect', () => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[WebSocket] Connected:', socketInstance.id);
-        }
         socketInstance.emit('join-session', session_token);
       });
 
       socketInstance.on('verification-complete', (data) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[WebSocket] Verification complete:', data);
-        }
         setVerificationComplete(true);
         setVerificationResult(data);
         loadVerificationStatus();
@@ -256,9 +256,7 @@ export default function MiCuentaPropietarioPage() {
       });
 
       socketInstance.on('disconnect', () => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[WebSocket] Disconnected');
-        }
+        // Connection closed
       });
 
       setSocket(socketInstance);
@@ -294,8 +292,8 @@ export default function MiCuentaPropietarioPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+        <div className="max-w-[1600px] mx-auto">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Mi Cuenta</h1>

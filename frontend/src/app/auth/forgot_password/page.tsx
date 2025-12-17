@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import type { AxiosError } from "axios"
 import Link from "next/link"
+import { validateEmail } from "@/lib/validations"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -17,13 +18,18 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
     setErrorMsg(null)
     setSuccessMsg(null)
-    if (!email.trim()) {
-      setErrorMsg("El correo es obligatorio.")
+
+    // Validar email
+    const cleanEmail = email.trim().toLowerCase()
+    const emailError = validateEmail(cleanEmail)
+    if (emailError) {
+      setErrorMsg(emailError)
       return
     }
+
     setLoading(true)
     try {
-      const res = await api.post("/api/auth/forgot-password", { email: email.trim().toLowerCase() })
+      const res = await api.post("/api/auth/forgot-password", { email: cleanEmail })
       setSuccessMsg(res.data.message || "Correo enviado. Revisa tu bandeja.")
       setEmail("")
     } catch (err) {
@@ -91,7 +97,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       <div className="mt-8 text-center">
-        <p className="text-gray-500 text-sm">© 2024 RentMatch</p>
+        <p className="text-gray-500 text-sm">© 2025 RentMatch</p>
       </div>
     </div>
   )

@@ -785,7 +785,7 @@ function StatsCard({
             <p className="text-sm text-gray-600 mb-1">{title}</p>
             <p className="text-2xl font-bold text-gray-900">{value}</p>
           </div>
-          <div className={`${colors[color]} p-3 rounded-xl`}>
+          <div className={`${colors[color]} p-3 rounded-xl flex items-center justify-center`}>
             <div className="w-6 h-6 text-white">
               {icon}
             </div>

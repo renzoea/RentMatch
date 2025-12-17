@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { createClient } from "@supabase/supabase-js"
+import { validatePassword } from "@/lib/validations"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,10 +60,14 @@ export default function ResetPasswordPage() {
       setErrorMsg("Las contraseñas no coinciden.")
       return
     }
-    if (newPassword.length < 8) {
-      setErrorMsg("Mínimo 8 caracteres.")
+
+    // Validar contraseña con la misma función que registro
+    const passwordError = validatePassword(newPassword)
+    if (passwordError) {
+      setErrorMsg(passwordError)
       return
     }
+
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) {
@@ -108,6 +113,7 @@ export default function ResetPasswordPage() {
               disabled={!sessionReady || loading}
               required
             />
+            <p className="text-sm text-gray-500 mt-2">Mínimo 8 caracteres, una mayúscula y un número</p>
           </div>
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
@@ -144,7 +150,7 @@ export default function ResetPasswordPage() {
       </div>
 
       <div className="mt-8 text-center">
-        <p className="text-gray-500 text-sm">© 2024 RentMatch</p>
+        <p className="text-gray-500 text-sm">© 2025 RentMatch</p>
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Phone, MapPin, Clock, Loader2, MessageCircle, ArrowRight } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Loader2, MessageCircle, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { useState } from "react";
 import Navbar from "@/components/navbar";
+import { validateName, validateEmail, validateTextLength } from "@/lib/validations";
 
 // ======================================================
 // NOTA: Se eliminaron todas las animaciones de F-M y CSS.
@@ -22,12 +23,64 @@ import Navbar from "@/components/navbar";
 
 export default function ContactoPage() {
   const [sending, setSending] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    // Validar nombre
+    const nameError = validateName(formData.name, 'El nombre');
+    if (nameError) {
+      setErrorMsg(nameError);
+      return;
+    }
+
+    // Validar email
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      setErrorMsg(emailError);
+      return;
+    }
+
+    // Validar asunto
+    const subjectError = validateTextLength(formData.subject.trim(), 200, 'El asunto');
+    if (subjectError) {
+      setErrorMsg(subjectError);
+      return;
+    }
+
+    // Validar mensaje
+    const messageError = validateTextLength(formData.message.trim(), 2000, 'El mensaje');
+    if (messageError) {
+      setErrorMsg(messageError);
+      return;
+    }
+
     setSending(true);
-    // TODO: mandalo a tu endpoint /action o API route
-    setTimeout(() => setSending(false), 900);
+
+    try {
+      // TODO: mandalo a tu endpoint /action o API route
+      await new Promise(resolve => setTimeout(resolve, 900));
+
+      setSuccessMsg('¡Mensaje enviado con éxito! Te responderemos pronto.');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch {
+      setErrorMsg('Error al enviar el mensaje. Por favor, intenta de nuevo.');
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -64,19 +117,42 @@ export default function ContactoPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-16">
-            
+
             {/* COLUMNA 1-3: FORMULARIO (Se le da más peso a la acción principal) */}
             <div className="lg:col-span-3">
                 <Card className="h-full border-orange-200/50 ring-1 ring-orange-100/60 bg-white/90 backdrop-blur-sm shadow-xl rounded-3xl p-8 md:p-10">
                     <h2 className="text-3xl font-bold text-gray-900 mb-6">
                       Envíanos un Mensaje
                     </h2>
-                    
+
+                    {/* Success/Error Messages */}
+                    {successMsg && (
+                      <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-800">
+                        <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                        <span className="font-medium">{successMsg}</span>
+                      </div>
+                    )}
+
+                    {errorMsg && (
+                      <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-800">
+                        <XCircle className="w-5 h-5 flex-shrink-0" />
+                        <span className="font-medium">{errorMsg}</span>
+                      </div>
+                    )}
+
                     <form className="space-y-6" onSubmit={onSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label htmlFor="name" className="text-gray-700 font-medium">Nombre completo</Label>
-                          <Input id="name" name="name" placeholder="Tu nombre" required className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all" />
+                          <Input
+                            id="name"
+                            name="name"
+                            placeholder="Tu nombre"
+                            required
+                            className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
@@ -87,13 +163,23 @@ export default function ContactoPage() {
                             placeholder="tu@email.com"
                             required
                             className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="subject" className="text-gray-700 font-medium">Asunto</Label>
-                        <Input id="subject" name="subject" placeholder="Consulta sobre…" required className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all" />
+                        <Input
+                          id="subject"
+                          name="subject"
+                          placeholder="Consulta sobre…"
+                          required
+                          className="rounded-xl h-12 bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
+                          value={formData.subject}
+                          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -104,6 +190,8 @@ export default function ContactoPage() {
                           placeholder="Escribe tu mensaje aquí…"
                           className="min-h-[160px] rounded-xl bg-white/70 border-orange-100 ring-1 ring-orange-50 focus-visible:ring-orange-300 transition-all"
                           required
+                          value={formData.message}
+                          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         />
                       </div>
 

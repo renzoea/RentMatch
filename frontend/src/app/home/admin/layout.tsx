@@ -84,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </div>
         </header>
-        <main className="flex-1">
+        <main className="flex-1 max-w-[1600px] mx-auto w-full">
           {children}
         </main>
       </div>

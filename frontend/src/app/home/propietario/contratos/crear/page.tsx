@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import LocationSelector from '@/components/location-selector';
 import PDFViewerModal from '@/components/pdf-viewer-modal';
+import { validateEmail, validateAmount, validateTextLength } from '@/lib/validations';
 
 type Tenant = {
   id: string;
@@ -129,8 +130,11 @@ function CrearContratoContent() {
   };
 
   const searchTenant = async () => {
-    if (!tenantEmail) {
-      setTenantError('Por favor ingresa un email');
+    // Validar email
+    const cleanEmail = tenantEmail.trim().toLowerCase();
+    const emailError = validateEmail(cleanEmail);
+    if (emailError) {
+      setTenantError(emailError);
       return;
     }
 
@@ -139,7 +143,7 @@ function CrearContratoContent() {
     setTenant(null);
 
     try {
-      const res = await api.get(`/api/contracts/find-tenant?email=${encodeURIComponent(tenantEmail)}`);
+      const res = await api.get(`/api/contracts/find-tenant?email=${encodeURIComponent(cleanEmail)}`);
       setTenant(res.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
@@ -209,15 +213,38 @@ function CrearContratoContent() {
       return;
     }
 
-    // Validar que los montos no sean 0 o negativos
-    if (!formData.rent_amount || parseFloat(formData.rent_amount) <= 0) {
-      toast.error('Monto inválido', 'El monto de alquiler debe ser mayor a 0');
+    // Validar monto de alquiler
+    const rentAmountError = validateAmount(formData.rent_amount, 'El monto de alquiler');
+    if (rentAmountError) {
+      toast.error('Monto inválido', rentAmountError);
       return;
     }
 
-    if (!formData.deposit_amount || parseFloat(formData.deposit_amount) <= 0) {
-      toast.error('Monto inválido', 'El monto del depósito debe ser mayor a 0');
-      return;
+    // Validar monto de depósito (si se proporciona)
+    if (formData.deposit_amount) {
+      const depositAmountError = validateAmount(formData.deposit_amount, 'El monto del depósito');
+      if (depositAmountError) {
+        toast.error('Monto inválido', depositAmountError);
+        return;
+      }
+    }
+
+    // Validar notas de la propiedad (si se proporciona)
+    if (formData.notes) {
+      const notesError = validateTextLength(formData.notes, 1000, 'Las notas de la propiedad');
+      if (notesError) {
+        toast.error('Texto muy largo', notesError);
+        return;
+      }
+    }
+
+    // Validar términos adicionales (si se proporciona)
+    if (formData.terms) {
+      const termsError = validateTextLength(formData.terms, 2000, 'Los términos adicionales');
+      if (termsError) {
+        toast.error('Texto muy largo', termsError);
+        return;
+      }
     }
 
     setSending(true);
